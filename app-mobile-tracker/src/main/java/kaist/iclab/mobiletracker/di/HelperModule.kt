@@ -4,6 +4,7 @@ import kaist.iclab.mobiletracker.helpers.BLEHelper
 import kaist.iclab.mobiletracker.repository.WatchSensorRepository
 import kaist.iclab.mobiletracker.services.CampaignService
 import kaist.iclab.mobiletracker.services.ProfileService
+import kaist.iclab.mobiletracker.services.SurveyService
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -27,6 +28,13 @@ val helperModule = module {
     // ProfileService - injects SupabaseHelper
     single {
         ProfileService(
+            supabaseHelper = get()
+        )
+    }
+
+    // SurveyService - injects SupabaseHelper
+    single {
+        SurveyService(
             supabaseHelper = get()
         )
     }

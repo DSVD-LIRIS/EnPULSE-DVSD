@@ -27,7 +27,6 @@ object Styles {
     // Component sizes
     val LOGO_SIZE = 56.dp
     val BUTTON_HEIGHT = 50.dp
-    val LIST_MIN_HEIGHT = 220.dp
     val LIST_MAX_HEIGHT = 260.dp
     val ITEM_VERTICAL_PADDING = 14.dp
     val ITEM_HORIZONTAL_PADDING = 16.dp

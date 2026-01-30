@@ -4,11 +4,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
+import kaist.iclab.mobiletracker.data.survey.SurveyConfig
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.mobiletracker.services.CampaignService
 import kaist.iclab.mobiletracker.services.ProfileService
+import kaist.iclab.mobiletracker.services.SurveyService
 import kaist.iclab.mobiletracker.utils.SupabaseSessionHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +24,7 @@ import kotlinx.coroutines.launch
 data class OnboardingUiState(
     val campaigns: List<CampaignData> = emptyList(),
     val selectedCampaign: CampaignData? = null,
+    val surveyConfigs: List<SurveyConfig> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val isComplete: Boolean = false
@@ -33,6 +36,7 @@ data class OnboardingUiState(
 class OnboardingViewModel(
     private val campaignService: CampaignService,
     private val profileService: ProfileService,
+    private val surveyService: SurveyService,
     private val supabaseHelper: SupabaseHelper,
     private val userProfileRepository: UserProfileRepository
 ) : ViewModel() {
@@ -101,11 +105,12 @@ class OnboardingViewModel(
 
                 when (val result = profileService.updateCampaignId(uuid, selectedCampaign.id)) {
                     is Result.Success -> {
-                        // Refresh user profile to update cached data
+                        // 1. Fetch survey configs for the selected campaign first
+                        fetchSurveyConfigs(selectedCampaign.id)
+                        
+                        // 2. Refresh user profile ONLY AFTER surveys are fetched
+                        // This triggers navigation in NavGraph (Observing userProfile)
                         refreshUserProfile(uuid)
-                        _uiState.update {
-                            it.copy(isLoading = false, isComplete = true)
-                        }
                     }
 
                     is Result.Error -> {
@@ -151,6 +156,40 @@ class OnboardingViewModel(
 
             is Result.Error -> {
                 Log.e(TAG, "Error refreshing profile: ${result.message}", result.exception)
+            }
+        }
+    }
+
+    /**
+     * Fetch survey configurations for the selected campaign
+     */
+    private suspend fun fetchSurveyConfigs(campaignId: Int) {
+        when (val result = surveyService.getCampaignSurveys(campaignId)) {
+            is Result.Success -> {
+                val configs = result.data
+                Log.d(TAG, "Successfully fetched ${configs.size} survey configs for campaign $campaignId")
+                configs.forEach { config ->
+                    Log.d(TAG, "Survey: ${config.title} (ID: ${config.id}, Type: ${config.scheduleType}, Questions: ${config.questions.size})")
+                }
+                _uiState.update {
+                    it.copy(
+                        surveyConfigs = configs,
+                        isLoading = false,
+                        isComplete = true
+                    )
+                }
+            }
+
+            is Result.Error -> {
+                Log.e(TAG, "Error fetching survey configs: ${result.message}", result.exception)
+                // Still mark as complete even if surveys fail - campaign is saved
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isComplete = true,
+                        error = "Campaign saved, but failed to load surveys: ${result.message}"
+                    )
+                }
             }
         }
     }

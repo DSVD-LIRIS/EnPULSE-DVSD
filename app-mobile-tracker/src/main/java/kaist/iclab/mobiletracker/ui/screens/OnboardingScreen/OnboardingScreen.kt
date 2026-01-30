@@ -143,7 +143,7 @@ fun OnboardingScreen(
                     }
                 } else {
                     LazyColumn(
-                        modifier = Modifier.heightIn(min = Styles.LIST_MIN_HEIGHT, max = Styles.LIST_MAX_HEIGHT)
+                        modifier = Modifier.heightIn(max = Styles.LIST_MAX_HEIGHT)
                     ) {
                         itemsIndexed(uiState.campaigns) { index, campaign ->
                             CampaignListItem(
