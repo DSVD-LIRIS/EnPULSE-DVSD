@@ -100,8 +100,8 @@ object SurveyConfigConverter {
         if (type == "ESM" && json != null) {
             esmConfig = LibEsmConfig(
                 numSurvey = json["numSurvey"]?.jsonPrimitive?.int ?: 3,
-                minInterval = json["minInterval"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(1),
-                maxInterval = json["maxInterval"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(3),
+                minInterval = (json["minInterval"]?.jsonPrimitive?.long ?: 60) * TimeUnit.MINUTES.toMillis(1),
+                maxInterval = (json["maxInterval"]?.jsonPrimitive?.long ?: 180) * TimeUnit.MINUTES.toMillis(1),
                 startOfDay = json["startOfDay"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(9),
                 endOfDay = json["endOfDay"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(21)
             )
