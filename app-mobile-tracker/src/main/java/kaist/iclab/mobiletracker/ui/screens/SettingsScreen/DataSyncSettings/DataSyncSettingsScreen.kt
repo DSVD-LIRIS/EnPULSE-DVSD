@@ -249,13 +249,7 @@ private fun AutomaticSyncSettingCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    if (isEnabled) {
-                        Modifier.clickable { onClick() }
-                    } else {
-                        Modifier
-                    }
-                )
+                .clickable { onClick() }
                 .padding(
                     horizontal = Styles.CARD_HORIZONTAL_PADDING,
                     vertical = Styles.CARD_VERTICAL_PADDING
@@ -297,15 +291,13 @@ private fun AutomaticSyncSettingCard(
                         )
                 )
             }
-            if (isEnabled) {
-                Spacer(Modifier.width(Styles.SPACER_WIDTH))
-                Icon(
-                    imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = null,
-                    tint = AppColors.TextSecondary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            Spacer(Modifier.width(Styles.SPACER_WIDTH))
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = AppColors.TextSecondary,
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }
