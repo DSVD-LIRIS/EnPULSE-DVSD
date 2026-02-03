@@ -83,7 +83,17 @@ class SurveySensor(
 
     data class Config (
         val survey: Map<String, Survey>
-    ): SensorConfig
+    ): SensorConfig {
+        companion object {
+            fun fromJson(jsonString: String): Config {
+                val surveyConfigs = Json.decodeFromString<Map<String, kaist.iclab.tracker.sensor.survey.config.SurveyConfig>>(jsonString)
+                val surveys = surveyConfigs.mapValues { (_, config) ->
+                    kaist.iclab.tracker.sensor.survey.config.SurveyBuilder.build(config)
+                }
+                return Config(surveys)
+            }
+        }
+    }
 
     @Serializable
     data class Entity (

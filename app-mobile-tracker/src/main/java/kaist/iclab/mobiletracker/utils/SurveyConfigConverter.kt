@@ -3,23 +3,29 @@ package kaist.iclab.mobiletracker.utils
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.data.survey.QuestionConfig
 import kaist.iclab.mobiletracker.data.survey.SurveyConfig
-import kaist.iclab.mobiletracker.utils.converter.ExpressionParser
-import kaist.iclab.mobiletracker.utils.converter.QuestionFactory
-import kaist.iclab.mobiletracker.utils.converter.ScheduleParser
 import kaist.iclab.tracker.sensor.survey.Survey
 import kaist.iclab.tracker.sensor.survey.SurveyNotificationConfig
 import kaist.iclab.tracker.sensor.survey.SurveyScheduleMethod
 import kaist.iclab.tracker.sensor.survey.SurveySensor
-import kaist.iclab.tracker.sensor.survey.question.Question
-import kaist.iclab.tracker.sensor.survey.question.QuestionTrigger
+import kaist.iclab.tracker.sensor.survey.config.SurveyBuilder
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
+import java.util.concurrent.TimeUnit
+import kaist.iclab.tracker.sensor.survey.config.SurveyConfig as LibSurveyConfig
+import kaist.iclab.tracker.sensor.survey.config.ScheduleConfig as LibScheduleConfig
+import kaist.iclab.tracker.sensor.survey.config.NotificationConfig as LibNotificationConfig
+import kaist.iclab.tracker.sensor.survey.config.QuestionConfig as LibQuestionConfig
+import kaist.iclab.tracker.sensor.survey.config.OptionConfig as LibOptionConfig
+import kaist.iclab.tracker.sensor.survey.config.ChildQuestionConfig as LibChildQuestionConfig
+import kaist.iclab.tracker.sensor.survey.config.TriggerConfig as LibTriggerConfig
+import kaist.iclab.tracker.sensor.survey.config.EsmConfig as LibEsmConfig
 
 /**
- * Converts Supabase SurveyConfig to tracker-library Survey objects.
- * 
- * This is the main orchestrator that delegates to:
- * - [ScheduleParser] for schedule parsing
- * - [ExpressionParser] for trigger parsing
- * - [QuestionFactory] for question creation
+ * Converts Supabase SurveyConfig to tracker-library Survey objects using Library DTOs.
  */
 object SurveyConfigConverter {
 
@@ -52,24 +58,17 @@ object SurveyConfigConverter {
 
         configs.forEach { config ->
             try {
+                // 1. Map to Library DTO
+                val libConfig = mapToLibConfig(config)
+                
+                // 2. Build Runtime Object
+                val survey = SurveyBuilder.build(libConfig)
+                
                 val surveyId = config.id.toString()
-                val scheduleMethod = ScheduleParser.parse(config.scheduleType, config.schedule)
-                val notificationConfig = SurveyNotificationConfig(
-                    title = config.title,
-                    description = config.description ?: "Please complete the survey",
-                    icon = R.drawable.ic_launcher_foreground
-                )
-                val questions = assembleQuestionHierarchy(config.questions)
-
-                if (questions.isNotEmpty()) {
-                    surveys[surveyId] = Survey(
-                        scheduleMethod = scheduleMethod,
-                        notificationConfig = notificationConfig,
-                        *questions.toTypedArray()
-                    )
-                    scheduleMethods[surveyId] = scheduleMethod
-                    notificationConfigs[surveyId] = notificationConfig
-                }
+                surveys[surveyId] = survey
+                scheduleMethods[surveyId] = survey.scheduleMethod
+                notificationConfigs[surveyId] = survey.notificationConfig
+                
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "Failed to convert survey ${config.id}: ${e.message}")
             }
@@ -78,47 +77,86 @@ object SurveyConfigConverter {
         return ConvertedSurveys(surveys, scheduleMethods, notificationConfigs)
     }
 
-    /**
-     * Assemble questions into a hierarchy based on parentId relationships.
-     * Returns only root-level questions (parentId == null) with children attached via triggers.
-     */
-    private fun assembleQuestionHierarchy(questions: List<QuestionConfig>): List<Question<*>> {
-        val childrenByParentId = questions.groupBy { it.parentId }
+    private fun mapToLibConfig(config: SurveyConfig): LibSurveyConfig {
+        return LibSurveyConfig(
+            id = config.id.toString(),
+            schedule = mapSchedule(config.scheduleType, config.schedule),
+            notification = LibNotificationConfig(
+                title = config.title,
+                description = config.description ?: "Please complete the survey"
+            ),
+            questions = mapQuestionsRecursively(config.questions)
+        )
+    }
 
-        fun assemble(config: QuestionConfig): Question<*>? {
-            val childConfigs = childrenByParentId[config.id] ?: emptyList()
-
-            // Group children by their trigger and create QuestionTriggers
-            val triggers = childConfigs
-                .groupBy { it.trigger }
-                .mapNotNull { (triggerJson, subConfigs) ->
-                    val parseResult = ExpressionParser.parse(triggerJson, config.type)
-
-                    when (parseResult) {
-                        is ExpressionParser.ParseResult.Success -> {
-                            val subQuestions = subConfigs.mapNotNull { assemble(it) }
-                            if (subQuestions.isEmpty()) return@mapNotNull null
-
-                            QuestionFactory.createTrigger(
-                                parentType = config.type,
-                                expression = parseResult.expression,
-                                children = subQuestions
-                            )
-                        }
-                        is ExpressionParser.ParseResult.NoTrigger -> null
-                        is ExpressionParser.ParseResult.Error -> {
-                            android.util.Log.w(TAG, "Trigger parse error for Q${config.id}: ${parseResult.message}")
-                            null
-                        }
-                    }
-                }
-
-            return QuestionFactory.create(config, triggers.ifEmpty { null })
+    private fun mapSchedule(type: String, scheduleJson: String?): LibScheduleConfig {
+        val json = scheduleJson?.let { 
+            try { Json.decodeFromString<JsonObject>(it) } catch(e: Exception) { null } 
         }
 
-        // Build from root questions only
-        return questions
-            .filter { it.parentId == null }
-            .mapNotNull { assemble(it) }
+        var esmConfig: LibEsmConfig? = null
+        var timeOfDay: List<String>? = null
+
+        if (type == "ESM" && json != null) {
+            esmConfig = LibEsmConfig(
+                numSurvey = json["numSurvey"]?.jsonPrimitive?.int ?: 3,
+                minInterval = json["minInterval"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(1),
+                maxInterval = json["maxInterval"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(3),
+                startOfDay = json["startOfDay"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(9),
+                endOfDay = json["endOfDay"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(21)
+            )
+        } else if (type == "TIME_OF_DAY" && json != null) {
+            val time = json["timeOfDay"]?.jsonPrimitive?.contentOrNull
+            if (time != null) {
+                timeOfDay = listOf(time)
+            }
+        }
+
+        return LibScheduleConfig(
+            type = type,
+            esm = esmConfig,
+            timeOfDay = timeOfDay
+        )
+    }
+
+    private fun mapQuestionsRecursively(questions: List<QuestionConfig>): List<LibQuestionConfig> {
+        val rootQuestions = questions.filter { it.parentId == null }
+        val childrenByParentId = questions.groupBy { it.parentId }
+
+        fun recurse(config: QuestionConfig): LibQuestionConfig {
+            val childConfigs = childrenByParentId[config.id] ?: emptyList()
+            
+            // Group by trigger and create ChildQuestionConfigs
+            val children = childConfigs.groupBy { it.trigger }.mapNotNull { (triggerJson, group) ->
+                if (triggerJson.isNullOrEmpty() || triggerJson == "null") return@mapNotNull null
+                
+                try {
+                    val triggerObj = Json.decodeFromString<JsonObject>(triggerJson)
+                    val op = triggerObj["op"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                    val value = triggerObj["value"]
+
+                    LibChildQuestionConfig(
+                        trigger = LibTriggerConfig(op = op, value = value),
+                        questions = group.map { recurse(it) }
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.e(TAG, "Failed to parse trigger: $triggerJson", e)
+                    null
+                }
+            }
+
+            return LibQuestionConfig(
+                id = config.id,
+                type = config.type,
+                text = config.text,
+                isMandatory = config.shouldAnswer,
+                options = config.options?.map { 
+                    LibOptionConfig(it.display, it.allowFreeResponse) 
+                },
+                children = children.ifEmpty { null }
+            )
+        }
+
+        return rootQuestions.map { recurse(it) }
     }
 }
