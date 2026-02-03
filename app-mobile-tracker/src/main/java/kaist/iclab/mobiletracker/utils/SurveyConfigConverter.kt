@@ -1,34 +1,32 @@
 package kaist.iclab.mobiletracker.utils
 
 import kaist.iclab.mobiletracker.R
-import kaist.iclab.mobiletracker.data.survey.OptionConfig
 import kaist.iclab.mobiletracker.data.survey.QuestionConfig
-import kaist.iclab.mobiletracker.data.survey.ScheduleType
 import kaist.iclab.mobiletracker.data.survey.SurveyConfig
+import kaist.iclab.mobiletracker.utils.converter.ExpressionParser
+import kaist.iclab.mobiletracker.utils.converter.QuestionFactory
+import kaist.iclab.mobiletracker.utils.converter.ScheduleParser
 import kaist.iclab.tracker.sensor.survey.Survey
 import kaist.iclab.tracker.sensor.survey.SurveyNotificationConfig
 import kaist.iclab.tracker.sensor.survey.SurveyScheduleMethod
 import kaist.iclab.tracker.sensor.survey.SurveySensor
-import kaist.iclab.tracker.sensor.survey.question.CheckboxQuestion
-import kaist.iclab.tracker.sensor.survey.question.NumberQuestion
-import kaist.iclab.tracker.sensor.survey.question.Option
 import kaist.iclab.tracker.sensor.survey.question.Question
-import kaist.iclab.tracker.sensor.survey.question.RadioQuestion
-import kaist.iclab.tracker.sensor.survey.question.TextQuestion
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.long
-import java.util.concurrent.TimeUnit
+import kaist.iclab.tracker.sensor.survey.question.QuestionTrigger
 
 /**
- * Converts Supabase SurveyConfig to tracker-library Survey objects
+ * Converts Supabase SurveyConfig to tracker-library Survey objects.
+ * 
+ * This is the main orchestrator that delegates to:
+ * - [ScheduleParser] for schedule parsing
+ * - [ExpressionParser] for trigger parsing
+ * - [QuestionFactory] for question creation
  */
 object SurveyConfigConverter {
 
+    private const val TAG = "SurveyConverter"
+
     /**
-     * Result of converting survey configs
+     * Result of converting survey configs.
      */
     data class ConvertedSurveys(
         val surveys: Map<String, Survey>,
@@ -37,17 +35,15 @@ object SurveyConfigConverter {
     )
 
     /**
-     * Convert a list of SurveyConfig to SurveySensor.Config
+     * Convert a list of SurveyConfig to SurveySensor.Config.
      */
     fun toSurveySensorConfig(configs: List<SurveyConfig>): SurveySensor.Config {
         val converted = convertAll(configs)
-        return SurveySensor.Config(
-            survey = converted.surveys
-        )
+        return SurveySensor.Config(survey = converted.surveys)
     }
 
     /**
-     * Convert all SurveyConfigs to tracker-library objects
+     * Convert all SurveyConfigs to tracker-library objects.
      */
     fun convertAll(configs: List<SurveyConfig>): ConvertedSurveys {
         val surveys = mutableMapOf<String, Survey>()
@@ -57,13 +53,13 @@ object SurveyConfigConverter {
         configs.forEach { config ->
             try {
                 val surveyId = config.id.toString()
-                val scheduleMethod = parseScheduleMethod(config.scheduleType, config.schedule)
+                val scheduleMethod = ScheduleParser.parse(config.scheduleType, config.schedule)
                 val notificationConfig = SurveyNotificationConfig(
                     title = config.title,
                     description = config.description ?: "Please complete the survey",
                     icon = R.drawable.ic_launcher_foreground
                 )
-                val questions = convertQuestions(config.questions)
+                val questions = assembleQuestionHierarchy(config.questions)
 
                 if (questions.isNotEmpty()) {
                     surveys[surveyId] = Survey(
@@ -75,7 +71,7 @@ object SurveyConfigConverter {
                     notificationConfigs[surveyId] = notificationConfig
                 }
             } catch (e: Exception) {
-                // Skip surveys that fail to convert
+                android.util.Log.e(TAG, "Failed to convert survey ${config.id}: ${e.message}")
             }
         }
 
@@ -83,143 +79,46 @@ object SurveyConfigConverter {
     }
 
     /**
-     * Parse schedule method from Supabase schedule JSON string
+     * Assemble questions into a hierarchy based on parentId relationships.
+     * Returns only root-level questions (parentId == null) with children attached via triggers.
      */
-    private fun parseScheduleMethod(scheduleType: String, scheduleJson: String?): SurveyScheduleMethod {
-        val schedule = scheduleJson?.let {
-            try {
-                Json.decodeFromString<JsonObject>(it)
-            } catch (e: Exception) {
-                null
-            }
-        }
-        
-        return when (scheduleType) {
-            ScheduleType.TIME_OF_DAY -> {
-                val times = parseTimeOfDay(schedule)
-                SurveyScheduleMethod.Fixed(timeOfDay = times)
-            }
-            ScheduleType.ESM -> {
-                parseESMSchedule(schedule)
-            }
-            else -> SurveyScheduleMethod.Manual()
-        }
-    }
+    private fun assembleQuestionHierarchy(questions: List<QuestionConfig>): List<Question<*>> {
+        val childrenByParentId = questions.groupBy { it.parentId }
 
-    /**
-     * Parse TIME_OF_DAY schedule
-     */
-    private fun parseTimeOfDay(schedule: JsonObject?): List<Long> {
-        if (schedule == null) return listOf(TimeUnit.HOURS.toMillis(12))
+        fun assemble(config: QuestionConfig): Question<*>? {
+            val childConfigs = childrenByParentId[config.id] ?: emptyList()
 
-        return try {
-            val timeOfDay = schedule["timeOfDay"]
-            if (timeOfDay != null) {
-                // Assuming timeOfDay is in format "HH:mm" or milliseconds
-                val timeStr = timeOfDay.jsonPrimitive.content
-                if (timeStr.contains(":")) {
-                    val parts = timeStr.split(":")
-                    val hours = parts[0].toLongOrNull() ?: 12
-                    val minutes = parts.getOrNull(1)?.toLongOrNull() ?: 0
-                    listOf(TimeUnit.HOURS.toMillis(hours) + TimeUnit.MINUTES.toMillis(minutes))
-                } else {
-                    listOf(timeStr.toLongOrNull() ?: TimeUnit.HOURS.toMillis(12))
+            // Group children by their trigger and create QuestionTriggers
+            val triggers = childConfigs
+                .groupBy { it.trigger }
+                .mapNotNull { (triggerJson, subConfigs) ->
+                    val parseResult = ExpressionParser.parse(triggerJson, config.type)
+
+                    when (parseResult) {
+                        is ExpressionParser.ParseResult.Success -> {
+                            val subQuestions = subConfigs.mapNotNull { assemble(it) }
+                            if (subQuestions.isEmpty()) return@mapNotNull null
+
+                            QuestionFactory.createTrigger(
+                                parentType = config.type,
+                                expression = parseResult.expression,
+                                children = subQuestions
+                            )
+                        }
+                        is ExpressionParser.ParseResult.NoTrigger -> null
+                        is ExpressionParser.ParseResult.Error -> {
+                            android.util.Log.w(TAG, "Trigger parse error for Q${config.id}: ${parseResult.message}")
+                            null
+                        }
+                    }
                 }
-            } else {
-                listOf(TimeUnit.HOURS.toMillis(12))
-            }
-        } catch (e: Exception) {
-            listOf(TimeUnit.HOURS.toMillis(12))
+
+            return QuestionFactory.create(config, triggers.ifEmpty { null })
         }
-    }
 
-    /**
-     * Parse ESM schedule
-     */
-    private fun parseESMSchedule(schedule: JsonObject?): SurveyScheduleMethod {
-        if (schedule == null) return SurveyScheduleMethod.Manual()
-
-        return try {
-            val numSurvey = schedule["numSurvey"]?.jsonPrimitive?.int ?: 3
-            val minInterval = schedule["minInterval"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(1)
-            val maxInterval = schedule["maxInterval"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(3)
-            val startOfDay = schedule["startOfDay"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(9)
-            val endOfDay = schedule["endOfDay"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(21)
-
-            SurveyScheduleMethod.ESM(
-                minInterval = minInterval,
-                maxInterval = maxInterval,
-                startOfDay = startOfDay,
-                endOfDay = endOfDay,
-                numSurvey = numSurvey
-            )
-        } catch (e: Exception) {
-            SurveyScheduleMethod.Manual()
-        }
-    }
-
-    /**
-     * Convert question configs to Question objects
-     * Only converts root-level questions (parentId == null)
-     */
-    private fun convertQuestions(questions: List<QuestionConfig>): List<Question<*>> {
-        // First pass: convert all questions
-        val rootQuestions = questions.filter { it.parentId == null }
-        return rootQuestions.mapNotNull { convertQuestion(it) }
-    }
-
-    /**
-     * Convert a single QuestionConfig to Question
-     */
-    private fun convertQuestion(config: QuestionConfig): Question<*>? {
-        return try {
-            when (config.type.uppercase()) {
-                "TEXT" -> TextQuestion(
-                    id = config.id,
-                    question = config.text,
-                    isMandatory = config.shouldAnswer
-                )
-                "NUMBER" -> NumberQuestion(
-                    id = config.id,
-                    question = config.text,
-                    isMandatory = config.shouldAnswer
-                )
-                "RADIO" -> {
-                    val options = convertOptions(config.options)
-                    if (options.isEmpty()) return null
-                    RadioQuestion(
-                        id = config.id,
-                        question = config.text,
-                        isMandatory = config.shouldAnswer,
-                        option = options
-                    )
-                }
-                "CHECKBOX" -> {
-                    val options = convertOptions(config.options)
-                    if (options.isEmpty()) return null
-                    CheckboxQuestion(
-                        id = config.id,
-                        question = config.text,
-                        isMandatory = config.shouldAnswer,
-                        option = options
-                    )
-                }
-                else -> null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    /**
-     * Convert OptionConfig list to Option list
-     */
-    private fun convertOptions(options: List<OptionConfig>?): List<Option> {
-        return options?.map { option ->
-            Option(
-                displayText = option.display,
-                allowFreeResponse = option.allowFreeResponse
-            )
-        } ?: emptyList()
+        // Build from root questions only
+        return questions
+            .filter { it.parentId == null }
+            .mapNotNull { assemble(it) }
     }
 }
