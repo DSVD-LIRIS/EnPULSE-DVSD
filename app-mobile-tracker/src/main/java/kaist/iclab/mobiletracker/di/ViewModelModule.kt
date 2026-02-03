@@ -1,13 +1,11 @@
 package kaist.iclab.mobiletracker.di
 
-import kaist.iclab.mobiletracker.helpers.SupabaseHelper
+import kaist.iclab.mobiletracker.repository.CampaignRepository
 import kaist.iclab.mobiletracker.repository.DataRepository
 import kaist.iclab.mobiletracker.repository.PhoneSensorRepository
 import kaist.iclab.mobiletracker.repository.SurveyRepository
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.mobiletracker.repository.WatchSensorRepository
-import kaist.iclab.mobiletracker.services.CampaignService
-import kaist.iclab.mobiletracker.services.ProfileService
 import kaist.iclab.mobiletracker.viewmodels.data.DataViewModel
 import kaist.iclab.mobiletracker.viewmodels.data.SensorDetailViewModel
 import kaist.iclab.mobiletracker.viewmodels.home.HomeViewModel
@@ -49,9 +47,7 @@ val viewModelModule = module {
     // AccountSettingsViewModel
     viewModel {
         AccountSettingsViewModel(
-            campaignService = get<CampaignService>(),
-            profileService = get<ProfileService>(),
-            supabaseHelper = get<SupabaseHelper>(),
+            campaignRepository = get<CampaignRepository>(),
             userProfileRepository = get<UserProfileRepository>(),
             surveyRepository = get<SurveyRepository>(),
             context = androidContext()
@@ -95,9 +91,7 @@ val viewModelModule = module {
     // OnboardingViewModel
     viewModel {
         kaist.iclab.mobiletracker.viewmodels.onboarding.OnboardingViewModel(
-            campaignService = get<CampaignService>(),
-            profileService = get<ProfileService>(),
-            supabaseHelper = get<SupabaseHelper>(),
+            campaignRepository = get<CampaignRepository>(),
             userProfileRepository = get<UserProfileRepository>(),
             surveyRepository = get<SurveyRepository>()
         )

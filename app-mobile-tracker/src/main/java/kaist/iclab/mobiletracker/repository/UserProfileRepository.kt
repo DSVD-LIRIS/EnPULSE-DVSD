@@ -4,19 +4,22 @@ import kaist.iclab.mobiletracker.data.sensors.phone.ProfileData
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Repository interface for user profile data caching.
- * Provides in-memory storage for user profile loaded after login.
+ * Repository interface for user profile management.
+ * Handles both caching and remote profile operations.
  */
 interface UserProfileRepository {
     /**
      * Get cached user profile as StateFlow
-     * @return StateFlow of the cached profile
      */
     val profileFlow: StateFlow<ProfileData?>
+    
+    /**
+     * Get current user UUID from session
+     */
+    fun getCurrentUuid(): String?
 
     /**
      * Save user profile to cache
-     * @param profile The profile to cache
      */
     fun saveProfile(profile: ProfileData)
 
@@ -24,5 +27,23 @@ interface UserProfileRepository {
      * Clear cached user profile
      */
     fun clearProfile()
+    
+    /**
+     * Update campaign ID for current user and refresh profile
+     * @return Result with success or failure
+     */
+    suspend fun updateCampaignId(campaignId: Int): kotlin.Result<Unit>
+    
+    /**
+     * Refresh profile from remote source
+     */
+    suspend fun refreshProfile(): kotlin.Result<ProfileData>
+    
+    /**
+     * Create profile if it doesn't exist
+     * @param email User email
+     * @param campaignId Optional campaign ID
+     */
+    suspend fun createProfileIfNotExists(email: String, campaignId: Int?): kotlin.Result<Unit>
 }
 

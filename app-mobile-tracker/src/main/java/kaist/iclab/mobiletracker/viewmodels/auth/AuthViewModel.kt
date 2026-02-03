@@ -6,9 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.auth.SupabaseAuth
 import kaist.iclab.mobiletracker.repository.AuthRepository
-import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
-import kaist.iclab.mobiletracker.services.ProfileService
 import kaist.iclab.tracker.auth.Authentication
 import kaist.iclab.tracker.auth.UserState
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +15,6 @@ import kotlinx.coroutines.launch
 class AuthViewModel(
     private val authentication: Authentication,
     private val authRepository: AuthRepository,
-    private val profileService: ProfileService,
     private val userProfileRepository: UserProfileRepository
 ) : ViewModel() {
     private val TAG = "AuthViewModel"
@@ -72,7 +69,6 @@ class AuthViewModel(
 
     /**
      * Save user profile to profiles table if it doesn't exist
-     * Gets UUID from Supabase session and email from user state
      */
     private suspend fun saveProfileIfNotExists(state: UserState) {
         val user = state.user
@@ -80,76 +76,24 @@ class AuthViewModel(
             return
         }
 
-        try {
-            // Get UUID from Supabase session
-            val uuid = getUuidFromSession()
-            if (uuid == null) {
-                return
+        userProfileRepository.createProfileIfNotExists(user.email, null)
+            .onFailure { e ->
+                Log.e(TAG, "Error saving profile: ${e.message}", e)
             }
-
-            val email = user.email
-
-            // Save profile if not exists (campaign_id will be null initially)
-            when (val result = profileService.createProfileIfNotExists(uuid, email, null)) {
-                is Result.Success -> {
-                    // Profile saved successfully
-                }
-
-                is Result.Error -> {
-                    Log.e(TAG, "Error saving profile: ${result.message}", result.exception)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in saveProfileIfNotExists: ${e.message}", e)
-        }
     }
 
     /**
      * Load user profile from Supabase and cache it
-     * Called after successful login to make profile data available throughout the app
      */
     private fun loadUserProfile() {
         viewModelScope.launch {
-            try {
-                val uuid = getUuidFromSession()
-                if (uuid == null) {
-                    return@launch
-                }
-
-                when (val result = profileService.getProfileByUuid(uuid)) {
-                    is Result.Success -> {
-                        userProfileRepository.saveProfile(result.data)
-                    }
-
-                    is Result.Error -> {
-                        // Profile might not exist yet, which is okay
-                        // Only log if it's not a "not found" error
-                        if (result.exception !is NoSuchElementException) {
-                            Log.e(
-                                TAG,
-                                "Error loading user profile: ${result.message}",
-                                result.exception
-                            )
-                        }
+            userProfileRepository.refreshProfile()
+                .onFailure { e ->
+                    // Profile might not exist yet, which is okay
+                    if (e !is NoSuchElementException) {
+                        Log.e(TAG, "Error loading user profile: ${e.message}", e)
                     }
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in loadUserProfile: ${e.message}", e)
-            }
-        }
-    }
-
-    /**
-     * Get UUID from Supabase session
-     * Gets UUID from SupabaseAuth
-     * Returns null if UUID cannot be retrieved (error is logged in SupabaseAuth)
-     */
-    private suspend fun getUuidFromSession(): String? {
-        return try {
-            (authentication as? SupabaseAuth)?.getUuid()
-        } catch (e: Exception) {
-            // Error is already logged in SupabaseAuth.getUuid()
-            null
         }
     }
 
@@ -167,13 +111,12 @@ class AuthViewModel(
         viewModelScope.launch {
             authentication.logout()
             authRepository.clearToken()
-            userProfileRepository.clearProfile() // Clear cached profile on logout
+            userProfileRepository.clearProfile()
         }
     }
 
     /**
      * Refresh user profile from Supabase
-     * Useful when profile data might have changed (e.g., campaign updated)
      */
     fun refreshUserProfile() {
         loadUserProfile()
@@ -185,4 +128,3 @@ class AuthViewModel(
         }
     }
 }
-

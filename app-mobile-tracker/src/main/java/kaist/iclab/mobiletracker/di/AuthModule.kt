@@ -6,7 +6,7 @@ import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.AuthRepository
 import kaist.iclab.mobiletracker.repository.AuthRepositoryImpl
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
-import kaist.iclab.mobiletracker.repository.UserProfileRepositoryImpl
+import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.viewmodels.auth.AuthViewModel
 import kaist.iclab.tracker.auth.Authentication
 import org.koin.android.ext.koin.androidContext
@@ -25,18 +25,13 @@ val authModule = module {
         AuthRepositoryImpl(context = androidContext())
     }
 
-    // UserProfileRepository - singleton for caching user profile
-    single<UserProfileRepository> {
-        UserProfileRepositoryImpl()
-    }
-
     // SupabaseAuth - factory for creating with Activity and server client ID
     factory { (activity: Activity, serverClientId: String) ->
         SupabaseAuth(
             context = activity,
             clientId = serverClientId,
             supabaseHelper = get<SupabaseHelper>(),
-            syncTimestampService = get()
+            syncTimestampService = get<SyncTimestampService>()
         ) as Authentication
     }
 
@@ -47,7 +42,6 @@ val authModule = module {
         AuthViewModel(
             authentication = authentication,
             authRepository = get<AuthRepository>(),
-            profileService = get(),
             userProfileRepository = get<UserProfileRepository>()
         )
     }

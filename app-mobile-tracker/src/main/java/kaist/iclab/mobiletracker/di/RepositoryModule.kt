@@ -6,8 +6,13 @@ import kaist.iclab.mobiletracker.repository.DataRepository
 import kaist.iclab.mobiletracker.repository.DataRepositoryImpl
 import kaist.iclab.mobiletracker.repository.HomeRepository
 import kaist.iclab.mobiletracker.repository.HomeRepositoryImpl
+import kaist.iclab.mobiletracker.repository.CampaignRepository
+import kaist.iclab.mobiletracker.repository.CampaignRepositoryImpl
+import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.repository.UserProfileRepositoryImpl
 import kaist.iclab.mobiletracker.repository.SurveyRepository
 import kaist.iclab.mobiletracker.repository.SurveyRepositoryImpl
+
 import kaist.iclab.mobiletracker.repository.handlers.SensorDataHandler
 import kaist.iclab.mobiletracker.repository.handlers.SensorDataHandlerRegistry
 import kaist.iclab.mobiletracker.repository.handlers.phone.AmbientLightDataHandler
@@ -129,4 +134,20 @@ val repositoryModule = module {
             inMemoryStorage = get(named("surveySensorConfigStorage"))
         )
     }
+    
+    // CampaignRepository for campaign data management
+    single<CampaignRepository> {
+        CampaignRepositoryImpl(
+            campaignService = get()
+        )
+    }
+    
+    // UserProfileRepository for user profile management
+    single<UserProfileRepository> {
+        UserProfileRepositoryImpl(
+            profileService = get(),
+            supabaseHelper = get()
+        )
+    }
 }
+
