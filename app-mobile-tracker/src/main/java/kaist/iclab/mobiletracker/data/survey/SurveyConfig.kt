@@ -1,7 +1,6 @@
 package kaist.iclab.mobiletracker.data.survey
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 
 /**
  * Survey configuration response structure (flat with parentId references)
@@ -13,7 +12,7 @@ data class SurveyConfig(
     val title: String,
     val description: String?,
     val scheduleType: String,
-    val schedule: JsonObject?,
+    val schedule: String?,  // JSON string for Gson compatibility
     val questions: List<QuestionConfig>
 )
 
@@ -27,7 +26,7 @@ data class QuestionConfig(
     val type: String,
     val text: String,
     val shouldAnswer: Boolean,
-    val trigger: JsonObject?,
+    val trigger: String?,  // JSON string for Gson compatibility
     val options: List<OptionConfig>?
 )
 
@@ -49,3 +48,10 @@ object ScheduleType {
     const val TIME_OF_DAY = "TIME_OF_DAY"
     const val ESM = "ESM"
 }
+/**
+ * Wrapper for List<SurveyConfig> for persistence
+ */
+@Serializable
+data class SurveyConfigList(
+    val configs: List<SurveyConfig> = emptyList()
+)

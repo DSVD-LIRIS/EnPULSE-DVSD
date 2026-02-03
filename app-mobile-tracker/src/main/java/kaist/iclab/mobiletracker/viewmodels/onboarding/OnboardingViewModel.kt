@@ -1,16 +1,15 @@
 package kaist.iclab.mobiletracker.viewmodels.onboarding
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
 import kaist.iclab.mobiletracker.data.survey.SurveyConfig
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.Result
+import kaist.iclab.mobiletracker.repository.SurveyRepository
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.mobiletracker.services.CampaignService
 import kaist.iclab.mobiletracker.services.ProfileService
-import kaist.iclab.mobiletracker.services.SurveyService
 import kaist.iclab.mobiletracker.utils.SupabaseSessionHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,14 +35,10 @@ data class OnboardingUiState(
 class OnboardingViewModel(
     private val campaignService: CampaignService,
     private val profileService: ProfileService,
-    private val surveyService: SurveyService,
     private val supabaseHelper: SupabaseHelper,
-    private val userProfileRepository: UserProfileRepository
+    private val userProfileRepository: UserProfileRepository,
+    private val surveyRepository: SurveyRepository
 ) : ViewModel() {
-
-    companion object {
-        private const val TAG = "OnboardingViewModel"
-    }
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
@@ -66,7 +61,6 @@ class OnboardingViewModel(
                 }
 
                 is Result.Error -> {
-                    Log.e(TAG, "Failed to load campaigns: ${result.message}", result.exception)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -94,60 +88,44 @@ class OnboardingViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            try {
-                val uuid = getUuidFromSession()
-                if (uuid == null) {
-                    _uiState.update {
-                        it.copy(isLoading = false, error = "Unable to get user session")
-                    }
-                    return@launch
-                }
-
-                when (val result = profileService.updateCampaignId(uuid, selectedCampaign.id)) {
-                    is Result.Success -> {
-                        // 1. Fetch survey configs for the selected campaign first
-                        fetchSurveyConfigs(selectedCampaign.id)
-                        
-                        // 2. Refresh user profile ONLY AFTER surveys are fetched
-                        // This triggers navigation in NavGraph (Observing userProfile)
-                        refreshUserProfile(uuid)
-                    }
-
-                    is Result.Error -> {
-                        Log.e(
-                            TAG,
-                            "Failed to update campaign: ${result.message}",
-                            result.exception
-                        )
-                        _uiState.update {
-                            it.copy(isLoading = false, error = result.message)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error confirming selection: ${e.message}", e)
+            val uuid = getUuidFromSession()
+            if (uuid == null) {
                 _uiState.update {
-                    it.copy(isLoading = false, error = e.message)
+                    it.copy(isLoading = false, error = "Unable to get user session")
+                }
+                return@launch
+            }
+
+            when (val result = profileService.updateCampaignId(uuid, selectedCampaign.id)) {
+                is Result.Success -> {
+                    // Fetch and persist surveys via repository
+                    val surveyResult = surveyRepository.fetchAndPersistSurveys(selectedCampaign.id)
+                    
+                    // Refresh user profile to trigger navigation
+                    refreshUserProfile(uuid)
+                    
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isComplete = true,
+                            error = if (surveyResult.isFailure) "Campaign saved, but failed to load surveys" else null
+                        )
+                    }
+                }
+
+                is Result.Error -> {
+                    _uiState.update {
+                        it.copy(isLoading = false, error = result.message)
+                    }
                 }
             }
         }
     }
 
-    /**
-     * Get UUID from Supabase session using SupabaseSessionHelper
-     */
     private fun getUuidFromSession(): String? {
-        return try {
-            SupabaseSessionHelper.getUuidOrNull(supabaseHelper.supabaseClient)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting UUID: ${e.message}", e)
-            null
-        }
+        return SupabaseSessionHelper.getUuidOrNull(supabaseHelper.supabaseClient)
     }
 
-    /**
-     * Refresh user profile after updating campaign
-     */
     private suspend fun refreshUserProfile(uuid: String) {
         when (val result = profileService.getProfileByUuid(uuid)) {
             is Result.Success -> {
@@ -155,41 +133,7 @@ class OnboardingViewModel(
             }
 
             is Result.Error -> {
-                Log.e(TAG, "Error refreshing profile: ${result.message}", result.exception)
-            }
-        }
-    }
-
-    /**
-     * Fetch survey configurations for the selected campaign
-     */
-    private suspend fun fetchSurveyConfigs(campaignId: Int) {
-        when (val result = surveyService.getCampaignSurveys(campaignId)) {
-            is Result.Success -> {
-                val configs = result.data
-                Log.d(TAG, "Successfully fetched ${configs.size} survey configs for campaign $campaignId")
-                configs.forEach { config ->
-                    Log.d(TAG, "Survey: ${config.title} (ID: ${config.id}, Type: ${config.scheduleType}, Questions: ${config.questions.size})")
-                }
-                _uiState.update {
-                    it.copy(
-                        surveyConfigs = configs,
-                        isLoading = false,
-                        isComplete = true
-                    )
-                }
-            }
-
-            is Result.Error -> {
-                Log.e(TAG, "Error fetching survey configs: ${result.message}", result.exception)
-                // Still mark as complete even if surveys fail - campaign is saved
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        isComplete = true,
-                        error = "Campaign saved, but failed to load surveys: ${result.message}"
-                    )
-                }
+                // Error refreshing profile
             }
         }
     }

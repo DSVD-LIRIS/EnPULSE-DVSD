@@ -28,8 +28,9 @@ import kaist.iclab.mobiletracker.services.supabase.UserInteractionSensorService
 import kaist.iclab.mobiletracker.services.supabase.WifiSensorService
 import kaist.iclab.mobiletracker.services.upload.PhoneSensorUploadService
 import kaist.iclab.mobiletracker.storage.CouchbaseSensorStateStorage
+import kaist.iclab.mobiletracker.storage.CouchbaseSurveyConfigStorage
 import kaist.iclab.mobiletracker.storage.SimpleStateStorage
-import kaist.iclab.mobiletracker.utils.SurveyParser
+import kaist.iclab.mobiletracker.utils.SurveyConfigConverter
 import kaist.iclab.tracker.listener.SamsungHealthDataInitializer
 import kaist.iclab.tracker.permission.AndroidPermissionManager
 import kaist.iclab.tracker.sensor.common.LocationSensor
@@ -52,6 +53,7 @@ import kaist.iclab.tracker.sensor.phone.StepSensor
 import kaist.iclab.tracker.sensor.phone.UserInteractionSensor
 import kaist.iclab.tracker.sensor.phone.WifiScanSensor
 import kaist.iclab.tracker.sensor.survey.SurveySensor
+import kaist.iclab.tracker.storage.core.StateStorage
 import kaist.iclab.tracker.storage.couchbase.CouchbaseStateStorage
 import kaist.iclab.tracker.storage.couchbase.CouchbaseSurveyScheduleStorage
 import org.koin.android.ext.koin.androidContext
@@ -320,26 +322,39 @@ val phoneSensorModule = module {
         )
     }
 
+    // Persistent storage for raw SurveyConfigList from Supabase
+    single {
+        CouchbaseSurveyConfigStorage(
+            couchbase = get()
+        )
+    }
+
+    // SurveySensor config storage - primed from persistent storage at startup
+    single<StateStorage<SurveySensor.Config>>(named("surveySensorConfigStorage")) {
+        val persistentStorage = get<CouchbaseSurveyConfigStorage>()
+        val savedConfigs = persistentStorage.get().configs
+        
+        val initialConfig = if (savedConfigs.isNotEmpty()) {
+            try {
+                SurveyConfigConverter.toSurveySensorConfig(savedConfigs)
+            } catch (e: Exception) {
+                android.util.Log.e("PhoneSensorModule", "Error priming survey config: ${e.message}")
+                SurveySensor.Config(survey = emptyMap())
+            }
+        } else {
+            SurveySensor.Config(survey = emptyMap())
+        }
+        
+        SimpleStateStorage(initialConfig)
+    }
+
     single {
         val context = androidContext()
-        val assetManager = context.assets
-        // TODO: Implement this with the actual JSON from API response
-        val jsonString =
-            assetManager.open("survey_config.json").bufferedReader().use { it.readText() }
-        val parsed = SurveyParser.parse(jsonString)
 
         SurveySensor(
             context = context,
             permissionManager = get<AndroidPermissionManager>(),
-            configStorage = SimpleStateStorage(
-                SurveySensor.Config(
-                    startTimeOfDay = parsed.startTimeOfDay,
-                    endTimeOfDay = parsed.endTimeOfDay,
-                    scheduleMethod = mapOf(parsed.id to parsed.scheduleMethod),
-                    survey = mapOf(parsed.id to parsed.survey),
-                    notificationConfig = mapOf(parsed.id to parsed.notificationConfig),
-                )
-            ),
+            configStorage = get(named("surveySensorConfigStorage")),
             stateStorage = CouchbaseSensorStateStorage(
                 couchbase = get(),
                 collectionName = SurveySensor::class.simpleName ?: ""
@@ -394,7 +409,7 @@ val phoneSensorModule = module {
                 clazz = ControllerState::class.java,
                 collectionName = BackgroundController::class.simpleName ?: ""
             ),
-            sensors = get(qualifier("phoneSensors")),
+            sensors = get(named("phoneSensors")),
             serviceNotification = get<BackgroundController.ServiceNotification>(),
             allowPartialSensing = true,
         )

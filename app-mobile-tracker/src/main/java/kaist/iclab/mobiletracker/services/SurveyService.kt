@@ -180,7 +180,7 @@ class SurveyService(
             title = survey.title,
             description = survey.description,
             scheduleType = scheduleType,
-            schedule = survey.scheduleMethod,
+            schedule = survey.scheduleMethod?.toString(),  // Convert JsonObject to String
             questions = questions.map { q ->
                 val trigger = triggerMap[q.triggeredBy]
                 QuestionConfig(
@@ -189,7 +189,7 @@ class SurveyService(
                     type = q.answerType.uppercase(),
                     text = q.question,
                     shouldAnswer = q.isMandatory,
-                    trigger = trigger?.expression,
+                    trigger = trigger?.expression?.toString(),  // Convert JsonObject to String
                     options = options
                         .filter { o -> o.questionId == q.id }
                         .map { o ->
