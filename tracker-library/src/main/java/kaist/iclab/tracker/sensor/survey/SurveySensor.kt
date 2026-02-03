@@ -145,8 +145,6 @@ class SurveySensor(
             intervals.add(interval)
         }
 
-        Log.v(TAG, "Intervals: ${intervals.map{ it.formatLapsedTime() }}")
-
         val intervalSum = intervals.sum()
         val startMargin = (Math.random() * (lengthOfDay - intervalSum)).toLong()
 
@@ -263,7 +261,7 @@ class SurveySensor(
 
         val surveyActivityIntent = Intent(context, DefaultSurveyActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            putExtra("id", id)
+            putExtra("id", surveyId)
             putExtra("scheduleId", scheduleId)
         }
 
