@@ -130,7 +130,8 @@ val repositoryModule = module {
         SurveyRepositoryImpl(
             surveyService = get(),
             persistentStorage = get(),
-            inMemoryStorage = get(named("surveySensorConfigStorage"))
+            inMemoryStorage = get(named("surveySensorConfigStorage")),
+            scheduleStorage = get()
         )
     }
 

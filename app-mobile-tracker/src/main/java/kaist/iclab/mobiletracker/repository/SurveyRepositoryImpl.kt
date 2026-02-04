@@ -6,6 +6,7 @@ import kaist.iclab.mobiletracker.storage.CouchbaseSurveyConfigStorage
 import kaist.iclab.mobiletracker.utils.SurveyConfigConverter
 import kaist.iclab.tracker.sensor.survey.SurveySensor
 import kaist.iclab.tracker.storage.core.StateStorage
+import kaist.iclab.tracker.storage.core.SurveyScheduleStorage
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -15,7 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 class SurveyRepositoryImpl(
     private val surveyService: SurveyService,
     private val persistentStorage: CouchbaseSurveyConfigStorage,
-    private val inMemoryStorage: StateStorage<SurveySensor.Config>
+    private val inMemoryStorage: StateStorage<SurveySensor.Config>,
+    private val scheduleStorage: SurveyScheduleStorage
 ) : SurveyRepository {
 
     override val surveysFlow: StateFlow<SurveyConfigList>
@@ -59,5 +61,8 @@ class SurveyRepositoryImpl(
     override fun clearSurveys() {
         persistentStorage.set(SurveyConfigList())
         inMemoryStorage.set(SurveySensor.Config(survey = emptyMap()))
+        // Clear pending survey schedules/notifications from old configuration
+        scheduleStorage.resetSchedule()
     }
 }
+
