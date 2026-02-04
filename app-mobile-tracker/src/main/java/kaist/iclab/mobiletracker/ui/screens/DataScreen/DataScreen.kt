@@ -308,7 +308,7 @@ private fun SummaryCard(
                         .fillMaxWidth()
                         .height(36.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppColors.SecondaryColor),
-                    enabled = !isUploading && !isDeleting && !isExporting,
+                    enabled = !isExporting && !isDeleting,
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     if (isExporting) {
@@ -335,7 +335,7 @@ private fun SummaryCard(
                             .weight(1f)
                             .height(36.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryColor),
-                        enabled = !isUploading && !isDeleting && !isExporting,
+                        enabled = !isUploading && !isDeleting,
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         if (isUploading) {
