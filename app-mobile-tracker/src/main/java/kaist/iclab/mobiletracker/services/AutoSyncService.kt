@@ -18,11 +18,8 @@ import kaist.iclab.mobiletracker.services.upload.WatchSensorUploadService
 import kaist.iclab.mobiletracker.utils.NotificationHelper
 import kaist.iclab.mobiletracker.utils.SensorTypeHelper
 import kaist.iclab.tracker.sensor.core.Sensor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -69,8 +66,8 @@ class AutoSyncService : Service(), KoinComponent {
     private val watchSensorUploadService: WatchSensorUploadService by inject()
     private val sensors by inject<List<Sensor<*, *>>>(qualifier = named("sensors"))
 
-    // Coroutine scope tied to service lifecycle
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Injected coroutine scope
+    private val appScope by inject<AppCoroutineScope>()
     private var syncJob: Job? = null
     private var lastSyncTime: Long = 0
 
@@ -106,7 +103,6 @@ class AutoSyncService : Service(), KoinComponent {
     override fun onDestroy() {
         super.onDestroy()
         stopAutoSync()
-        serviceScope.cancel()
     }
 
     /**
@@ -117,7 +113,7 @@ class AutoSyncService : Service(), KoinComponent {
             return
         }
 
-        syncJob = serviceScope.launch {
+        syncJob = appScope.io.launch {
             lastSyncTime = System.currentTimeMillis()
 
             while (isActive) {
@@ -178,7 +174,7 @@ class AutoSyncService : Service(), KoinComponent {
         }
 
         // All conditions met, trigger sync
-        serviceScope.launch {
+        appScope.io.launch {
             uploadAllSensorData()
         }
         lastSyncTime = currentTime

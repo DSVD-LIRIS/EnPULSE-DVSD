@@ -42,56 +42,51 @@ class SurveyService(
     suspend fun getSurveyConfig(surveyId: Int): Result<SurveyConfig> {
         return SupabaseLoadingInterceptor.withLoading {
             runCatchingSuspend {
-                try {
-                    // 1. Fetch survey
-                    val survey = supabaseClient.from(TABLE_SURVEY)
+                // 1. Fetch survey
+                val survey = supabaseClient.from(TABLE_SURVEY)
+                    .select {
+                        filter {
+                            eq("id", surveyId)
+                        }
+                    }
+                    .decodeSingleOrNull<SurveyEntity>()
+                    ?: throw NoSuchElementException("Survey with ID $surveyId not found")
+
+                // 2. Fetch questions
+                val questions = supabaseClient.from(TABLE_QUESTION)
+                    .select {
+                        filter {
+                            eq("survey_id", surveyId)
+                        }
+                    }
+                    .decodeList<SurveyQuestionEntity>()
+
+                // 3. Fetch options for all questions
+                val questionIds = questions.map { q -> q.id }
+                val options = if (questionIds.isNotEmpty()) {
+                    supabaseClient.from(TABLE_OPTION)
                         .select {
                             filter {
-                                eq("id", surveyId)
+                                isIn("question_id", questionIds)
                             }
                         }
-                        .decodeSingleOrNull<SurveyEntity>()
-                        ?: throw NoSuchElementException("Survey with ID $surveyId not found")
+                        .decodeList<SurveyQuestionOptionEntity>()
+                } else emptyList()
 
-                    // 2. Fetch questions
-                    val questions = supabaseClient.from(TABLE_QUESTION)
+                // 4. Fetch triggers
+                val triggerIds = questions.mapNotNull { q -> q.triggeredBy }
+                val triggers = if (triggerIds.isNotEmpty()) {
+                    supabaseClient.from(TABLE_TRIGGER)
                         .select {
                             filter {
-                                eq("survey_id", surveyId)
+                                isIn("id", triggerIds)
                             }
                         }
-                        .decodeList<SurveyQuestionEntity>()
+                        .decodeList<SurveyQuestionTriggerEntity>()
+                } else emptyList()
 
-                    // 3. Fetch options for all questions
-                    val questionIds = questions.map { q -> q.id }
-                    val options = if (questionIds.isNotEmpty()) {
-                        supabaseClient.from(TABLE_OPTION)
-                            .select {
-                                filter {
-                                    isIn("question_id", questionIds)
-                                }
-                            }
-                            .decodeList<SurveyQuestionOptionEntity>()
-                    } else emptyList()
-
-                    // 4. Fetch triggers
-                    val triggerIds = questions.mapNotNull { q -> q.triggeredBy }
-                    val triggers = if (triggerIds.isNotEmpty()) {
-                        supabaseClient.from(TABLE_TRIGGER)
-                            .select {
-                                filter {
-                                    isIn("id", triggerIds)
-                                }
-                            }
-                            .decodeList<SurveyQuestionTriggerEntity>()
-                    } else emptyList()
-
-                    // 5. Build the config
-                    assembleConfig(survey, questions, options, triggers)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error fetching survey config: ${e.message}", e)
-                    throw e
-                }
+                // 5. Build the config
+                assembleConfig(survey, questions, options, triggers)
             }
         }
     }
@@ -232,12 +227,7 @@ class SurveyService(
      */
     suspend fun submitSurveyResponses(responses: List<SurveyQuestionResponseInsert>): Result<Unit> {
         return runCatchingSuspend {
-            try {
-                supabaseClient.from(TABLE_RESPONSE).insert(responses)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error submitting survey responses: ${e.message}", e)
-                throw e
-            }
+            supabaseClient.from(TABLE_RESPONSE).insert(responses)
         }
     }
 }

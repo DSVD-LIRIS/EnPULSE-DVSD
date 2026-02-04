@@ -19,10 +19,7 @@ import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.core.Sensor
 import kaist.iclab.tracker.sensor.core.SensorEntity
 import kaist.iclab.tracker.sensor.survey.SurveySensor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -70,14 +67,14 @@ class PhoneSensorDataService : Service(), KoinComponent {
     private val surveyService by inject<SurveyService>()
     private val userProfileRepository by inject<UserProfileRepository>()
 
-    // Coroutine scope tied to service lifecycle
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Injected coroutine scope for background operations
+    private val appScope by inject<AppCoroutineScope>()
 
     private val listener: Map<String, (SensorEntity) -> Unit> = sensors.associate {
         it.id to
                 { e: SensorEntity ->
                     if (phoneSensorRepository.hasStorageForSensor(it.id)) {
-                        serviceScope.launch {
+                        appScope.io.launch {
                             when (val result = phoneSensorRepository.insertSensorData(it.id, e)) {
                                 is Result.Success -> {
                                     // Track when phone sensor data is collected
@@ -102,7 +99,7 @@ class PhoneSensorDataService : Service(), KoinComponent {
     // Listener for survey responses - submits to Supabase
     private val surveyResponseListener: (SensorEntity) -> Unit = listener@{ entity ->
         val surveyEntity = entity as? SurveySensor.Entity ?: return@listener
-        serviceScope.launch {
+        appScope.io.launch {
             try {
                 val uuid = userProfileRepository.getCurrentUuid()
                 if (uuid == null) {
@@ -224,9 +221,6 @@ class PhoneSensorDataService : Service(), KoinComponent {
     }
 
     override fun onDestroy() {
-        // Cancel all coroutines when service is destroyed
-        serviceScope.cancel()
-
         // Remove all sensor listeners
         for (sensor in sensors) {
             sensor.removeListener(listener[sensor.id]!!)

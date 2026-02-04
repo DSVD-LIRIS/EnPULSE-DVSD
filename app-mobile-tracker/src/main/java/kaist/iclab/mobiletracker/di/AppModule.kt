@@ -13,5 +13,8 @@ val appModule = module {
     single {
         MetaData(androidContext())
     }
+
+    // Centralized Coroutine Scope for background operations
+    single { AppCoroutineScope() }
 }
 

@@ -15,11 +15,10 @@ import kaist.iclab.mobiletracker.repository.WatchSensorRepository
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.utils.SensorDataCsvParser
 import kaist.iclab.tracker.sync.ble.BLEDataChannel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.time.Instant
 
 /**
@@ -30,11 +29,12 @@ class BLEHelper(
     private val context: Context,
     private val watchSensorRepository: WatchSensorRepository,
     private val timestampService: SyncTimestampService
-) {
+) : KoinComponent {
     private lateinit var bleChannel: BLEDataChannel
 
     // Create a managed coroutine scope that can be cancelled
-    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Injected coroutine scope
+    private val appScope by inject<AppCoroutineScope>()
 
     fun initialize() {
         bleChannel = BLEDataChannel(context)
@@ -46,7 +46,7 @@ class BLEHelper(
      * Should be called when the helper is being destroyed.
      */
     fun cleanup() {
-        ioScope.cancel()
+        // No need to cancel scope as it's app-level
     }
 
     private fun setupListeners() {
@@ -100,7 +100,7 @@ class BLEHelper(
      * Uses managed coroutine scope for proper lifecycle management.
      */
     private fun parseAndStoreWatchData(csvData: String) {
-        ioScope.launch {
+        appScope.io.launch {
             // Extract batch ID for ACK (if present in new format)
             val batchId = parseBatchId(csvData)
 
