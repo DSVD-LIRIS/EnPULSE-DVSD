@@ -17,33 +17,33 @@ class SurveyRepositoryImpl(
     private val persistentStorage: CouchbaseSurveyConfigStorage,
     private val inMemoryStorage: StateStorage<SurveySensor.Config>
 ) : SurveyRepository {
-    
+
     override val surveysFlow: StateFlow<SurveyConfigList>
         get() = persistentStorage.stateFlow
-    
+
     override suspend fun fetchAndPersistSurveys(campaignId: Int): kotlin.Result<Int> {
         return when (val result = surveyService.getCampaignSurveys(campaignId)) {
             is Result.Success -> {
                 val configs = result.data
-                
+
                 if (configs.isNotEmpty()) {
                     // 1. Persist to Couchbase
                     persistentStorage.set(SurveyConfigList(configs))
-                    
+
                     // 2. Apply to in-memory storage for SurveySensor
                     val sensorConfig = SurveyConfigConverter.toSurveySensorConfig(configs)
                     inMemoryStorage.set(sensorConfig)
                 }
-                
+
                 kotlin.Result.success(configs.size)
             }
-            
+
             is Result.Error -> {
                 kotlin.Result.failure(result.exception ?: Exception(result.message))
             }
         }
     }
-    
+
     override fun getSensorConfig(): SurveySensor.Config {
         val savedConfigs = persistentStorage.get().configs
         return if (savedConfigs.isNotEmpty()) {
@@ -52,7 +52,7 @@ class SurveyRepositoryImpl(
             SurveySensor.Config(survey = emptyMap())
         }
     }
-    
+
     override fun clearSurveys() {
         persistentStorage.set(SurveyConfigList())
         inMemoryStorage.set(SurveySensor.Config(survey = emptyMap()))

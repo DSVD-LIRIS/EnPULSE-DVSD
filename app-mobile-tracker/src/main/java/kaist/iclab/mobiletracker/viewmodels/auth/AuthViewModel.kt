@@ -4,7 +4,6 @@ import android.app.Activity
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kaist.iclab.mobiletracker.auth.SupabaseAuth
 import kaist.iclab.mobiletracker.repository.AuthRepository
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.tracker.auth.Authentication

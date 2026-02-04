@@ -1,5 +1,6 @@
 package kaist.iclab.mobiletracker.di.phone
 
+import android.util.Log
 import kaist.iclab.mobiletracker.storage.CouchbaseSensorStateStorage
 import kaist.iclab.mobiletracker.storage.CouchbaseSurveyConfigStorage
 import kaist.iclab.mobiletracker.storage.SimpleStateStorage
@@ -35,18 +36,21 @@ val surveySensorModule = module {
     single<StateStorage<SurveySensor.Config>>(named("surveySensorConfigStorage")) {
         val persistentStorage = get<CouchbaseSurveyConfigStorage>()
         val savedConfigs = persistentStorage.get().configs
-        
+
         val initialConfig = if (savedConfigs.isNotEmpty()) {
             try {
                 SurveyConfigConverter.toSurveySensorConfig(savedConfigs)
             } catch (e: Exception) {
-                android.util.Log.e("SurveySensorModule", "Error priming survey config: ${e.message}")
+                Log.e(
+                    "SurveySensorModule",
+                    "Error priming survey config: ${e.message}"
+                )
                 SurveySensor.Config(survey = emptyMap())
             }
         } else {
             SurveySensor.Config(survey = emptyMap())
         }
-        
+
         SimpleStateStorage(initialConfig)
     }
 

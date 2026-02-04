@@ -1,7 +1,6 @@
 package kaist.iclab.mobiletracker.di.phone
 
 import kaist.iclab.mobiletracker.R
-import kaist.iclab.tracker.permission.AndroidPermissionManager
 import kaist.iclab.tracker.sensor.common.LocationSensor
 import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.controller.ControllerState

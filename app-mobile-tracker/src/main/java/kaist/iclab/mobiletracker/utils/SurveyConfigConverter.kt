@@ -1,6 +1,6 @@
 package kaist.iclab.mobiletracker.utils
 
-import kaist.iclab.mobiletracker.R
+import android.util.Log
 import kaist.iclab.mobiletracker.data.survey.QuestionConfig
 import kaist.iclab.mobiletracker.data.survey.SurveyConfig
 import kaist.iclab.tracker.sensor.survey.Survey
@@ -15,14 +15,14 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import java.util.concurrent.TimeUnit
-import kaist.iclab.tracker.sensor.survey.config.SurveyConfig as LibSurveyConfig
-import kaist.iclab.tracker.sensor.survey.config.ScheduleConfig as LibScheduleConfig
-import kaist.iclab.tracker.sensor.survey.config.NotificationConfig as LibNotificationConfig
-import kaist.iclab.tracker.sensor.survey.config.QuestionConfig as LibQuestionConfig
-import kaist.iclab.tracker.sensor.survey.config.OptionConfig as LibOptionConfig
 import kaist.iclab.tracker.sensor.survey.config.ChildQuestionConfig as LibChildQuestionConfig
-import kaist.iclab.tracker.sensor.survey.config.TriggerConfig as LibTriggerConfig
 import kaist.iclab.tracker.sensor.survey.config.EsmConfig as LibEsmConfig
+import kaist.iclab.tracker.sensor.survey.config.NotificationConfig as LibNotificationConfig
+import kaist.iclab.tracker.sensor.survey.config.OptionConfig as LibOptionConfig
+import kaist.iclab.tracker.sensor.survey.config.QuestionConfig as LibQuestionConfig
+import kaist.iclab.tracker.sensor.survey.config.ScheduleConfig as LibScheduleConfig
+import kaist.iclab.tracker.sensor.survey.config.SurveyConfig as LibSurveyConfig
+import kaist.iclab.tracker.sensor.survey.config.TriggerConfig as LibTriggerConfig
 
 /**
  * Converts Supabase SurveyConfig to tracker-library Survey objects using Library DTOs.
@@ -60,17 +60,17 @@ object SurveyConfigConverter {
             try {
                 // 1. Map to Library DTO
                 val libConfig = mapToLibConfig(config)
-                
+
                 // 2. Build Runtime Object
                 val survey = SurveyBuilder.build(libConfig)
-                
+
                 val surveyId = config.id.toString()
                 surveys[surveyId] = survey
                 scheduleMethods[surveyId] = survey.scheduleMethod
                 notificationConfigs[surveyId] = survey.notificationConfig
-                
+
             } catch (e: Exception) {
-                android.util.Log.e(TAG, "Failed to convert survey ${config.id}: ${e.message}")
+                Log.e(TAG, "Failed to convert survey ${config.id}: ${e.message}")
             }
         }
 
@@ -90,8 +90,12 @@ object SurveyConfigConverter {
     }
 
     private fun mapSchedule(type: String, scheduleJson: String?): LibScheduleConfig {
-        val json = scheduleJson?.let { 
-            try { Json.decodeFromString<JsonObject>(it) } catch(e: Exception) { null } 
+        val json = scheduleJson?.let {
+            try {
+                Json.decodeFromString<JsonObject>(it)
+            } catch (e: Exception) {
+                null
+            }
         }
 
         var esmConfig: LibEsmConfig? = null
@@ -100,8 +104,10 @@ object SurveyConfigConverter {
         if (type == "ESM" && json != null) {
             esmConfig = LibEsmConfig(
                 numSurvey = json["numSurvey"]?.jsonPrimitive?.int ?: 3,
-                minInterval = ((json["minInterval"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 60.0) * TimeUnit.MINUTES.toMillis(1)).toLong(),
-                maxInterval = ((json["maxInterval"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 180.0) * TimeUnit.MINUTES.toMillis(1)).toLong(),
+                minInterval = ((json["minInterval"]?.jsonPrimitive?.content?.toDoubleOrNull()
+                    ?: 60.0) * TimeUnit.MINUTES.toMillis(1)).toLong(),
+                maxInterval = ((json["maxInterval"]?.jsonPrimitive?.content?.toDoubleOrNull()
+                    ?: 180.0) * TimeUnit.MINUTES.toMillis(1)).toLong(),
                 startOfDay = json["startOfDay"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(9),
                 endOfDay = json["endOfDay"]?.jsonPrimitive?.long ?: TimeUnit.HOURS.toMillis(21)
             )
@@ -125,11 +131,11 @@ object SurveyConfigConverter {
 
         fun recurse(config: QuestionConfig): LibQuestionConfig {
             val childConfigs = childrenByParentId[config.id] ?: emptyList()
-            
+
             // Group by trigger and create ChildQuestionConfigs
             val children = childConfigs.groupBy { it.trigger }.mapNotNull { (triggerJson, group) ->
                 if (triggerJson.isNullOrEmpty() || triggerJson == "null") return@mapNotNull null
-                
+
                 try {
                     val triggerObj = Json.decodeFromString<JsonObject>(triggerJson)
                     val op = triggerObj["op"]?.jsonPrimitive?.content ?: return@mapNotNull null
@@ -140,7 +146,7 @@ object SurveyConfigConverter {
                         questions = group.map { recurse(it) }
                     )
                 } catch (e: Exception) {
-                    android.util.Log.e(TAG, "Failed to parse trigger: $triggerJson", e)
+                    Log.e(TAG, "Failed to parse trigger: $triggerJson", e)
                     null
                 }
             }
@@ -150,8 +156,8 @@ object SurveyConfigConverter {
                 type = config.type,
                 text = config.text,
                 isMandatory = config.shouldAnswer,
-                options = config.options?.map { 
-                    LibOptionConfig(it.display, it.allowFreeResponse) 
+                options = config.options?.map {
+                    LibOptionConfig(it.display, it.allowFreeResponse)
                 },
                 children = children.ifEmpty { null }
             )

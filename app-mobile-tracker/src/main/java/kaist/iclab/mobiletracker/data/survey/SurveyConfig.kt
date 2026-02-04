@@ -48,6 +48,7 @@ object ScheduleType {
     const val TIME_OF_DAY = "TIME_OF_DAY"
     const val ESM = "ESM"
 }
+
 /**
  * Wrapper for List<SurveyConfig> for persistence
  */

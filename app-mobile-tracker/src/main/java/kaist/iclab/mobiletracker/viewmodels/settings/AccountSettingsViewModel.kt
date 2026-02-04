@@ -71,7 +71,7 @@ class AccountSettingsViewModel(
 
             campaignRepository.fetchCampaigns()
                 .onSuccess { _isLoadingCampaigns.value = false }
-                .onFailure { 
+                .onFailure {
                     _campaignError.value = it.message
                     _isLoadingCampaigns.value = false
                 }
@@ -91,7 +91,7 @@ class AccountSettingsViewModel(
                 _isSyncingSurveys.value = true
                 surveyRepository.fetchAndPersistSurveys(campaignIdInt)
                 _isSyncingSurveys.value = false
-                
+
                 userProfileRepository.refreshProfile()
                 AppToast.show(context, R.string.toast_experiment_group_selected)
             }

@@ -2,7 +2,14 @@ package kaist.iclab.mobiletracker.services
 
 import android.util.Log
 import io.github.jan.supabase.postgrest.from
-import kaist.iclab.mobiletracker.data.survey.*
+import kaist.iclab.mobiletracker.data.survey.OptionConfig
+import kaist.iclab.mobiletracker.data.survey.QuestionConfig
+import kaist.iclab.mobiletracker.data.survey.ScheduleType
+import kaist.iclab.mobiletracker.data.survey.SurveyConfig
+import kaist.iclab.mobiletracker.data.survey.SurveyEntity
+import kaist.iclab.mobiletracker.data.survey.SurveyQuestionEntity
+import kaist.iclab.mobiletracker.data.survey.SurveyQuestionOptionEntity
+import kaist.iclab.mobiletracker.data.survey.SurveyQuestionTriggerEntity
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.runCatchingSuspend
@@ -148,10 +155,11 @@ class SurveyService(
                     surveys.map { survey ->
                         val surveyQuestions = questions.filter { q -> q.surveyId == survey.id }
                         val surveyQuestionIds = surveyQuestions.map { q -> q.id }
-                        val surveyOptions = options.filter { o -> o.questionId in surveyQuestionIds }
+                        val surveyOptions =
+                            options.filter { o -> o.questionId in surveyQuestionIds }
                         val surveyTriggerIds = surveyQuestions.mapNotNull { q -> q.triggeredBy }
                         val surveyTriggers = triggers.filter { t -> t.id in surveyTriggerIds }
-                        
+
                         assembleConfig(survey, surveyQuestions, surveyOptions, surveyTriggers)
                     }
                 } catch (e: Exception) {

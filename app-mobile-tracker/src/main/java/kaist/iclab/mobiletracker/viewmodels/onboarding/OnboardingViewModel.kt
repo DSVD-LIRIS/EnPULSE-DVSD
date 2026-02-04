@@ -65,10 +65,10 @@ class OnboardingViewModel(
                 .onSuccess {
                     // Fetch surveys
                     val surveyResult = surveyRepository.fetchAndPersistSurveys(selectedCampaign.id)
-                    
+
                     // Refresh profile to trigger navigation
                     userProfileRepository.refreshProfile()
-                    
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,

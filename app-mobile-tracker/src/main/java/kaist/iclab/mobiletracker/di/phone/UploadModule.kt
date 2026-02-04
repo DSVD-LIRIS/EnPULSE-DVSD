@@ -158,18 +158,48 @@ val uploadModule = module {
             ScreenUploadHandler(dao = db.screenDao(), service = get<ScreenSensorService>()),
             WifiScanUploadHandler(dao = db.wifiDao(), service = get<WifiSensorService>()),
             StepUploadHandler(dao = db.stepDao(), service = get<StepSensorService>()),
-            AmbientLightUploadHandler(dao = db.ambientLightDao(), service = get<AmbientLightSensorService>()),
-            AppListChangeUploadHandler(dao = db.appListChangeDao(), service = get<AppListChangeSensorService>()),
-            AppUsageLogUploadHandler(dao = db.appUsageLogDao(), service = get<AppUsageLogSensorService>()),
-            BluetoothScanUploadHandler(dao = db.bluetoothScanDao(), service = get<BluetoothScanSensorService>()),
+            AmbientLightUploadHandler(
+                dao = db.ambientLightDao(),
+                service = get<AmbientLightSensorService>()
+            ),
+            AppListChangeUploadHandler(
+                dao = db.appListChangeDao(),
+                service = get<AppListChangeSensorService>()
+            ),
+            AppUsageLogUploadHandler(
+                dao = db.appUsageLogDao(),
+                service = get<AppUsageLogSensorService>()
+            ),
+            BluetoothScanUploadHandler(
+                dao = db.bluetoothScanDao(),
+                service = get<BluetoothScanSensorService>()
+            ),
             CallLogUploadHandler(dao = db.callLogDao(), service = get<CallLogSensorService>()),
-            ConnectivityUploadHandler(dao = db.connectivityDao(), service = get<ConnectivitySensorService>()),
-            DataTrafficUploadHandler(dao = db.dataTrafficDao(), service = get<DataTrafficSensorService>()),
-            DeviceModeUploadHandler(dao = db.deviceModeDao(), service = get<DeviceModeSensorService>()),
+            ConnectivityUploadHandler(
+                dao = db.connectivityDao(),
+                service = get<ConnectivitySensorService>()
+            ),
+            DataTrafficUploadHandler(
+                dao = db.dataTrafficDao(),
+                service = get<DataTrafficSensorService>()
+            ),
+            DeviceModeUploadHandler(
+                dao = db.deviceModeDao(),
+                service = get<DeviceModeSensorService>()
+            ),
             MediaUploadHandler(dao = db.mediaDao(), service = get<MediaSensorService>()),
-            MessageLogUploadHandler(dao = db.messageLogDao(), service = get<MessageLogSensorService>()),
-            NotificationUploadHandler(dao = db.notificationDao(), service = get<NotificationSensorService>()),
-            UserInteractionUploadHandler(dao = db.userInteractionDao(), service = get<UserInteractionSensorService>())
+            MessageLogUploadHandler(
+                dao = db.messageLogDao(),
+                service = get<MessageLogSensorService>()
+            ),
+            NotificationUploadHandler(
+                dao = db.notificationDao(),
+                service = get<NotificationSensorService>()
+            ),
+            UserInteractionUploadHandler(
+                dao = db.userInteractionDao(),
+                service = get<UserInteractionSensorService>()
+            )
         )
         SensorUploadHandlerRegistry(handlers)
     }

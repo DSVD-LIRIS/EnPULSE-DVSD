@@ -8,18 +8,18 @@ import kotlinx.coroutines.flow.StateFlow
  * Centralizes campaign fetching and caching.
  */
 interface CampaignRepository {
-    
+
     /**
      * Observable flow of cached campaigns
      */
     val campaignsFlow: StateFlow<List<CampaignData>>
-    
+
     /**
      * Fetch all campaigns from remote source.
      * Updates the campaignsFlow on success.
      */
     suspend fun fetchCampaigns(): kotlin.Result<List<CampaignData>>
-    
+
     /**
      * Get cached campaigns (non-suspending)
      */

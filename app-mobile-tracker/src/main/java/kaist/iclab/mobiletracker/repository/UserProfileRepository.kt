@@ -12,7 +12,7 @@ interface UserProfileRepository {
      * Get cached user profile as StateFlow
      */
     val profileFlow: StateFlow<ProfileData?>
-    
+
     /**
      * Get current user UUID from session
      */
@@ -27,18 +27,18 @@ interface UserProfileRepository {
      * Clear cached user profile
      */
     fun clearProfile()
-    
+
     /**
      * Update campaign ID for current user and refresh profile
      * @return Result with success or failure
      */
     suspend fun updateCampaignId(campaignId: Int): kotlin.Result<Unit>
-    
+
     /**
      * Refresh profile from remote source
      */
     suspend fun refreshProfile(): kotlin.Result<ProfileData>
-    
+
     /**
      * Create profile if it doesn't exist
      * @param email User email

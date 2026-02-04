@@ -25,20 +25,17 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.helpers.ImageAsset
 import kaist.iclab.mobiletracker.ui.theme.AppColors
@@ -239,7 +236,10 @@ fun CampaignListItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onClick() }
-                .padding(horizontal = Styles.ITEM_HORIZONTAL_PADDING, vertical = Styles.ITEM_VERTICAL_PADDING),
+                .padding(
+                    horizontal = Styles.ITEM_HORIZONTAL_PADDING,
+                    vertical = Styles.ITEM_VERTICAL_PADDING
+                ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
