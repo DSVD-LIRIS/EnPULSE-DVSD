@@ -1,16 +1,15 @@
 package kaist.iclab.mobiletracker.services
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.R
+import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kaist.iclab.mobiletracker.helpers.LanguageHelper
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.services.upload.PhoneSensorUploadService
@@ -18,7 +17,6 @@ import kaist.iclab.mobiletracker.services.upload.WatchSensorUploadService
 import kaist.iclab.mobiletracker.utils.NotificationHelper
 import kaist.iclab.mobiletracker.utils.SensorTypeHelper
 import kaist.iclab.tracker.sensor.core.Sensor
-import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -34,13 +32,6 @@ import org.koin.core.qualifier.named
 class AutoSyncService : Service(), KoinComponent {
     companion object {
         private const val TAG = "AutoSyncService"
-        private const val CHECK_INTERVAL_MS =
-            10_000L // Check every 10 seconds to catch short intervals
-
-        private const val NOTIFICATION_CHANNEL_ID = "auto_sync_channel"
-        private const val NOTIFICATION_CHANNEL_NAME = "Auto Sync Notifications"
-        private const val NOTIFICATION_ID_SUCCESS = 1001
-        private const val NOTIFICATION_ID_FAILURE = 1002
 
         /**
          * Helper function to start the service from a Context
@@ -75,7 +66,7 @@ class AutoSyncService : Service(), KoinComponent {
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -83,22 +74,6 @@ class AutoSyncService : Service(), KoinComponent {
         return START_STICKY
     }
 
-    /**
-     * Creates notification channel for auto-sync notifications
-     */
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID,
-                NOTIFICATION_CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Notifications for automatic data synchronization"
-            }
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -109,6 +84,14 @@ class AutoSyncService : Service(), KoinComponent {
      * Starts the auto-sync coroutine that periodically checks and syncs data
      */
     private fun startAutoSync() {
+        Log.d(TAG, "Starting auto sync service")
+        // Create notification channel
+        NotificationHelper.ensureNotificationChannel(
+            this,
+            Constants.Notification.CHANNEL_ID_AUTO_SYNC,
+            Constants.Notification.CHANNEL_NAME_AUTO_SYNC
+        )
+
         if (syncJob?.isActive == true) {
             return
         }
@@ -119,10 +102,10 @@ class AutoSyncService : Service(), KoinComponent {
             while (isActive) {
                 try {
                     checkAndSyncIfNeeded()
-                    delay(CHECK_INTERVAL_MS)
+                    delay(Constants.AutoSync.CHECK_INTERVAL_MS)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in auto-sync loop: ${e.message}", e)
-                    delay(CHECK_INTERVAL_MS)
+                    delay(Constants.AutoSync.CHECK_INTERVAL_MS)
                 }
             }
         }
@@ -150,7 +133,7 @@ class AutoSyncService : Service(), KoinComponent {
 
         // Get auto-sync settings
         val intervalMs = syncTimestampService.getAutoSyncIntervalMs()
-        if (intervalMs == SyncTimestampService.AUTO_SYNC_INTERVAL_NONE) {
+        if (intervalMs == Constants.AutoSync.INTERVAL_NONE) {
             return
         }
 
@@ -164,9 +147,9 @@ class AutoSyncService : Service(), KoinComponent {
         if (!isNetworkConditionMet()) {
             val networkMode = syncTimestampService.getAutoSyncNetworkMode()
             val networkModeName = when (networkMode) {
-                SyncTimestampService.AUTO_SYNC_NETWORK_WIFI_MOBILE -> "WiFi/Mobile"
-                SyncTimestampService.AUTO_SYNC_NETWORK_WIFI_ONLY -> "WiFi Only"
-                SyncTimestampService.AUTO_SYNC_NETWORK_MOBILE_ONLY -> "Mobile Only"
+                Constants.AutoSync.NETWORK_WIFI_MOBILE -> "WiFi/Mobile"
+                Constants.AutoSync.NETWORK_WIFI_ONLY -> "WiFi Only"
+                Constants.AutoSync.NETWORK_MOBILE_ONLY -> "Mobile Only"
                 else -> "Unknown"
             }
             Log.w(TAG, "Network condition not met (mode=$networkModeName), skipping sync")
@@ -187,7 +170,7 @@ class AutoSyncService : Service(), KoinComponent {
         val networkMode = syncTimestampService.getAutoSyncNetworkMode()
 
         // If mode is WIFI_MOBILE, any connection is fine
-        if (networkMode == SyncTimestampService.AUTO_SYNC_NETWORK_WIFI_MOBILE) {
+        if (networkMode == Constants.AutoSync.NETWORK_WIFI_MOBILE) {
             return isConnected()
         }
 
@@ -200,8 +183,8 @@ class AutoSyncService : Service(), KoinComponent {
         val hasCellular = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
 
         return when (networkMode) {
-            SyncTimestampService.AUTO_SYNC_NETWORK_WIFI_ONLY -> hasWifi
-            SyncTimestampService.AUTO_SYNC_NETWORK_MOBILE_ONLY -> hasCellular
+            Constants.AutoSync.NETWORK_WIFI_ONLY -> hasWifi
+            Constants.AutoSync.NETWORK_MOBILE_ONLY -> hasCellular
             else -> isConnected()
         }
     }
@@ -291,17 +274,24 @@ class AutoSyncService : Service(), KoinComponent {
      */
     private fun showSuccessNotification(successCount: Int) {
         val pendingIntent =
-            NotificationHelper.createMainActivityPendingIntent(this, NOTIFICATION_ID_SUCCESS)
+            NotificationHelper.createMainActivityPendingIntent(
+                this,
+                Constants.Notification.ID_AUTO_SYNC_SUCCESS
+            )
         val localizedContext = LanguageHelper(this).applyLanguage(this)
         val notification = NotificationHelper.buildNotification(
             context = this,
-            channelId = NOTIFICATION_CHANNEL_ID,
+            channelId = Constants.Notification.CHANNEL_ID_AUTO_SYNC,
             title = localizedContext.getString(R.string.auto_sync_success_title),
             text = localizedContext.getString(R.string.auto_sync_success_message, successCount),
             pendingIntent = pendingIntent
         ).build()
 
-        NotificationHelper.showNotification(this, NOTIFICATION_ID_SUCCESS, notification)
+        NotificationHelper.showNotification(
+            this,
+            Constants.Notification.ID_AUTO_SYNC_SUCCESS,
+            notification
+        )
     }
 
     /**
@@ -315,11 +305,14 @@ class AutoSyncService : Service(), KoinComponent {
         }
 
         val pendingIntent =
-            NotificationHelper.createMainActivityPendingIntent(this, NOTIFICATION_ID_FAILURE)
+            NotificationHelper.createMainActivityPendingIntent(
+                this,
+                Constants.Notification.ID_AUTO_SYNC_FAILURE
+            )
         val localizedContext = LanguageHelper(this).applyLanguage(this)
         val notification = NotificationHelper.buildNotification(
             context = this,
-            channelId = NOTIFICATION_CHANNEL_ID,
+            channelId = Constants.Notification.CHANNEL_ID_AUTO_SYNC,
             title = localizedContext.getString(R.string.auto_sync_failure_title),
             text = localizedContext.getString(
                 R.string.auto_sync_failure_message,
@@ -329,7 +322,11 @@ class AutoSyncService : Service(), KoinComponent {
             pendingIntent = pendingIntent
         ).build()
 
-        NotificationHelper.showNotification(this, NOTIFICATION_ID_FAILURE, notification)
+        NotificationHelper.showNotification(
+            this,
+            Constants.Notification.ID_AUTO_SYNC_FAILURE,
+            notification
+        )
         Log.w(TAG, "Failure notification shown: $failureCount sensors failed")
     }
 

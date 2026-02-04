@@ -199,7 +199,6 @@
     <string name="sync_interval_option_15_min">Every 15 minutes</string>
     <string name="sync_interval_option_30_min">Every 30 minutes</string>
     <string name="sync_interval_option_60_min">Every 1 hour</string>
-    <string name="sync_interval_option_120_min">Every 2 hours</string>
 
     <string name="sync_network_title">Sync Network</string>
     <string name="sync_network_description">Automatically upload data only when the selected network type is available.</string>

@@ -199,7 +199,6 @@
     <string name="sync_interval_option_15_min">15분마다</string>
     <string name="sync_interval_option_30_min">30분마다</string>
     <string name="sync_interval_option_60_min">1시간마다</string>
-    <string name="sync_interval_option_120_min">2시간마다</string>
 
     <string name="sync_network_title">동기화 네트워크</string>
     <string name="sync_network_description">선택한 네트워크 유형이 사용 가능할 때만 데이터를 자동으로 업로드합니다.</string>

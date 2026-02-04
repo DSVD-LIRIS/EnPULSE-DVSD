@@ -12,12 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.AppRegistration
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Call
@@ -37,6 +36,7 @@ import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiTethering
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -44,13 +44,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.ui.theme.AppColors
 import kaist.iclab.mobiletracker.ui.utils.getSensorDisplayName
@@ -114,28 +114,138 @@ fun HomeScreen(
         // Create sensor items list with current counts, filtered to non-zero
         val sensorItems = remember(uiState) {
             listOf(
-                SensorItem("WatchAccelerometer", uiState.watchAccelerometerCount, Icons.Default.Speed, Styles.Colors.WATCH_ACCELEROMETER),
-                SensorItem("AmbientLight", uiState.ambientLightCount, Icons.Default.LightMode, Styles.Colors.AMBIENT_LIGHT),
-                SensorItem("AppListChange", uiState.appListChangeCount, Icons.Default.AppRegistration, Styles.Colors.APP_LIST_CHANGE),
-                SensorItem("AppUsage", uiState.appUsageCount, Icons.Default.GridView, Styles.Colors.APP_USAGE),
-                SensorItem("Battery", uiState.batteryCount, Icons.Default.BatteryChargingFull, Styles.Colors.DEVICE_STATUS),
-                SensorItem("BluetoothScan", uiState.bluetoothCount, Icons.Default.Bluetooth, Styles.Colors.BLUETOOTH),
-                SensorItem("CallLog", uiState.callLogCount, Icons.Default.Call, Styles.Colors.CALL_LOG),
-                SensorItem("DataTraffic", uiState.dataTrafficCount, Icons.Default.DataUsage, Styles.Colors.DATA_TRAFFIC),
-                SensorItem("DeviceMode", uiState.deviceModeCount, Icons.Default.SettingsSuggest, Styles.Colors.DEVICE_MODE),
-                SensorItem("WatchEDA", uiState.watchEDACount, Icons.Default.Waves, Styles.Colors.WATCH_EDA),
-                SensorItem("WatchHeartRate", uiState.watchHeartRateCount, Icons.Default.FavoriteBorder, Styles.Colors.WATCH_HEART_RATE),
-                SensorItem("Location", uiState.locationCount, Icons.Default.Place, Styles.Colors.LOCATION),
-                SensorItem("Media", uiState.mediaCount, Icons.Default.PlayCircleOutline, Styles.Colors.MEDIA),
-                SensorItem("MessageLog", uiState.messageLogCount, Icons.AutoMirrored.Filled.Message, Styles.Colors.MESSAGE_LOG),
-                SensorItem("Connectivity", uiState.connectivityCount, Icons.Default.Wifi, Styles.Colors.CONNECTIVITY),
-                SensorItem("Notification", uiState.notificationCount, Icons.Default.Notifications, Styles.Colors.NOTIFICATIONS),
-                SensorItem("Step", uiState.activityCount, Icons.AutoMirrored.Filled.DirectionsWalk, Styles.Colors.ACTIVITY),
-                SensorItem("WatchPPG", uiState.watchPPGCount, Icons.Default.MonitorHeart, Styles.Colors.WATCH_PPG),
-                SensorItem("Screen", uiState.screenCount, Icons.Default.StayCurrentPortrait, Styles.Colors.SCREEN),
-                SensorItem("WatchSkinTemperature", uiState.watchSkinTemperatureCount, Icons.Default.Thermostat, Styles.Colors.WATCH_SKIN_TEMP),
-                SensorItem("UserInteraction", uiState.userInteractionCount, Icons.Default.TouchApp, Styles.Colors.USER_INTERACTION),
-                SensorItem("WifiScan", uiState.wifiScanCount, Icons.Default.WifiTethering, Styles.Colors.WIFI_SCAN)
+                SensorItem(
+                    "WatchAccelerometer",
+                    uiState.watchAccelerometerCount,
+                    Icons.Default.Speed,
+                    Styles.Colors.WATCH_ACCELEROMETER
+                ),
+                SensorItem(
+                    "AmbientLight",
+                    uiState.ambientLightCount,
+                    Icons.Default.LightMode,
+                    Styles.Colors.AMBIENT_LIGHT
+                ),
+                SensorItem(
+                    "AppListChange",
+                    uiState.appListChangeCount,
+                    Icons.Default.AppRegistration,
+                    Styles.Colors.APP_LIST_CHANGE
+                ),
+                SensorItem(
+                    "AppUsage",
+                    uiState.appUsageCount,
+                    Icons.Default.GridView,
+                    Styles.Colors.APP_USAGE
+                ),
+                SensorItem(
+                    "Battery",
+                    uiState.batteryCount,
+                    Icons.Default.BatteryChargingFull,
+                    Styles.Colors.DEVICE_STATUS
+                ),
+                SensorItem(
+                    "BluetoothScan",
+                    uiState.bluetoothCount,
+                    Icons.Default.Bluetooth,
+                    Styles.Colors.BLUETOOTH
+                ),
+                SensorItem(
+                    "CallLog",
+                    uiState.callLogCount,
+                    Icons.Default.Call,
+                    Styles.Colors.CALL_LOG
+                ),
+                SensorItem(
+                    "DataTraffic",
+                    uiState.dataTrafficCount,
+                    Icons.Default.DataUsage,
+                    Styles.Colors.DATA_TRAFFIC
+                ),
+                SensorItem(
+                    "DeviceMode",
+                    uiState.deviceModeCount,
+                    Icons.Default.SettingsSuggest,
+                    Styles.Colors.DEVICE_MODE
+                ),
+                SensorItem(
+                    "WatchEDA",
+                    uiState.watchEDACount,
+                    Icons.Default.Waves,
+                    Styles.Colors.WATCH_EDA
+                ),
+                SensorItem(
+                    "WatchHeartRate",
+                    uiState.watchHeartRateCount,
+                    Icons.Default.FavoriteBorder,
+                    Styles.Colors.WATCH_HEART_RATE
+                ),
+                SensorItem(
+                    "Location",
+                    uiState.locationCount,
+                    Icons.Default.Place,
+                    Styles.Colors.LOCATION
+                ),
+                SensorItem(
+                    "Media",
+                    uiState.mediaCount,
+                    Icons.Default.PlayCircleOutline,
+                    Styles.Colors.MEDIA
+                ),
+                SensorItem(
+                    "MessageLog",
+                    uiState.messageLogCount,
+                    Icons.AutoMirrored.Filled.Message,
+                    Styles.Colors.MESSAGE_LOG
+                ),
+                SensorItem(
+                    "Connectivity",
+                    uiState.connectivityCount,
+                    Icons.Default.Wifi,
+                    Styles.Colors.CONNECTIVITY
+                ),
+                SensorItem(
+                    "Notification",
+                    uiState.notificationCount,
+                    Icons.Default.Notifications,
+                    Styles.Colors.NOTIFICATIONS
+                ),
+                SensorItem(
+                    "Step",
+                    uiState.activityCount,
+                    Icons.AutoMirrored.Filled.DirectionsWalk,
+                    Styles.Colors.ACTIVITY
+                ),
+                SensorItem(
+                    "WatchPPG",
+                    uiState.watchPPGCount,
+                    Icons.Default.MonitorHeart,
+                    Styles.Colors.WATCH_PPG
+                ),
+                SensorItem(
+                    "Screen",
+                    uiState.screenCount,
+                    Icons.Default.StayCurrentPortrait,
+                    Styles.Colors.SCREEN
+                ),
+                SensorItem(
+                    "WatchSkinTemperature",
+                    uiState.watchSkinTemperatureCount,
+                    Icons.Default.Thermostat,
+                    Styles.Colors.WATCH_SKIN_TEMP
+                ),
+                SensorItem(
+                    "UserInteraction",
+                    uiState.userInteractionCount,
+                    Icons.Default.TouchApp,
+                    Styles.Colors.USER_INTERACTION
+                ),
+                SensorItem(
+                    "WifiScan",
+                    uiState.wifiScanCount,
+                    Icons.Default.WifiTethering,
+                    Styles.Colors.WIFI_SCAN
+                )
             ).filter { it.count > 0 }
         }
 

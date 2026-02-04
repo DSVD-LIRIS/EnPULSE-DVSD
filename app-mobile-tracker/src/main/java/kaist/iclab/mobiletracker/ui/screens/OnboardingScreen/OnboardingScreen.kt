@@ -145,7 +145,8 @@ fun OnboardingScreen(
                 } else if (uiState.campaigns.isEmpty()) {
                     Box(modifier = Modifier.padding(Styles.SPACING_L)) {
                         Text(
-                            text = uiState.error ?: context.getString(R.string.onboarding_no_campaigns),
+                            text = uiState.error
+                                ?: context.getString(R.string.onboarding_no_campaigns),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             color = if (uiState.error != null) AppColors.ErrorColor else AppColors.TextSecondary

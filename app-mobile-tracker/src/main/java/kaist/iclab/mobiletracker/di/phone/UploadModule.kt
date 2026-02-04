@@ -101,7 +101,8 @@ val uploadModule = module {
     single<PhoneSensorRepository> {
         PhoneSensorRepositoryImpl(
             sensorDataStorages = get<Map<String, BaseDao<*, *>>>(named("sensorDataStorages")),
-            supabaseHelper = get()
+            supabaseHelper = get(),
+            appScope = get()
         )
     }
 

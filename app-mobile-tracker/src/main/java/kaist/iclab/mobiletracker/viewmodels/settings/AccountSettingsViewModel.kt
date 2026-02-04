@@ -92,7 +92,7 @@ class AccountSettingsViewModel(
                 _isSyncingSurveys.value = false
 
                 userProfileRepository.refreshProfile()
-                
+
                 if (surveyResult.isSuccess) {
                     AppToast.show(context, R.string.toast_experiment_group_selected)
                 } else {

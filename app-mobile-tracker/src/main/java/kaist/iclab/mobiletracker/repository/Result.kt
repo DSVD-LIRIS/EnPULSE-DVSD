@@ -99,6 +99,7 @@ inline fun <T, R> Result<T>.map(transform: (T) -> R): Result<R> {
         } catch (e: Throwable) {
             Result.Error(e)
         }
+
         is Result.Error -> this
     }
 }

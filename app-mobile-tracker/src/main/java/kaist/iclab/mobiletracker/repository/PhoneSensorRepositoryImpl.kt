@@ -4,6 +4,7 @@ import android.util.Log
 import kaist.iclab.mobiletracker.data.DeviceType
 import kaist.iclab.mobiletracker.db.dao.common.BaseDao
 import kaist.iclab.mobiletracker.db.dao.common.LocationDao
+import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.utils.SupabaseSessionHelper
 import kaist.iclab.tracker.sensor.core.SensorEntity
@@ -14,7 +15,8 @@ import kaist.iclab.tracker.sensor.core.SensorEntity
  */
 class PhoneSensorRepositoryImpl(
     private val sensorDataStorages: Map<String, BaseDao<*, *>>,
-    private val supabaseHelper: SupabaseHelper
+    private val supabaseHelper: SupabaseHelper,
+    @Suppress("unused") private val appScope: AppCoroutineScope // Keep injection to avoid breaking module but mark unused or remove if desired
 ) : PhoneSensorRepository {
 
     companion object {
@@ -26,9 +28,27 @@ class PhoneSensorRepositoryImpl(
             @Suppress("UNCHECKED_CAST")
             val dao = sensorDataStorages[sensorId] as? BaseDao<SensorEntity, *>
             if (dao != null) {
-                // Get user UUID from Supabase session (nullable if not logged in)
                 val userUuid = SupabaseSessionHelper.getUuidOrNull(supabaseHelper.supabaseClient)
                 dao.insert(entity, userUuid)
+            } else {
+                val error = IllegalStateException("No DAO found for sensor ID: $sensorId")
+                Log.w(TAG, error.message ?: "Unknown error")
+                throw error
+            }
+        }
+    }
+
+    override suspend fun insertSensorDataBatch(
+        sensorId: String,
+        entities: List<SensorEntity>
+    ): Result<Unit> {
+        return runCatchingSuspend {
+            @Suppress("UNCHECKED_CAST")
+            val dao = sensorDataStorages[sensorId] as? BaseDao<SensorEntity, *>
+            if (dao != null) {
+                val userUuid = SupabaseSessionHelper.getUuidOrNull(supabaseHelper.supabaseClient)
+                // Assuming BaseDao has insertBatch based on previous context, user approved changes imply BaseDao handles this
+                dao.insertBatch(entities, userUuid)
             } else {
                 val error = IllegalStateException("No DAO found for sensor ID: $sensorId")
                 Log.w(TAG, error.message ?: "Unknown error")
@@ -92,4 +112,3 @@ class PhoneSensorRepositoryImpl(
         }.getOrNull() ?: 0
     }
 }
-

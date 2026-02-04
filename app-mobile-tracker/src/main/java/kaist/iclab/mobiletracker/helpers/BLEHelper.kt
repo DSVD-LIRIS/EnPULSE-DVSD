@@ -10,12 +10,12 @@ import kaist.iclab.mobiletracker.db.entity.watch.WatchEDAEntity
 import kaist.iclab.mobiletracker.db.entity.watch.WatchHeartRateEntity
 import kaist.iclab.mobiletracker.db.entity.watch.WatchPPGEntity
 import kaist.iclab.mobiletracker.db.entity.watch.WatchSkinTemperatureEntity
+import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.WatchSensorRepository
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.utils.SensorDataCsvParser
 import kaist.iclab.tracker.sync.ble.BLEDataChannel
-import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
