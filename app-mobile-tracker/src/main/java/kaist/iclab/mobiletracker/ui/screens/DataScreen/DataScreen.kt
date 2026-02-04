@@ -314,9 +314,9 @@ private fun SummaryCard(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = when {
-                            isUploading -> stringResource(R.string.toast_upload_all_summary, totalRecords)
-                            isDeleting -> stringResource(R.string.sync_clear_data_title)
-                            true -> stringResource(R.string.sensor_export_csv)
+                            isUploading -> stringResource(R.string.sync_status_uploading)
+                            isDeleting -> stringResource(R.string.sync_status_deleting)
+                            true -> stringResource(R.string.sync_status_exporting)
                             else -> ""
                         },
                         fontSize = 12.sp,
