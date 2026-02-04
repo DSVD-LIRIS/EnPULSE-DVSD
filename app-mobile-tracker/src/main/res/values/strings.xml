@@ -15,6 +15,7 @@
     <string name="home_status_stopped">Stopped</string>
     <string name="home_daily_highlights">Today\'s Data Snapshot</string>
     <string name="home_logs_unit">%1$d logs</string>
+    <string name="home_empty_state_message">Start collecting to see data</string>
     <string name="home_watch_status_label">Galaxy Watch Device</string>
     <string name="home_watch_connected">Connected</string>
     <string name="home_watch_disconnected">Disconnected</string>
@@ -248,6 +249,7 @@
 
     <!-- Toast Messages -->
     <string name="toast_experiment_group_selected">Experiment group selected successfully</string>
+    <string name="toast_experiment_group_selected_partial_error">Experiment group selected, but surveys failed to sync</string>
     <string name="toast_data_deleted">Data deleted successfully</string>
     <string name="toast_sensor_data_deleted">Sensor data deleted successfully</string>
     <string name="toast_sensor_data_uploaded">Data uploaded successfully</string>
@@ -270,6 +272,7 @@
     <string name="onboarding_ok">OK</string>
     <string name="onboarding_loading">Loading campaigns…</string>
     <string name="onboarding_no_campaigns">No campaigns available</string>
+    <string name="onboarding_survey_fetch_error">Campaign saved, but failed to load surveys. You can retry from Settings later.</string>
     <string name="onboarding_start">Start</string>
     <string name="onboarding_help_text">Please consult the researcher to choose which experiment group is appropriate for you</string>
 

@@ -88,12 +88,16 @@ class AccountSettingsViewModel(
 
         userProfileRepository.updateCampaignId(campaignIdInt)
             .onSuccess {
-                _isSyncingSurveys.value = true
-                surveyRepository.fetchAndPersistSurveys(campaignIdInt)
+                val surveyResult = surveyRepository.fetchAndPersistSurveys(campaignIdInt)
                 _isSyncingSurveys.value = false
 
                 userProfileRepository.refreshProfile()
-                AppToast.show(context, R.string.toast_experiment_group_selected)
+                
+                if (surveyResult.isSuccess) {
+                    AppToast.show(context, R.string.toast_experiment_group_selected)
+                } else {
+                    AppToast.show(context, R.string.toast_experiment_group_selected_partial_error)
+                }
             }
     }
 }

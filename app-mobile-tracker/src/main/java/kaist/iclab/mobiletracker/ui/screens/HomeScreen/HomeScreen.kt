@@ -2,14 +2,18 @@ package kaist.iclab.mobiletracker.ui.screens.HomeScreen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.Message
@@ -38,7 +42,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -103,8 +110,8 @@ fun HomeScreen(
             modifier = Modifier.padding(top = Styles.GRID_SECTION_TITLE_TOP_PADDING)
         )
 
-        // 4. Highlight List - All sensors ordered alphabetically using LazyColumn for performance
-        // Create sensor items list with current counts
+        // 4. Highlight List - Only show sensors with data collected today
+        // Create sensor items list with current counts, filtered to non-zero
         val sensorItems = remember(uiState) {
             listOf(
                 SensorItem("WatchAccelerometer", uiState.watchAccelerometerCount, Icons.Default.Speed, Styles.Colors.WATCH_ACCELEROMETER),
@@ -129,24 +136,52 @@ fun HomeScreen(
                 SensorItem("WatchSkinTemperature", uiState.watchSkinTemperatureCount, Icons.Default.Thermostat, Styles.Colors.WATCH_SKIN_TEMP),
                 SensorItem("UserInteraction", uiState.userInteractionCount, Icons.Default.TouchApp, Styles.Colors.USER_INTERACTION),
                 SensorItem("WifiScan", uiState.wifiScanCount, Icons.Default.WifiTethering, Styles.Colors.WIFI_SCAN)
-            )
+            ).filter { it.count > 0 }
         }
 
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(Styles.INSIGHT_ROW_VERTICAL_SPACING),
-            contentPadding = PaddingValues(bottom = Styles.BOTTOM_SPACER_HEIGHT)
-        ) {
-            items(
-                items = sensorItems,
-                key = { it.sensorId }
-            ) { sensor ->
-                InsightRow(
-                    title = getSensorDisplayName(sensor.sensorId),
-                    value = stringResource(R.string.home_logs_unit, sensor.count),
-                    icon = sensor.icon,
-                    iconColor = sensor.iconColor
-                )
+        if (sensorItems.isEmpty()) {
+            // Empty state - no data collected today
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BarChart,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = AppColors.PrimaryColor
+                    )
+                    Text(
+                        text = stringResource(R.string.home_empty_state_message),
+                        fontSize = Styles.GREETING_SUBTITLE_FONT_SIZE,
+                        color = AppColors.TextSecondary,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(Styles.INSIGHT_ROW_VERTICAL_SPACING),
+                contentPadding = PaddingValues(bottom = Styles.BOTTOM_SPACER_HEIGHT)
+            ) {
+                items(
+                    items = sensorItems,
+                    key = { it.sensorId }
+                ) { sensor ->
+                    InsightRow(
+                        title = getSensorDisplayName(sensor.sensorId),
+                        value = stringResource(R.string.home_logs_unit, sensor.count),
+                        icon = sensor.icon,
+                        iconColor = sensor.iconColor
+                    )
+                }
             }
         }
     }

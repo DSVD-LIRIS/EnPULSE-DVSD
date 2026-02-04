@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.helpers.ImageAsset
 import kaist.iclab.mobiletracker.ui.theme.AppColors
+import kaist.iclab.mobiletracker.utils.AppToast
 import kaist.iclab.mobiletracker.viewmodels.onboarding.OnboardingViewModel
 import org.koin.androidx.compose.koinViewModel
 
@@ -61,6 +62,18 @@ fun OnboardingScreen(
     // Load campaigns on first composition
     LaunchedEffect(Unit) {
         viewModel.loadCampaigns()
+    }
+
+    // Show toast if there's an error (like survey fetch failure)
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { error ->
+            val message = if (error == "onboarding_survey_fetch_error") {
+                context.getString(R.string.onboarding_survey_fetch_error)
+            } else {
+                error
+            }
+            AppToast.show(context, message)
+        }
     }
 
     Column(
@@ -132,10 +145,10 @@ fun OnboardingScreen(
                 } else if (uiState.campaigns.isEmpty()) {
                     Box(modifier = Modifier.padding(Styles.SPACING_L)) {
                         Text(
-                            text = context.getString(R.string.onboarding_no_campaigns),
+                            text = uiState.error ?: context.getString(R.string.onboarding_no_campaigns),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
-                            color = AppColors.TextSecondary
+                            color = if (uiState.error != null) AppColors.ErrorColor else AppColors.TextSecondary
                         )
                     }
                 } else {
