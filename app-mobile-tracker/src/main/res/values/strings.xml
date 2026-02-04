@@ -279,5 +279,6 @@
     <string name="pagination_page_format">Page %1$d / %2$d</string>
     <string name="pagination_previous">Previous Page</string>
     <string name="pagination_next">Next Page</string>
-    <string name="sensor_watch_badge_desc">Watch sensor</string>
+    <string name="phone_sensor_badge_description">Phone sensor</string>
+    <string name="watch_sensor_badge_description">Watch sensor</string>
 </resources>

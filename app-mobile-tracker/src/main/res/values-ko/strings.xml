@@ -279,6 +279,7 @@
     <string name="pagination_page_format">%1$d / %2$d 페이지</string>
     <string name="pagination_previous">이전 페이지</string>
     <string name="pagination_next">다음 페이지</string>
-    <string name="sensor_watch_badge_desc">워치 센서</string>
+    <string name="phone_sensor_badge_description">폰 센서</string>
+    <string name="watch_sensor_badge_description">워치 센서</string>
 </resources>
 
