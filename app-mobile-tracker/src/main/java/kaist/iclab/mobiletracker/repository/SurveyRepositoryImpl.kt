@@ -33,6 +33,9 @@ class SurveyRepositoryImpl(
                     // 2. Apply to in-memory storage for SurveySensor
                     val sensorConfig = SurveyConfigConverter.toSurveySensorConfig(configs)
                     inMemoryStorage.set(sensorConfig)
+                } else {
+                    // Clear old surveys when new campaign has no surveys
+                    clearSurveys()
                 }
 
                 kotlin.Result.success(configs.size)
