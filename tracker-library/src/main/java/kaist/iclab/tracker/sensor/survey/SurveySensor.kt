@@ -101,8 +101,6 @@ class SurveySensor(
         val actualTriggerTime: Long? = null,
         val surveyStartTime: Long? = null,
         val responseSubmissionTime: Long? = null,
-//        val title: String,
-//        val message: String,
         val response: JsonElement,
     ): SensorEntity()
 
@@ -287,13 +285,10 @@ class SurveySensor(
     }
 
     private val surveyResultCallback = surveyResultCallback@{ intent: Intent? ->
-        Log.d(TAG, "surveyResultCallback invoked")
-
         if(intent == null) return@surveyResultCallback
-        val scheduleId = intent.getStringExtra("scheduleId")!!
-        val result = intent.getStringExtra("result")!!
+        val scheduleId = intent.getStringExtra("scheduleId") ?: return@surveyResultCallback
+        val result = intent.getStringExtra("result") ?: return@surveyResultCallback
         val responseTime = intent.getLongExtra("responseTime", -1)
-
 
         scheduleStorage.setResponseSubmissionTime(scheduleId, responseTime)
         val schedule = scheduleStorage.getScheduleByScheduleId(scheduleId)!!

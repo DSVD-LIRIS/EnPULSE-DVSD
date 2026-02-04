@@ -9,6 +9,7 @@ import kaist.iclab.mobiletracker.data.survey.SurveyConfig
 import kaist.iclab.mobiletracker.data.survey.SurveyEntity
 import kaist.iclab.mobiletracker.data.survey.SurveyQuestionEntity
 import kaist.iclab.mobiletracker.data.survey.SurveyQuestionOptionEntity
+import kaist.iclab.mobiletracker.data.survey.SurveyQuestionResponseInsert
 import kaist.iclab.mobiletracker.data.survey.SurveyQuestionTriggerEntity
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.Result
@@ -30,6 +31,7 @@ class SurveyService(
         private const val TABLE_QUESTION = "survey_question"
         private const val TABLE_OPTION = "survey_question_option"
         private const val TABLE_TRIGGER = "survey_question_trigger"
+        private const val TABLE_RESPONSE = "survey_question_response"
     }
 
     /**
@@ -221,5 +223,21 @@ class SurveyService(
         if (scheduleMethod.containsKey("timeOfDay")) return ScheduleType.TIME_OF_DAY
         if (scheduleMethod.containsKey("numSurvey")) return ScheduleType.ESM
         return ScheduleType.MANUAL
+    }
+
+    /**
+     * Submit survey question responses to Supabase
+     * @param responses List of response entities to insert
+     * @return Result indicating success or failure
+     */
+    suspend fun submitSurveyResponses(responses: List<SurveyQuestionResponseInsert>): Result<Unit> {
+        return runCatchingSuspend {
+            try {
+                supabaseClient.from(TABLE_RESPONSE).insert(responses)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error submitting survey responses: ${e.message}", e)
+                throw e
+            }
+        }
     }
 }

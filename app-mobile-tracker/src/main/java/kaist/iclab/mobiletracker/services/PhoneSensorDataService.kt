@@ -8,21 +8,30 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import kaist.iclab.mobiletracker.R
+import kaist.iclab.mobiletracker.data.survey.SurveyQuestionResponseInsert
 import kaist.iclab.mobiletracker.helpers.LanguageHelper
 import kaist.iclab.mobiletracker.repository.PhoneSensorRepository
 import kaist.iclab.mobiletracker.repository.Result
+import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.services.SurveyService
 import kaist.iclab.mobiletracker.utils.NotificationHelper
 import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.core.Sensor
 import kaist.iclab.tracker.sensor.core.SensorEntity
+import kaist.iclab.tracker.sensor.survey.SurveySensor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import org.koin.android.ext.android.inject
 import org.koin.core.component.KoinComponent
 import org.koin.core.qualifier.named
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /**
  * Foreground service for receiving and storing phone sensor data locally in Room database.
@@ -57,6 +66,9 @@ class PhoneSensorDataService : Service(), KoinComponent {
     private val phoneSensorRepository by inject<PhoneSensorRepository>()
     private val serviceNotification by inject<BackgroundController.ServiceNotification>()
     private val timestampService: SyncTimestampService by lazy { SyncTimestampService(this) }
+    private val surveySensor by inject<SurveySensor>()
+    private val surveyService by inject<SurveyService>()
+    private val userProfileRepository by inject<UserProfileRepository>()
 
     // Coroutine scope tied to service lifecycle
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -64,9 +76,6 @@ class PhoneSensorDataService : Service(), KoinComponent {
     private val listener: Map<String, (SensorEntity) -> Unit> = sensors.associate {
         it.id to
                 { e: SensorEntity ->
-                    // NOTE: Uncomment this if you want to verify the data is received
-                    Log.v(TAG, "[PHONE] - Data received from ${it.name}: $e")
-
                     if (phoneSensorRepository.hasStorageForSensor(it.id)) {
                         serviceScope.launch {
                             when (val result = phoneSensorRepository.insertSensorData(it.id, e)) {
@@ -88,6 +97,83 @@ class PhoneSensorDataService : Service(), KoinComponent {
                         Log.w(TAG, "[PHONE] - No storage found for sensor ${it.name} (${it.id})")
                     }
                 }
+    }
+
+    // Listener for survey responses - submits to Supabase
+    private val surveyResponseListener: (SensorEntity) -> Unit = listener@{ entity ->
+        val surveyEntity = entity as? SurveySensor.Entity ?: return@listener
+        serviceScope.launch {
+            try {
+                val uuid = userProfileRepository.getCurrentUuid()
+                if (uuid == null) {
+                    Log.w(TAG, "[SURVEY] - No user UUID available, skipping Supabase submission")
+                    return@launch
+                }
+
+                val responses = buildSurveyResponses(surveyEntity, uuid)
+                if (responses.isEmpty()) {
+                    Log.w(TAG, "[SURVEY] - No responses to submit")
+                    return@launch
+                }
+
+                when (val result = surveyService.submitSurveyResponses(responses)) {
+                    is Result.Success -> {
+                        Log.d(TAG, "[SURVEY] - Successfully submitted ${responses.size} responses to Supabase")
+                    }
+                    is Result.Error -> {
+                        Log.e(TAG, "[SURVEY] - Failed to submit responses: ${result.message}", result.exception)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "[SURVEY] - Error processing survey response", e)
+            }
+        }
+    }
+
+    private fun buildSurveyResponses(
+        entity: SurveySensor.Entity,
+        uuid: String
+    ): List<SurveyQuestionResponseInsert> {
+        val formatter = DateTimeFormatter.ISO_INSTANT
+        
+        fun formatTimestamp(millis: Long?): String? {
+            return millis?.let {
+                Instant.ofEpochMilli(it).atOffset(ZoneOffset.UTC).format(formatter)
+            }
+        }
+
+        val responseJson = entity.response
+        
+        // Response is a JsonArray: [{"id":25,"response":"..."},{"id":26,"response":55.0},...]
+        if (responseJson !is kotlinx.serialization.json.JsonArray) {
+            Log.w(TAG, "[SURVEY] - Response is not a JsonArray: ${responseJson::class.simpleName}")
+            return emptyList()
+        }
+
+        return responseJson.mapNotNull { element ->
+            val obj = element as? JsonObject
+            if (obj == null) {
+                Log.w(TAG, "[SURVEY] - Array element is not a JsonObject: $element")
+                return@mapNotNull null
+            }
+
+            // Use jsonPrimitive.content to avoid quotes if it's a string, or just toString() for numbers
+            val questionId = obj["id"]?.toString()?.replace("\"", "")?.toIntOrNull()
+            if (questionId == null) {
+                Log.w(TAG, "[SURVEY] - Invalid 'id' field in response element")
+                return@mapNotNull null
+            }
+
+            SurveyQuestionResponseInsert(
+                questionId = questionId,
+                uuid = uuid,
+                triggerTime = formatTimestamp(entity.triggerTime),
+                actualTriggerTime = formatTimestamp(entity.actualTriggerTime),
+                surveyStartTime = formatTimestamp(entity.surveyStartTime),
+                responseSubmissionTime = formatTimestamp(entity.responseSubmissionTime),
+                response = element
+            )
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -124,11 +210,15 @@ class PhoneSensorDataService : Service(), KoinComponent {
         for (sensor in sensors) {
             sensor.removeListener(listener[sensor.id]!!)
         }
+        surveySensor.removeListener(surveyResponseListener)
 
         // Then add listeners
         for (sensor in sensors) {
             sensor.addListener(listener[sensor.id]!!)
         }
+
+        // Add survey response listener for Supabase submission
+        surveySensor.addListener(surveyResponseListener)
 
         return START_STICKY
     }
@@ -141,6 +231,9 @@ class PhoneSensorDataService : Service(), KoinComponent {
         for (sensor in sensors) {
             sensor.removeListener(listener[sensor.id]!!)
         }
+
+        // Remove survey response listener
+        surveySensor.removeListener(surveyResponseListener)
 
         super.onDestroy()
     }
