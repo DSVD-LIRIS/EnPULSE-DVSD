@@ -1,15 +1,15 @@
 package kaist.iclab.mobiletracker.services
 
-import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.IBinder
 import android.util.Log
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.lifecycleScope
 import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.R
-import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kaist.iclab.mobiletracker.helpers.LanguageHelper
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.services.upload.PhoneSensorUploadService
@@ -17,7 +17,7 @@ import kaist.iclab.mobiletracker.services.upload.WatchSensorUploadService
 import kaist.iclab.mobiletracker.utils.NotificationHelper
 import kaist.iclab.mobiletracker.utils.SensorTypeHelper
 import kaist.iclab.tracker.sensor.core.Sensor
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -28,8 +28,10 @@ import org.koin.core.qualifier.named
 /**
  * Service that handles automatic synchronization of sensor data to Supabase
  * based on configured interval and network preferences.
+ *
+ * Uses LifecycleService for automatic coroutine lifecycle management.
  */
-class AutoSyncService : Service(), KoinComponent {
+class AutoSyncService : LifecycleService(), KoinComponent {
     companion object {
         private const val TAG = "AutoSyncService"
 
@@ -57,31 +59,22 @@ class AutoSyncService : Service(), KoinComponent {
     private val watchSensorUploadService: WatchSensorUploadService by inject()
     private val sensors by inject<List<Sensor<*, *>>>(qualifier = named("sensors"))
 
-    // Injected coroutine scope
-    private val appScope by inject<AppCoroutineScope>()
-    private var syncJob: Job? = null
     private var lastSyncTime: Long = 0
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    override fun onCreate() {
-        super.onCreate()
-
+    override fun onBind(intent: Intent): IBinder? {
+        super.onBind(intent)
+        return null
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         startAutoSync()
         return START_STICKY
     }
 
-
-    override fun onDestroy() {
-        super.onDestroy()
-        stopAutoSync()
-    }
-
     /**
-     * Starts the auto-sync coroutine that periodically checks and syncs data
+     * Starts the auto-sync coroutine that periodically checks and syncs data.
+     * Uses lifecycleScope for automatic cancellation on service destruction.
      */
     private fun startAutoSync() {
         Log.d(TAG, "Starting auto sync service")
@@ -92,11 +85,8 @@ class AutoSyncService : Service(), KoinComponent {
             Constants.Notification.CHANNEL_NAME_AUTO_SYNC
         )
 
-        if (syncJob?.isActive == true) {
-            return
-        }
-
-        syncJob = appScope.io.launch {
+        // lifecycleScope automatically cancels when service is destroyed
+        lifecycleScope.launch(Dispatchers.IO) {
             lastSyncTime = System.currentTimeMillis()
 
             while (isActive) {
@@ -109,14 +99,6 @@ class AutoSyncService : Service(), KoinComponent {
                 }
             }
         }
-    }
-
-    /**
-     * Stops the auto-sync coroutine
-     */
-    private fun stopAutoSync() {
-        syncJob?.cancel()
-        syncJob = null
     }
 
     /**
@@ -157,7 +139,7 @@ class AutoSyncService : Service(), KoinComponent {
         }
 
         // All conditions met, trigger sync
-        appScope.io.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             uploadAllSensorData()
         }
         lastSyncTime = currentTime

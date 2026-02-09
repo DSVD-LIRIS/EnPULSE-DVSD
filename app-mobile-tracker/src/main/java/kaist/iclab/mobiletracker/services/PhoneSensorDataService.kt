@@ -1,16 +1,16 @@
 package kaist.iclab.mobiletracker.services
 
-import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.lifecycleScope
 import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.data.survey.SurveyQuestionResponseInsert
-import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kaist.iclab.mobiletracker.helpers.LanguageHelper
 import kaist.iclab.mobiletracker.repository.PhoneSensorRepository
 import kaist.iclab.mobiletracker.repository.Result
@@ -20,7 +20,7 @@ import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.core.Sensor
 import kaist.iclab.tracker.sensor.core.SensorEntity
 import kaist.iclab.tracker.sensor.survey.SurveySensor
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -38,8 +38,10 @@ import java.time.format.DateTimeFormatter
 /**
  * Foreground service for receiving and storing phone sensor data locally in Room database.
  * Replicates the wearable tracker's batching mechanism using Channels.
+ *
+ * Uses LifecycleService for automatic coroutine lifecycle management.
  */
-class PhoneSensorDataService : Service(), KoinComponent {
+class PhoneSensorDataService : LifecycleService(), KoinComponent {
     companion object {
         private const val TAG = "PhoneSensorDataService"
 
@@ -61,14 +63,12 @@ class PhoneSensorDataService : Service(), KoinComponent {
     private val surveySensor by inject<SurveySensor>()
     private val surveyService by inject<SurveyService>()
     private val userProfileRepository by inject<UserProfileRepository>()
-    private val appScope by inject<AppCoroutineScope>()
 
     // Channel for batching
     private val eventChannel = Channel<Pair<String, SensorEntity>>(
         capacity = Constants.DB.BUFFER_SIZE,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
-    private var batchJob: Job? = null
 
     // Listener just sends to channel
     private val listener: Map<String, (SensorEntity) -> Unit> = sensors.associate { sensor ->
@@ -84,12 +84,13 @@ class PhoneSensorDataService : Service(), KoinComponent {
 
     private val surveyResponseListener: (SensorEntity) -> Unit = listener@{ entity ->
         val surveyEntity = entity as? SurveySensor.Entity ?: return@listener
-        appScope.io.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             handleSurveyResponse(surveyEntity)
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         startForegroundService()
         registerListeners()
         startBatchProcessing()
@@ -129,10 +130,11 @@ class PhoneSensorDataService : Service(), KoinComponent {
         surveySensor.addListener(surveyResponseListener)
     }
 
+    /**
+     * Starts batch processing using lifecycleScope for automatic cancellation.
+     */
     private fun startBatchProcessing() {
-        if (batchJob?.isActive == true) return
-
-        batchJob = appScope.io.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
             var lastFlushTime = System.currentTimeMillis()
 
@@ -226,7 +228,7 @@ class PhoneSensorDataService : Service(), KoinComponent {
         sensors.forEach { it.removeListener(listener[it.id]!!) }
         surveySensor.removeListener(surveyResponseListener)
 
-        // Flush remaining
+        // Flush remaining data before destruction
         runBlocking {
             val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
             while (true) {
@@ -239,9 +241,11 @@ class PhoneSensorDataService : Service(), KoinComponent {
             flushBuffer(buffer)
         }
 
-        batchJob?.cancel()
         super.onDestroy()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onBind(intent: Intent): IBinder? {
+        super.onBind(intent)
+        return null
+    }
 }

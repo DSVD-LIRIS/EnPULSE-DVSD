@@ -114,6 +114,7 @@ dependencies {
     /* Androidx */
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.service)
     implementation(libs.compose.lifecycle.viewmodel)
 
     /* Navigation */
