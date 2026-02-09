@@ -11,6 +11,21 @@ import kaist.iclab.tracker.auth.UserState
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for authentication and user profile management.
+ *
+ * Handles Google Sign-In authentication flow, token management, and user profile
+ * synchronization with Supabase. Automatically:
+ * - Requests token after successful login
+ * - Saves token to repository for persistence
+ * - Creates user profile in Supabase if not exists
+ * - Loads and caches user profile data
+ * - Clears profile data on logout
+ *
+ * @param authentication Authentication wrapper for login/logout operations
+ * @param authRepository Repository for token persistence
+ * @param userProfileRepository Repository for user profile data
+ */
 class AuthViewModel(
     private val authentication: Authentication,
     private val authRepository: AuthRepository,

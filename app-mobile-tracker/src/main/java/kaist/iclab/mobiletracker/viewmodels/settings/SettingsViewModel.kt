@@ -23,6 +23,24 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for the Settings screen.
+ *
+ * Manages sensor toggle states, permission requests, and data collection lifecycle.
+ * Observes background controller state changes and automatically starts/stops the
+ * PhoneSensorDataService accordingly.
+ *
+ * Key responsibilities:
+ * - Toggle individual sensors on/off
+ * - Request and observe permissions
+ * - Start/stop data logging
+ * - Manage AutoSyncService lifecycle
+ *
+ * @param backgroundController Controller managing sensor background collection
+ * @param permissionManager Manager for Android permission requests
+ * @param syncTimestampService Service for tracking sync timestamps
+ * @param context Application context
+ */
 class SettingsViewModel(
     private val backgroundController: BackgroundController,
     private val permissionManager: AndroidPermissionManager,
