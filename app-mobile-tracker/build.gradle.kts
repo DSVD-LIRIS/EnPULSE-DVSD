@@ -152,4 +152,6 @@ dependencies {
     /* Google Play Services Location */
     implementation(libs.android.gms.location)
 
+    /* Testing */
+    testImplementation(libs.junit)
 }

@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "kaist.iclab.wearabletracker"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "kaist.iclab.trackerSystem"
@@ -54,7 +54,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildToolsVersion = "36.1.0"
 
 }
 

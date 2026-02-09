@@ -30,14 +30,14 @@ graph TB
 
 ## Key Components
 
-| Layer | Description |
-|-------|-------------|
-| **UI** | Jetpack Compose screens with Material 3 design |
-| **ViewModels** | State management using Kotlin StateFlow |
-| **Repositories** | Data abstraction layer with Result pattern |
-| **Services** | Background processing, sync, and upload |
-| **Database** | Room database with 22+ entities |
-| **DI** | Koin-based dependency injection |
+| Layer            | Description                                    |
+|------------------|------------------------------------------------|
+| **UI**           | Jetpack Compose screens with Material 3 design |
+| **ViewModels**   | State management using Kotlin StateFlow        |
+| **Repositories** | Data abstraction layer with Result pattern     |
+| **Services**     | Background processing, sync, and upload        |
+| **Database**     | Room database with 22+ entities                |
+| **DI**           | Koin-based dependency injection                |
 
 ## Package Structure
 
@@ -63,6 +63,7 @@ kaist.iclab.mobiletracker/
 ## Data Flow
 
 ### Sensor Data Collection
+
 ```mermaid
 sequenceDiagram
     participant Sensor
@@ -79,6 +80,7 @@ sequenceDiagram
 ```
 
 ### Data Synchronization
+
 ```mermaid
 sequenceDiagram
     participant AutoSyncService
@@ -114,6 +116,7 @@ Each sensor type has its own handler implementation registered in `SensorDataHan
 ## Configuration
 
 ### Environment Variables (BuildConfig)
+
 - `SUPABASE_URL` - Supabase project URL
 - `SUPABASE_ANON_KEY` - Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
@@ -122,16 +125,17 @@ Configure these in `local.properties` for local development.
 
 ## Services
 
-| Service | Purpose |
-|---------|---------|
-| `PhoneSensorDataService` | Foreground service for receiving and batching sensor data |
-| `AutoSyncService` | Background service for automatic data synchronization |
-| `PhoneSensorUploadService` | Handles uploading phone sensor data to Supabase |
-| `WatchSensorUploadService` | Handles uploading watch sensor data to Supabase |
+| Service                    | Purpose                                                   |
+|----------------------------|-----------------------------------------------------------|
+| `PhoneSensorDataService`   | Foreground service for receiving and batching sensor data |
+| `AutoSyncService`          | Background service for automatic data synchronization     |
+| `PhoneSensorUploadService` | Handles uploading phone sensor data to Supabase           |
+| `WatchSensorUploadService` | Handles uploading watch sensor data to Supabase           |
 
 ## Database Schema
 
 The app uses Room database with schema export enabled. Schema files are located in:
+
 ```
 app-mobile-tracker/schemas/
 ```

@@ -53,4 +53,7 @@ dependencies {
     // Samsung Dependencies
     api(project(":samsung-health-data-api"))
     api(project(":samsung-health-sensor-api"))
+
+    // Testing
+    testImplementation(libs.junit)
 }
