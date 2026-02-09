@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
@@ -18,6 +20,27 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load local.properties for local development
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { localProperties.load(it) }
+        }
+
+        // Supabase credentials for test-sync: read from local.properties or environment (for CI)
+        val supabaseUrl: String = findProperty("TEST_SUPABASE_URL")?.toString()
+            ?: localProperties.getProperty("TEST_SUPABASE_URL")
+            ?: System.getenv("TEST_SUPABASE_URL")
+            ?: "MISSING_TEST_SUPABASE_URL"
+
+        val supabaseAnonKey: String = findProperty("TEST_SUPABASE_ANON_KEY")?.toString()
+            ?: localProperties.getProperty("TEST_SUPABASE_ANON_KEY")
+            ?: System.getenv("TEST_SUPABASE_ANON_KEY")
+            ?: "MISSING_TEST_SUPABASE_ANON_KEY"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
     }
 
     buildTypes {
@@ -36,6 +59,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

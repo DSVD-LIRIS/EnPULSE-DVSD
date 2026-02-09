@@ -1,10 +1,12 @@
 package com.example.test_sync.config
 
+import com.example.test_sync.BuildConfig
+
 /**
  * Configuration file for test-sync app.
  * Contains all implemented configuration variables.
  *
- * ⚠️ IMPORTANT: Replace placeholder values with your actual configuration!
+ * Credentials are injected via BuildConfig from local.properties or environment variables.
  */
 object AppConfig {
 
@@ -12,18 +14,16 @@ object AppConfig {
 
     /**
      * Supabase project URL
-     * Get this from your Supabase project dashboard > Settings > API
-     * Example: https://your-project-id.supabase.co
+     * Injected from local.properties (TEST_SUPABASE_URL) or environment variable
      */
-    const val SUPABASE_URL = "https://urtvamywsnujfmcdnnxb.supabase.co"
+    val SUPABASE_URL: String = BuildConfig.SUPABASE_URL
 
     /**
      * Supabase anonymous/public key
-     * Get this from your Supabase project settings > API > Project API keys
+     * Injected from local.properties (TEST_SUPABASE_ANON_KEY) or environment variable
      * This is safe to use in client applications
      */
-    const val SUPABASE_ANON_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVydHZhbXl3c251amZtY2RubnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MTExMDYsImV4cCI6MjA2NjQ4NzEwNn0.VIGwIg_IRqJuw2Vqqk8SM8raWC2AjryMSZSwnTrmBaI"
+    val SUPABASE_ANON_KEY: String = BuildConfig.SUPABASE_ANON_KEY
 
     /**
      * Supabase table name for test data
