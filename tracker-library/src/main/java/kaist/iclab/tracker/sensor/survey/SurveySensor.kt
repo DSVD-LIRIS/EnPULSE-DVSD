@@ -185,7 +185,7 @@ class SurveySensor(
         context.startActivity(intent)
     }
 
-    private fun scheduleSurveyForDate(baseDate: Long): SurveySchedule? {
+    private fun scheduleSurveyForDate(baseDate: Long) {
         Log.d(TAG, "BaseDate: ${baseDate.formatLocalDateTime()}")
         val now = System.currentTimeMillis()
         val config = configStorage.get()
@@ -205,8 +205,6 @@ class SurveySensor(
                 ))
             }
         }
-
-        return scheduleStorage.getNextSchedule()
     }
 
     private fun setupNextSurveySchedule() {
@@ -259,7 +257,7 @@ class SurveySensor(
 
         val pendingIntent = PendingIntent.getActivity(context, 0, surveyActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
-        val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID + "_" + surveyId)
             .setOngoing(true)
             .setAutoCancel(true)
             .setContentTitle(notificationConfig.title)
