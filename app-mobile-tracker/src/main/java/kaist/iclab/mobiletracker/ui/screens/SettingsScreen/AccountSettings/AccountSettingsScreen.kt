@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.navigation.Screen
+import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.ui.components.CampaignDialog.CampaignDialog
 import kaist.iclab.mobiletracker.ui.components.LogoutDialog.LogoutDialog
 import kaist.iclab.mobiletracker.ui.theme.AppColors
@@ -47,6 +48,7 @@ import kaist.iclab.mobiletracker.utils.AppToast
 import kaist.iclab.mobiletracker.viewmodels.auth.AuthViewModel
 import kaist.iclab.mobiletracker.viewmodels.settings.AccountSettingsViewModel
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import kaist.iclab.mobiletracker.ui.screens.SettingsScreen.Styles as SettingsStyles
 
 /**
@@ -58,7 +60,8 @@ fun AccountSettingsScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
     authViewModel: AuthViewModel = koinViewModel(),
-    accountSettingsViewModel: AccountSettingsViewModel = koinViewModel()
+    accountSettingsViewModel: AccountSettingsViewModel = koinViewModel(),
+    syncTimestampService: SyncTimestampService = koinInject()
 ) {
     val context = LocalContext.current
     val userState by authViewModel.userState.collectAsState()
@@ -69,6 +72,11 @@ fun AccountSettingsScreen(
     val campaignError by accountSettingsViewModel.campaignError.collectAsState()
     val selectedCampaignId by accountSettingsViewModel.selectedCampaignId.collectAsState()
     val selectedCampaignName by accountSettingsViewModel.selectedCampaignName.collectAsState()
+
+    // Data collection running if started timestamp is not null
+    val isDataCollectionRunning by remember {
+        mutableStateOf(syncTimestampService.getDataCollectionStarted() != null)
+    }
 
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showCampaignDialog by remember { mutableStateOf(false) }
@@ -207,7 +215,14 @@ fun AccountSettingsScreen(
                         description = selectedCampaignName
                             ?: context.getString(R.string.campaign_no_campaign_joined),
                         hasSelectedExperiment = selectedCampaignName != null,
-                        onClick = { showCampaignDialog = true }
+                        isEnabled = !isDataCollectionRunning,
+                        onClick = {
+                            if (isDataCollectionRunning) {
+                                AppToast.show(context, R.string.turn_off_data_collection_first)
+                            } else {
+                                showCampaignDialog = true
+                            }
+                        }
                     )
                 }
             }
@@ -245,6 +260,7 @@ private fun CampaignMenuItem(
     title: String,
     description: String,
     hasSelectedExperiment: Boolean,
+    isEnabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -286,10 +302,12 @@ private fun CampaignMenuItem(
                 )
             )
         }
-        Icon(
-            imageVector = Icons.Filled.ChevronRight,
-            contentDescription = null,
-            tint = AppColors.TextSecondary
-        )
+        if (isEnabled) {
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = AppColors.TextSecondary
+            )
+        }
     }
 }

@@ -3,63 +3,33 @@ package kaist.iclab.mobiletracker.services
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.utils.DateTimeFormatter
 
 /**
  * Service for tracking and retrieving sync-related timestamps.
  * Uses SharedPreferences for persistent storage of timestamps.
  */
-class SyncTimestampService(context: Context) {
+class SyncTimestampService(private val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(
-        "sync_timestamps",
+        Constants.Prefs.PREFS_NAME,
         Context.MODE_PRIVATE
     )
-
-    companion object {
-        private const val KEY_LAST_WATCH_DATA = "last_watch_data"
-        private const val KEY_LAST_PHONE_SENSOR = "last_phone_sensor"
-        private const val KEY_LAST_SUCCESSFUL_UPLOAD = "last_successful_upload"
-        private const val KEY_DATA_COLLECTION_STARTED = "data_collection_started"
-
-        // Automatic sync preferences
-        private const val KEY_AUTO_SYNC_INTERVAL = "auto_sync_interval"
-        private const val KEY_AUTO_SYNC_NETWORK = "auto_sync_network"
-
-        // Cached user UUID for background operations
-        private const val KEY_CACHED_USER_UUID = "cached_user_uuid"
-
-        // Interval values in milliseconds (0 = no auto sync)
-        // 1 minute = 60,000 ms
-        const val AUTO_SYNC_INTERVAL_NONE = 0L
-
-        // Sub-minute intervals
-        const val AUTO_SYNC_INTERVAL_30_SEC = 30L * 1000   // 30 seconds
-
-        // Minute intervals
-        const val AUTO_SYNC_INTERVAL_1_MIN = 60L * 1000    // 1 minute = 60,000 ms
-        const val AUTO_SYNC_INTERVAL_15_MIN = 15L * 60 * 1000 // 15 minutes = 900,000 ms
-        const val AUTO_SYNC_INTERVAL_30_MIN = 30L * 60 * 1000 // 30 minutes = 1,800,000 ms
-        const val AUTO_SYNC_INTERVAL_60_MIN = 60L * 60 * 1000 // 60 minutes = 3,600,000 ms
-        const val AUTO_SYNC_INTERVAL_120_MIN = 120L * 60 * 1000 // 120 minutes = 7,200,000 ms
-
-        // Network mode values
-        const val AUTO_SYNC_NETWORK_WIFI_MOBILE = 0
-        const val AUTO_SYNC_NETWORK_WIFI_ONLY = 1
-        const val AUTO_SYNC_NETWORK_MOBILE_ONLY = 2
-    }
 
     /**
      * Update timestamp when watch data is received via BLE
      */
     fun updateLastWatchDataReceived() {
-        prefs.edit().putLong(KEY_LAST_WATCH_DATA, System.currentTimeMillis()).apply()
+        prefs.edit().putLong(Constants.Prefs.KEY_LAST_WATCH_DATA, System.currentTimeMillis())
+            .apply()
     }
 
     /**
      * Update timestamp when phone sensor data is collected
      */
     fun updateLastPhoneSensorData() {
-        prefs.edit().putLong(KEY_LAST_PHONE_SENSOR, System.currentTimeMillis()).apply()
+        prefs.edit().putLong(Constants.Prefs.KEY_LAST_PHONE_SENSOR, System.currentTimeMillis())
+            .apply()
     }
 
     /**
@@ -67,7 +37,7 @@ class SyncTimestampService(context: Context) {
      * @param timestamp Optional timestamp to use, defaults to current time
      */
     fun updateLastSuccessfulUpload(timestamp: Long = System.currentTimeMillis()) {
-        prefs.edit().putLong(KEY_LAST_SUCCESSFUL_UPLOAD, timestamp).apply()
+        prefs.edit().putLong(Constants.Prefs.KEY_LAST_SUCCESSFUL_UPLOAD, timestamp).apply()
     }
 
     /**
@@ -112,38 +82,42 @@ class SyncTimestampService(context: Context) {
      * Update timestamp when data collection starts
      */
     fun updateDataCollectionStarted() {
-        prefs.edit().putLong(KEY_DATA_COLLECTION_STARTED, System.currentTimeMillis()).apply()
+        prefs.edit()
+            .putLong(Constants.Prefs.KEY_DATA_COLLECTION_STARTED, System.currentTimeMillis())
+            .apply()
     }
 
     /**
      * Clear data collection started timestamp (when collection stops)
      */
     fun clearDataCollectionStarted() {
-        prefs.edit().remove(KEY_DATA_COLLECTION_STARTED).apply()
+        prefs.edit().remove(Constants.Prefs.KEY_DATA_COLLECTION_STARTED).apply()
     }
 
     /**
      * Automatic sync interval in milliseconds.
      */
     fun getAutoSyncIntervalMs(): Long {
-        return prefs.getLong(KEY_AUTO_SYNC_INTERVAL, AUTO_SYNC_INTERVAL_NONE)
+        return prefs.getLong(
+            Constants.Prefs.KEY_AUTO_SYNC_INTERVAL,
+            Constants.AutoSync.INTERVAL_NONE
+        )
     }
 
     fun setAutoSyncIntervalMs(intervalMs: Long) {
         val validIntervals = setOf(
-            AUTO_SYNC_INTERVAL_NONE,
-            AUTO_SYNC_INTERVAL_30_SEC,
-            AUTO_SYNC_INTERVAL_1_MIN,
-            AUTO_SYNC_INTERVAL_15_MIN,
-            AUTO_SYNC_INTERVAL_30_MIN,
-            AUTO_SYNC_INTERVAL_60_MIN,
-            AUTO_SYNC_INTERVAL_120_MIN
+            Constants.AutoSync.INTERVAL_NONE,
+            Constants.AutoSync.INTERVAL_30_SEC,
+            Constants.AutoSync.INTERVAL_1_MIN,
+            Constants.AutoSync.INTERVAL_15_MIN,
+            Constants.AutoSync.INTERVAL_30_MIN,
+            Constants.AutoSync.INTERVAL_60_MIN
         )
 
         prefs.edit {
             putLong(
-                KEY_AUTO_SYNC_INTERVAL,
-                if (intervalMs in validIntervals) intervalMs else AUTO_SYNC_INTERVAL_NONE
+                Constants.Prefs.KEY_AUTO_SYNC_INTERVAL,
+                if (intervalMs in validIntervals) intervalMs else Constants.AutoSync.INTERVAL_NONE
             )
         }
     }
@@ -153,18 +127,21 @@ class SyncTimestampService(context: Context) {
      * See AUTO_SYNC_NETWORK_* constants.
      */
     fun getAutoSyncNetworkMode(): Int {
-        return prefs.getInt(KEY_AUTO_SYNC_NETWORK, AUTO_SYNC_NETWORK_WIFI_MOBILE)
+        return prefs.getInt(
+            Constants.Prefs.KEY_AUTO_SYNC_NETWORK,
+            Constants.AutoSync.NETWORK_WIFI_MOBILE
+        )
     }
 
     fun setAutoSyncNetworkMode(mode: Int) {
-        prefs.edit().putInt(KEY_AUTO_SYNC_NETWORK, mode).apply()
+        prefs.edit().putInt(Constants.Prefs.KEY_AUTO_SYNC_NETWORK, mode).apply()
     }
 
     /**
      * Get formatted last watch data received timestamp
      */
     fun getLastWatchDataReceived(): String? {
-        val timestamp = prefs.getLong(KEY_LAST_WATCH_DATA, 0L)
+        val timestamp = prefs.getLong(Constants.Prefs.KEY_LAST_WATCH_DATA, 0L)
         return if (timestamp > 0) {
             DateTimeFormatter.formatTimestampShort(timestamp)
         } else {
@@ -176,7 +153,7 @@ class SyncTimestampService(context: Context) {
      * Get formatted last phone sensor data timestamp
      */
     fun getLastPhoneSensorData(): String? {
-        val timestamp = prefs.getLong(KEY_LAST_PHONE_SENSOR, 0L)
+        val timestamp = prefs.getLong(Constants.Prefs.KEY_LAST_PHONE_SENSOR, 0L)
         return if (timestamp > 0) {
             DateTimeFormatter.formatTimestampShort(timestamp)
         } else {
@@ -188,7 +165,7 @@ class SyncTimestampService(context: Context) {
      * Get formatted last successful upload timestamp
      */
     fun getLastSuccessfulUpload(): String? {
-        val timestamp = prefs.getLong(KEY_LAST_SUCCESSFUL_UPLOAD, 0L)
+        val timestamp = prefs.getLong(Constants.Prefs.KEY_LAST_SUCCESSFUL_UPLOAD, 0L)
         return if (timestamp > 0) {
             DateTimeFormatter.formatTimestampShort(timestamp)
         } else {
@@ -200,7 +177,7 @@ class SyncTimestampService(context: Context) {
      * Get formatted data collection started timestamp
      */
     fun getDataCollectionStarted(): String? {
-        val timestamp = prefs.getLong(KEY_DATA_COLLECTION_STARTED, 0L)
+        val timestamp = prefs.getLong(Constants.Prefs.KEY_DATA_COLLECTION_STARTED, 0L)
         return if (timestamp > 0) {
             DateTimeFormatter.formatTimestampShort(timestamp)
         } else {
@@ -245,14 +222,14 @@ class SyncTimestampService(context: Context) {
         clearAllSensorUploadTimestamps()
 
         // Clear global upload timestamp
-        editor.remove(KEY_LAST_SUCCESSFUL_UPLOAD)
+        editor.remove(Constants.Prefs.KEY_LAST_SUCCESSFUL_UPLOAD)
 
         // Clear last received timestamps
-        editor.remove(KEY_LAST_WATCH_DATA)
-        editor.remove(KEY_LAST_PHONE_SENSOR)
+        editor.remove(Constants.Prefs.KEY_LAST_WATCH_DATA)
+        editor.remove(Constants.Prefs.KEY_LAST_PHONE_SENSOR)
 
         // Clear data collection started
-        editor.remove(KEY_DATA_COLLECTION_STARTED)
+        editor.remove(Constants.Prefs.KEY_DATA_COLLECTION_STARTED)
 
         editor.apply()
     }
@@ -263,7 +240,7 @@ class SyncTimestampService(context: Context) {
      */
     fun storeUserUuid(uuid: String) {
         prefs.edit {
-            putString(KEY_CACHED_USER_UUID, uuid)
+            putString(Constants.Prefs.KEY_CACHED_USER_UUID, uuid)
         }
     }
 
@@ -272,7 +249,7 @@ class SyncTimestampService(context: Context) {
      * Returns null if no UUID is cached
      */
     fun getCachedUserUuid(): String? {
-        return prefs.getString(KEY_CACHED_USER_UUID, null)
+        return prefs.getString(Constants.Prefs.KEY_CACHED_USER_UUID, null)
     }
 
     /**
@@ -281,8 +258,7 @@ class SyncTimestampService(context: Context) {
      */
     fun clearUserUuid() {
         prefs.edit {
-            remove(KEY_CACHED_USER_UUID)
+            remove(Constants.Prefs.KEY_CACHED_USER_UUID)
         }
     }
 }
-

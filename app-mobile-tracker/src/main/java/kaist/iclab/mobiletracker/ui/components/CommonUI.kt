@@ -1,10 +1,10 @@
-package kaist.iclab.mobiletracker.ui.screens.SettingsScreen
+package kaist.iclab.mobiletracker.ui.components
 
-import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,16 +18,43 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kaist.iclab.mobiletracker.R
-import kaist.iclab.mobiletracker.helpers.LanguageHelper
+import kaist.iclab.mobiletracker.ui.screens.SettingsScreen.Styles
 import kaist.iclab.mobiletracker.ui.theme.AppColors
 
+/**
+ * Standard Application Header Component
+ */
 @Composable
-fun SettingsMenuItem(
+fun AppHeader(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(Styles.HEADER_HEIGHT)
+            .padding(start = Styles.HEADER_START_PADDING, end = Styles.HEADER_END_PADDING),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            fontWeight = FontWeight.Bold,
+            fontSize = Styles.HEADER_FONT_SIZE
+        )
+    }
+}
+
+/**
+ * Standard Application Menu Item Component
+ */
+@Composable
+fun AppMenuItem(
     title: String,
     icon: ImageVector,
     onClick: () -> Unit,
+    showDivider: Boolean = true,
     iconTint: Color = AppColors.PrimaryColor
 ) {
     Row(
@@ -59,38 +86,6 @@ fun SettingsMenuItem(
             tint = AppColors.TextSecondary
         )
     }
-}
-
-/**
- * Gets the current language display name for the language menu item
- */
-fun getLanguageDisplayName(context: Context): String {
-    val languageHelper = LanguageHelper(context)
-    val currentLanguage = languageHelper.getLanguage()
-    return when (currentLanguage) {
-        "ko" -> context.getString(R.string.language_korean_full)
-        "en" -> context.getString(R.string.language_english_full)
-        else -> context.getString(R.string.language_english_full)
-    }
-}
-
-/**
- * Composable that renders a menu item with an optional divider below it
- */
-@Composable
-fun SettingsMenuItemWithDivider(
-    title: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    showDivider: Boolean = true,
-    iconTint: Color = AppColors.PrimaryColor
-) {
-    SettingsMenuItem(
-        title = title,
-        icon = icon,
-        onClick = onClick,
-        iconTint = iconTint
-    )
     if (showDivider) {
         HorizontalDivider(
             color = AppColors.BorderDark,
