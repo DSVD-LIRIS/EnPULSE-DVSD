@@ -1,9 +1,11 @@
 package kaist.iclab.mobiletracker.config
 
 /**
- * TODO: Change approach using environment variables
- * Configuration file for test-sync app.
- * Contains all implemented configuration variables.
+ * Environment-specific configuration for the mobile tracker app.
+ * Contains API keys, URLs, and environment-dependent values.
+ *
+ * For app-level constants (database settings, intervals, identifiers),
+ * see [kaist.iclab.mobiletracker.Constants].
  *
  * ⚠️ IMPORTANT: Replace placeholder values with your actual configuration!
  */

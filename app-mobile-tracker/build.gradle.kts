@@ -50,7 +50,8 @@ android {
             buildConfigField("Boolean", "SKIP_LOGIN", "false")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             buildConfigField("Boolean", "SKIP_LOGIN", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -72,8 +73,8 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
 
-    implementation("androidx.compose.material:material:1.9.5")
-    implementation("androidx.compose.material:material-icons-extended:1.7.7")
+    implementation(libs.compose.material)
+    implementation(libs.compose.material.icons.extended)
 
     implementation(platform(libs.compose.bom))
     debugImplementation(libs.compose.ui.tooling)

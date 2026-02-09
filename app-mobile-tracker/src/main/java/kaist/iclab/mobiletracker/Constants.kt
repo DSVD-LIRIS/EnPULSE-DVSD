@@ -2,7 +2,10 @@ package kaist.iclab.mobiletracker
 
 /**
  * Centralized constants for the mobile tracker app.
- * All constants used across the app should be defined here.
+ * All app-level constants used across the app should be defined here.
+ *
+ * For environment-specific configuration (API keys, URLs, etc.),
+ * see [kaist.iclab.mobiletracker.config.AppConfig].
  */
 object Constants {
     /**
