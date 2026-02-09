@@ -21,6 +21,10 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
+
         // Load local.properties for local development
         val localProperties = Properties()
         val localPropertiesFile = rootProject.file("local.properties")
