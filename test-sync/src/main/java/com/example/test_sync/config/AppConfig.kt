@@ -14,13 +14,13 @@ object AppConfig {
 
     /**
      * Supabase project URL
-     * Injected from local.properties (TEST_SUPABASE_URL) or environment variable
+     * Injected from local.properties (SUPABASE_URL) or environment variable
      */
     val SUPABASE_URL: String = BuildConfig.SUPABASE_URL
 
     /**
      * Supabase anonymous/public key
-     * Injected from local.properties (TEST_SUPABASE_ANON_KEY) or environment variable
+     * Injected from local.properties (SUPABASE_ANON_KEY) or environment variable
      * This is safe to use in client applications
      */
     val SUPABASE_ANON_KEY: String = BuildConfig.SUPABASE_ANON_KEY

@@ -29,15 +29,15 @@ android {
         }
 
         // Supabase credentials for test-sync: read from local.properties or environment (for CI)
-        val supabaseUrl: String = findProperty("TEST_SUPABASE_URL")?.toString()
-            ?: localProperties.getProperty("TEST_SUPABASE_URL")
-            ?: System.getenv("TEST_SUPABASE_URL")
-            ?: "MISSING_TEST_SUPABASE_URL"
+        val supabaseUrl: String = findProperty("SUPABASE_URL")?.toString()
+            ?: localProperties.getProperty("SUPABASE_URL")
+            ?: System.getenv("SUPABASE_URL")
+            ?: "MISSING_SUPABASE_URL"
 
-        val supabaseAnonKey: String = findProperty("TEST_SUPABASE_ANON_KEY")?.toString()
-            ?: localProperties.getProperty("TEST_SUPABASE_ANON_KEY")
-            ?: System.getenv("TEST_SUPABASE_ANON_KEY")
-            ?: "MISSING_TEST_SUPABASE_ANON_KEY"
+        val supabaseAnonKey: String = findProperty("SUPABASE_ANON_KEY")?.toString()
+            ?: localProperties.getProperty("TSUPABASE_ANON_KEY")
+            ?: System.getenv("SUPABASE_ANON_KEY")
+            ?: "MISSING_SUPABASE_ANON_KEY"
 
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
