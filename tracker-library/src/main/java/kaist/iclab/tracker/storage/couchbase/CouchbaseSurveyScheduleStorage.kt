@@ -56,7 +56,7 @@ class CouchbaseSurveyScheduleStorage(
             return result
 
         } catch(e: Exception) {
-            if(e is NoSuchElementException) Log.d(TAG, "No next schedule today")
+            if(e is NoSuchElementException) Log.d(TAG, "No next schedule today for $surveyId")
             else e.printStackTrace()
         }
 

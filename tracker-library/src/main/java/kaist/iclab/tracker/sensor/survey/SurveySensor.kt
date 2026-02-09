@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import kaist.iclab.tracker.TrackerUtil.formatLapsedTime
 import kaist.iclab.tracker.TrackerUtil.formatLocalDateTime
 import kaist.iclab.tracker.listener.AlarmListener
 import kaist.iclab.tracker.listener.BroadcastListener
@@ -135,8 +134,6 @@ class SurveySensor(
             intervals.add(interval)
         }
 
-        Log.v(TAG, "Intervals: ${intervals.map{ it.formatLapsedTime() }}")
-
         val intervalSum = intervals.sum()
         val startMargin = (Math.random() * (lengthOfDay - intervalSum)).toLong()
 
@@ -161,16 +158,22 @@ class SurveySensor(
         val zoneId = ZoneId.systemDefault()
         val dateTime = java.time.Instant.ofEpochMilli(timestamp).atZone(zoneId)
 
-        val todayStart = dateTime.toLocalDate().atStartOfDay(zoneId).toInstant().toEpochMilli()
-        val endOfYesterday = todayStart + endOfDay - TimeUnit.DAYS.toMillis(1)
+        val today = dateTime.toLocalDate().atStartOfDay(zoneId).toInstant().toEpochMilli()
+        val todayEnd = today + endOfDay
+        val endOfYesterday = todayEnd - TimeUnit.DAYS.toMillis(1)
+
 
         return if (timestamp < endOfYesterday) {
             // If current time is earlier than yesterday's window end,
             // the logical "base date" is yesterday.
-            todayStart - TimeUnit.DAYS.toMillis(1)
+            today - TimeUnit.DAYS.toMillis(1)
+        } else if (timestamp < todayEnd) {
+            // If current time is earlier than today's window end,
+            // the logical base date is today.
+            today
         } else {
-            // Otherwise, the logical base date is today.
-            todayStart
+            // Otherwise, the logical base date is tomorrow
+            today + TimeUnit.DAYS.toMillis(1)
         }
     }
 
@@ -185,26 +188,30 @@ class SurveySensor(
         context.startActivity(intent)
     }
 
-    private fun scheduleSurveyForDate(baseDate: Long) {
-        Log.d(TAG, "BaseDate: ${baseDate.formatLocalDateTime()}")
+    private fun scheduleSurveyForDate(baseDate: Long, surveyId: String) {
+        Log.d(TAG, "Schedule $surveyId using base date ${baseDate.formatLocalDateTime()}")
         val now = System.currentTimeMillis()
         val config = configStorage.get()
+        val survey = config.survey[surveyId]!!
 
-        config.survey.forEach { id, survey ->
-            val scheduleMethod = survey.scheduleMethod
-            val schedule = when(scheduleMethod) {
-                is SurveyScheduleMethod.ESM -> getESMSchedule(baseDate, scheduleMethod)
-                is SurveyScheduleMethod.Fixed -> scheduleMethod.timeOfDay.map { it + baseDate }
-                else -> listOf()
-            }
+        val scheduleMethod = survey.scheduleMethod
+        val schedule = when(scheduleMethod) {
+            is SurveyScheduleMethod.ESM -> getESMSchedule(baseDate, scheduleMethod)
+            is SurveyScheduleMethod.Fixed -> scheduleMethod.timeOfDay.map { it + baseDate }
+            else -> listOf()
+        }.filter { it >= now }
 
-            schedule.filter { it >= now }.forEach {
-                scheduleStorage.addSchedule(SurveySchedule(
-                    surveyId = id,
-                    triggerTime = it
-                ))
-            }
+        schedule.forEach {
+            scheduleStorage.addSchedule(SurveySchedule(
+                surveyId = id,
+                triggerTime = it
+            ))
         }
+
+        // Fail-safe for endless recursion
+        if(baseDate - now >= TimeUnit.DAYS.toMillis(3)) return
+        // If it is near the EOD, schedule for next day
+        if(schedule.isEmpty() && scheduleMethod !is SurveyScheduleMethod.Manual) scheduleSurveyForDate(baseDate + TimeUnit.DAYS.toMillis(1), surveyId)
     }
 
     private fun setupNextSurveySchedule() {
@@ -214,13 +221,14 @@ class SurveySensor(
             val nextSchedule = scheduleStorage.getNextSchedule(surveyId = id)
 
             if(nextSchedule == null) {
-                val lastSchedule = scheduleStorage.getLastSchedule()
+                val lastSchedule = scheduleStorage.getLastSchedule(surveyId = id)
                 val nextBaseDate = if(lastSchedule == null) {
                     getBaseDate(currentTime, survey.scheduleMethod)
                 } else {
                     getBaseDate(lastSchedule.triggerTime!!, survey.scheduleMethod) + TimeUnit.DAYS.toMillis(1)
                 }
-                scheduleSurveyForDate(nextBaseDate)
+
+                scheduleSurveyForDate(nextBaseDate, id)
             }
         }
 
