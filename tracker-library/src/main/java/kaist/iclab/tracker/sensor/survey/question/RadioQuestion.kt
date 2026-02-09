@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlin.collections.toMutableMap
 
 class RadioQuestion(
     override val id: Int,
@@ -13,14 +12,15 @@ class RadioQuestion(
     override val isMandatory: Boolean,
     val option: List<Option>,
     questionTrigger: List<QuestionTrigger<Int?>>? = null
-): Question<Int?>(
+) : Question<Int?>(
     id, question, isMandatory, null, questionTrigger
 ) {
     private val _otherResponse = MutableStateFlow<Map<Int, String>>(mapOf())
     val otherResponse = _otherResponse.asStateFlow()
 
     init {
-        _otherResponse.value = option.indices.associateWith { "" }.filter { option[it.key].allowFreeResponse }
+        _otherResponse.value =
+            option.indices.associateWith { "" }.filter { option[it.key].allowFreeResponse }
     }
 
     override fun isAllowedResponse(response: Int?): Boolean {
@@ -42,7 +42,10 @@ class RadioQuestion(
             put("id", id)
             put("isMandatory", isMandatory)
             put("value", response.value)
-            if(response.value in otherResponse.value.keys) put("otherResponse", otherResponse.value[response.value])
+            if (response.value in otherResponse.value.keys) put(
+                "otherResponse",
+                otherResponse.value[response.value]
+            )
         }
 
         return jsonObject
@@ -50,7 +53,8 @@ class RadioQuestion(
 
     override fun initResponse() {
         setResponse(null)
-        _otherResponse.value = option.indices.associateWith { "" }.filter { option[it.key].allowFreeResponse }
+        _otherResponse.value =
+            option.indices.associateWith { "" }.filter { option[it.key].allowFreeResponse }
     }
 
     override fun eval(expr: Expression<Int?>, value: Int?): Boolean {

@@ -12,13 +12,11 @@ import kaist.iclab.tracker.sensor.survey.SurveyScheduleMethod
 import kaist.iclab.tracker.sensor.survey.SurveySensor
 import kaist.iclab.tracker.sensor.survey.question.CheckboxQuestion
 import kaist.iclab.tracker.sensor.survey.question.NumberQuestion
-import kaist.iclab.tracker.sensor.survey.question.Operator
 import kaist.iclab.tracker.sensor.survey.question.Option
+import kaist.iclab.tracker.sensor.survey.question.Predicate
 import kaist.iclab.tracker.sensor.survey.question.QuestionTrigger
 import kaist.iclab.tracker.sensor.survey.question.RadioQuestion
 import kaist.iclab.tracker.sensor.survey.question.TextQuestion
-import kaist.iclab.tracker.sensor.survey.question.Predicate
-import kaist.iclab.tracker.sensor.survey.question.SetPredicate
 import kaist.iclab.tracker.storage.core.StateStorage
 import kaist.iclab.tracker.storage.couchbase.CouchbaseDB
 import kaist.iclab.tracker.storage.couchbase.CouchbaseStateStorage
@@ -55,87 +53,89 @@ val koinModule = module {
         SurveySensor(
             context = androidContext(),
             permissionManager = get<AndroidPermissionManager>(),
-            configStorage = SimpleStateStorage(SurveySensor.Config(
-                survey = mapOf(
-                    "test" to Survey(
-                        scheduleMethod = SurveyScheduleMethod.ESM(
-                            minInterval = TimeUnit.MINUTES.toMillis(30),
-                            maxInterval = TimeUnit.MINUTES.toMillis(45),
-                            startOfDay = TimeUnit.HOURS.toMillis(9),
-                            endOfDay = TimeUnit.HOURS.toMillis(25),
-                            numSurvey = 30,
-                        ),
-                        notificationConfig = SurveyNotificationConfig(
-                            title = "Survey Test",
-                            description = "This is a survey test",
-                            icon = R.drawable.ic_launcher_foreground
-                        ),
-                        TextQuestion(
-                            id = 1,
-                            question = "Your name?",
-                            isMandatory = true,
-                        ),
-                        NumberQuestion(
-                            id = 2,
-                            question = "Your age?",
-                            isMandatory = false,
-                        ),
-                        RadioQuestion(
-                            id = 3,
-                            question = "How are you?",
-                            isMandatory = true,
-                            option = listOf(
-                                Option("Good"),
-                                Option("Bad"),
-                                Option("Okay"),
-                                Option("Other: ", allowFreeResponse = true)
-                            )
-                        ),
-                        CheckboxQuestion(
-                            id = 4,
-                            question = "Choose all even number",
-                            isMandatory = false,
-                            option = listOf(
-                                Option("1"),
-                                Option("2"),
-                                Option("4"),
-                                Option("5")
+            configStorage = SimpleStateStorage(
+                SurveySensor.Config(
+                    survey = mapOf(
+                        "test" to Survey(
+                            scheduleMethod = SurveyScheduleMethod.ESM(
+                                minInterval = TimeUnit.MINUTES.toMillis(30),
+                                maxInterval = TimeUnit.MINUTES.toMillis(45),
+                                startOfDay = TimeUnit.HOURS.toMillis(9),
+                                endOfDay = TimeUnit.HOURS.toMillis(25),
+                                numSurvey = 30,
                             ),
-                            questionTrigger = listOf(
-                                QuestionTrigger(
-                                    predicate = Predicate.Equal(setOf(1, 2)),
-                                    children = listOf(
-                                        RadioQuestion(
-                                            id = 5,
-                                            question = "Is P = NP?",
-                                            isMandatory = true,
-                                            option = listOf(
-                                                Option("Hell yeah"),
-                                                Option("Nah")
-                                            ),
+                            notificationConfig = SurveyNotificationConfig(
+                                title = "Survey Test",
+                                description = "This is a survey test",
+                                icon = R.drawable.ic_launcher_foreground
+                            ),
+                            TextQuestion(
+                                id = 1,
+                                question = "Your name?",
+                                isMandatory = true,
+                            ),
+                            NumberQuestion(
+                                id = 2,
+                                question = "Your age?",
+                                isMandatory = false,
+                            ),
+                            RadioQuestion(
+                                id = 3,
+                                question = "How are you?",
+                                isMandatory = true,
+                                option = listOf(
+                                    Option("Good"),
+                                    Option("Bad"),
+                                    Option("Okay"),
+                                    Option("Other: ", allowFreeResponse = true)
+                                )
+                            ),
+                            CheckboxQuestion(
+                                id = 4,
+                                question = "Choose all even number",
+                                isMandatory = false,
+                                option = listOf(
+                                    Option("1"),
+                                    Option("2"),
+                                    Option("4"),
+                                    Option("5")
+                                ),
+                                questionTrigger = listOf(
+                                    QuestionTrigger(
+                                        predicate = Predicate.Equal(setOf(1, 2)),
+                                        children = listOf(
+                                            RadioQuestion(
+                                                id = 5,
+                                                question = "Is P = NP?",
+                                                isMandatory = true,
+                                                option = listOf(
+                                                    Option("Hell yeah"),
+                                                    Option("Nah")
+                                                ),
+                                            )
                                         )
                                     )
                                 )
                             )
+                        ),
+                        "fixedTime" to Survey(
+                            scheduleMethod = SurveyScheduleMethod.Fixed(
+                                timeOfDay = listOf(TimeUnit.HOURS.toMillis(15)),
+                            ),
+                            notificationConfig = SurveyNotificationConfig(
+                                title = "Survey Test",
+                                description = "This is a fixed time survey at 3PM",
+                                icon = R.drawable.ic_launcher_foreground
+                            ),
+                            TextQuestion(
+                                id = 6,
+                                question = "Testing",
+                                isMandatory = true,
+                            ),
                         )
                     ),
-                    "fixedTime" to Survey(
-                        scheduleMethod = SurveyScheduleMethod.Fixed(
-                            timeOfDay = listOf(TimeUnit.HOURS.toMillis(15)),
-                        ),
-                        notificationConfig = SurveyNotificationConfig(
-                            title = "Survey Test",
-                            description = "This is a fixed time survey at 3PM",
-                            icon = R.drawable.ic_launcher_foreground
-                        ),
-                        TextQuestion(
-                            id = 6,
-                            question = "Testing",
-                            isMandatory = true,
-                        ),
-                    )
-                ),
-            )),
+                )
+            ),
             stateStorage = CouchbaseSensorStateStorage(
                 couchbase = get(),
                 collectionName = SurveySensor::class.simpleName ?: ""

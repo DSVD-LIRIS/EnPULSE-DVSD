@@ -33,12 +33,12 @@ android {
             ?: localProperties.getProperty("SUPABASE_URL")
             ?: System.getenv("SUPABASE_URL")
             ?: "MISSING_SUPABASE_URL"
-        
+
         val supabaseAnonKey: String = findProperty("SUPABASE_ANON_KEY")?.toString()
             ?: localProperties.getProperty("SUPABASE_ANON_KEY")
             ?: System.getenv("SUPABASE_ANON_KEY")
             ?: "MISSING_SUPABASE_ANON_KEY"
-        
+
         val supabaseServiceRoleKey: String = findProperty("SUPABASE_SERVICE_ROLE_KEY")?.toString()
             ?: localProperties.getProperty("SUPABASE_SERVICE_ROLE_KEY")
             ?: System.getenv("SUPABASE_SERVICE_ROLE_KEY")
