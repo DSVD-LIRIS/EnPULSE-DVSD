@@ -163,7 +163,7 @@ class SurveyBuilderTest {
         assertEquals(1, survey.flatQuestions.size)
         val q = survey.flatQuestions[0] as RadioQuestion
         assertEquals(3, q.option.size)
-        assertEquals("Option A", q.option[0].display)
+        assertEquals("Option A", q.option[0].displayText)
         assertFalse(q.option[0].allowFreeResponse)
         assertTrue(q.option[2].allowFreeResponse)
     }
@@ -174,7 +174,7 @@ class SurveyBuilderTest {
         assertEquals(1, survey.flatQuestions.size)
         val q = survey.flatQuestions[0] as CheckboxQuestion
         assertEquals(2, q.option.size)
-        assertEquals("Alpha", q.option[0].display)
+        assertEquals("Alpha", q.option[0].displayText)
     }
 
     @Test
