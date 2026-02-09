@@ -2,9 +2,15 @@ package kaist.iclab.mobiletracker
 
 /**
  * Centralized constants for the mobile tracker app.
- * All app-level constants used across the app should be defined here.
  *
- * For environment-specific configuration (API keys, URLs, etc.),
+ * This file contains internal app logic constants such as:
+ * - Database table names and batch sizes
+ * - Shared Preferences keys
+ * - Synchronization intervals and network types
+ * - Notification channel IDs and names
+ * - Internal sensor identifiers used for logic
+ *
+ * For environment-specific values like Supabase URLs and API keys,
  * see [kaist.iclab.mobiletracker.config.AppConfig].
  */
 object Constants {

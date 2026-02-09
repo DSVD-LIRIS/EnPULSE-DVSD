@@ -7,17 +7,17 @@ plugins {
     alias(libs.plugins.googleServices)
 
     id("com.google.devtools.ksp")
-    kotlin("plugin.serialization") version "2.2.10"
+    kotlin("plugin.serialization")
 }
 
 android {
     namespace = "kaist.iclab.mobiletracker"
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "kaist.iclab.trackerSystem"
-        minSdk = 30
-        targetSdk = 36
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0.0"
 

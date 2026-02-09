@@ -4,12 +4,15 @@ import kaist.iclab.mobiletracker.BuildConfig
 
 /**
  * Environment-specific configuration for the mobile tracker app.
- * Contains API keys, URLs, and environment-dependent values.
  *
- * For app-level constants (database settings, intervals, identifiers),
+ * This file contains values that vary by environment or external integration:
+ * - Supabase credentials (URL, keys) injected via BuildConfig
+ * - Supabase remote table names
+ * - BLE communication keys
+ * - Logging tags for debugging
+ *
+ * For internal app constants (DB settings, Prefs keys, Intervals),
  * see [kaist.iclab.mobiletracker.Constants].
- *
- * Credentials are injected via BuildConfig from local.properties or environment variables.
  */
 object AppConfig {
     /**
