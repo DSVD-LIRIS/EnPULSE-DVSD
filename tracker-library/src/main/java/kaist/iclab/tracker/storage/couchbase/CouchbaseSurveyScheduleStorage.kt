@@ -31,8 +31,9 @@ class CouchbaseSurveyScheduleStorage(
             .where(
                 Expression.property("actualTriggerTime").isNotValued().and(
                     Expression.property("triggerTime").greaterThan(Expression.value(now - TimeUnit.MINUTES.toMillis(5)))
-                ). apply {
+                ).run {
                     if(surveyId != null) and(Expression.property("surveyId").equalTo(Expression.value(surveyId)))
+                    else this
                 }
             )
             .orderBy(Ordering.property("triggerTime").ascending())
@@ -51,23 +52,23 @@ class CouchbaseSurveyScheduleStorage(
                 )
             }
 
-            if(result != null) Log.d(TAG, "Next Schedule: surveyId=${result.surveyId}, uuid=${result.scheduleId!!}, triggerTime=${result.triggerTime?.formatLocalDateTime()}")
-            else Log.d(TAG, "No next schedule today")
-
+            if(result != null) Log.d(TAG, "Next Schedule for $surveyId: surveyId=${result.surveyId}, uuid=${result.scheduleId!!}, triggerTime=${result.triggerTime?.formatLocalDateTime()}")
             return result
 
         } catch(e: Exception) {
             if(e is NoSuchElementException) Log.d(TAG, "No next schedule today")
             else e.printStackTrace()
-            return null
         }
+
+        return null
     }
 
     override fun getLastSchedule(surveyId: String?): SurveySchedule? {
         val query = QueryBuilder.select(SelectResult.expression(Meta.id).`as`("uuid"), SelectResult.all())
             .from(DataSource.collection(collection))
-            .apply {
+            .run {
                 if(surveyId !== null) where(Expression.property("surveyId").equalTo(Expression.value(surveyId)))
+                else where(Expression.value(true))
             }
             .orderBy(Ordering.property("triggerTime").descending())
             .limit(Expression.intValue(1))
