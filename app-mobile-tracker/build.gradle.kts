@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
@@ -18,6 +20,33 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
+
+        // Load local.properties for local development
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { localProperties.load(it) }
+        }
+
+        // Supabase credentials: read from local.properties or environment (for CI)
+        val supabaseUrl: String = findProperty("SUPABASE_URL")?.toString()
+            ?: localProperties.getProperty("SUPABASE_URL")
+            ?: System.getenv("SUPABASE_URL")
+            ?: "MISSING_SUPABASE_URL"
+        
+        val supabaseAnonKey: String = findProperty("SUPABASE_ANON_KEY")?.toString()
+            ?: localProperties.getProperty("SUPABASE_ANON_KEY")
+            ?: System.getenv("SUPABASE_ANON_KEY")
+            ?: "MISSING_SUPABASE_ANON_KEY"
+        
+        val supabaseServiceRoleKey: String = findProperty("SUPABASE_SERVICE_ROLE_KEY")?.toString()
+            ?: localProperties.getProperty("SUPABASE_SERVICE_ROLE_KEY")
+            ?: System.getenv("SUPABASE_SERVICE_ROLE_KEY")
+            ?: "MISSING_SUPABASE_SERVICE_ROLE_KEY"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
+        buildConfigField("String", "SUPABASE_SERVICE_ROLE_KEY", "\"$supabaseServiceRoleKey\"")
     }
 
     compileOptions {
@@ -59,7 +88,6 @@ android {
             )
         }
     }
-    buildToolsVersion = "36.1.0"
 }
 
 dependencies {
