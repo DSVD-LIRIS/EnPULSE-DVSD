@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.kotlinCompose)
 
-    kotlin("plugin.serialization")
+    alias(libs.plugins.kotlinSerialization)
 }
 
 android {

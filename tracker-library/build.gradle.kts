@@ -3,7 +3,7 @@ plugins {
     /* Parceler (for Samsung Health Data SDK) */
     id("kotlin-parcelize")
     alias(libs.plugins.kotlinCompose)
-    kotlin("plugin.serialization")
+    alias(libs.plugins.kotlinSerialization)
 }
 
 android {

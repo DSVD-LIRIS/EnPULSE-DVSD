@@ -88,7 +88,7 @@ dependencies {
     implementation(libs.koin.androidx.compose)
 
     // icons
-    implementation(libs.material.icons.extended)
+    implementation(libs.compose.material.icons.extended)
 
     // tracker library
     implementation(project(":tracker-library"))

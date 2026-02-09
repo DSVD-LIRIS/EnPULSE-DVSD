@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.googleServices)
 
     id("com.google.devtools.ksp")
-    kotlin("plugin.serialization")
+    alias(libs.plugins.kotlinSerialization)
 }
 
 android {

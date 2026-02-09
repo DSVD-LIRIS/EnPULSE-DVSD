@@ -95,6 +95,7 @@ object SurveyBuilder {
         } ?: emptyList()
 
         return try {
+            @Suppress("UNCHECKED_CAST")
             when (config.type.uppercase()) {
                 "TEXT" -> TextQuestion(
                     id = config.id,
