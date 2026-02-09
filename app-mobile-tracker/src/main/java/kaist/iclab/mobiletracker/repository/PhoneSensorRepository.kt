@@ -16,6 +16,14 @@ interface PhoneSensorRepository {
     suspend fun insertSensorData(sensorId: String, entity: SensorEntity): Result<Unit>
 
     /**
+     * Insert sensor data in batch
+     * @param sensorId The ID of the sensor
+     * @param entities List of sensor entities to insert
+     * @return Result indicating success or failure
+     */
+    suspend fun insertSensorDataBatch(sensorId: String, entities: List<SensorEntity>): Result<Unit>
+
+    /**
      * Delete all data for a specific sensor
      * @param sensorId The ID of the sensor
      * @return Result indicating success or failure with error details

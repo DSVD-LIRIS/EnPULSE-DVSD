@@ -15,6 +15,7 @@
     <string name="home_status_stopped">Stopped</string>
     <string name="home_daily_highlights">Today\'s Data Snapshot</string>
     <string name="home_logs_unit">%1$d logs</string>
+    <string name="home_empty_state_message">Start collecting to see data</string>
     <string name="home_watch_status_label">Galaxy Watch Device</string>
     <string name="home_watch_connected">Connected</string>
     <string name="home_watch_disconnected">Disconnected</string>
@@ -198,7 +199,6 @@
     <string name="sync_interval_option_15_min">Every 15 minutes</string>
     <string name="sync_interval_option_30_min">Every 30 minutes</string>
     <string name="sync_interval_option_60_min">Every 1 hour</string>
-    <string name="sync_interval_option_120_min">Every 2 hours</string>
 
     <string name="sync_network_title">Sync Network</string>
     <string name="sync_network_description">Automatically upload data only when the selected network type is available.</string>
@@ -213,6 +213,9 @@
     <string name="sync_clear_data_message">All local sensor data will be deleted. Data already uploaded to the server will not be affected.\n\nThis action cannot be undone.</string>
     <string name="sync_clear_data_confirm">Clear</string>
     <string name="sync_clear_data_cancel">Cancel</string>
+    <string name="sync_status_uploading">Uploading…</string>
+    <string name="sync_status_exporting">Exporting…</string>
+    <string name="sync_status_deleting">Deleting…</string>
 
     <!-- Sensor Sync Status -->
     <string name="sensor_upload_data">Upload Data</string>
@@ -248,6 +251,7 @@
 
     <!-- Toast Messages -->
     <string name="toast_experiment_group_selected">Experiment group selected successfully</string>
+    <string name="toast_experiment_group_selected_partial_error">Experiment group selected, but surveys failed to sync</string>
     <string name="toast_data_deleted">Data deleted successfully</string>
     <string name="toast_sensor_data_deleted">Sensor data deleted successfully</string>
     <string name="toast_sensor_data_uploaded">Data uploaded successfully</string>
@@ -270,6 +274,7 @@
     <string name="onboarding_ok">OK</string>
     <string name="onboarding_loading">Loading campaigns…</string>
     <string name="onboarding_no_campaigns">No campaigns available</string>
+    <string name="onboarding_survey_fetch_error">Campaign saved, but failed to load surveys. You can retry from Settings later.</string>
     <string name="onboarding_start">Start</string>
     <string name="onboarding_help_text">Please consult the researcher to choose which experiment group is appropriate for you</string>
 
@@ -277,5 +282,6 @@
     <string name="pagination_page_format">Page %1$d / %2$d</string>
     <string name="pagination_previous">Previous Page</string>
     <string name="pagination_next">Next Page</string>
-    <string name="sensor_watch_badge_desc">Watch sensor</string>
+    <string name="phone_sensor_badge_description">Phone sensor</string>
+    <string name="watch_sensor_badge_description">Watch sensor</string>
 </resources>

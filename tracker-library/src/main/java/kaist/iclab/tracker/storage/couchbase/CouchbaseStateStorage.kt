@@ -7,7 +7,6 @@ import kaist.iclab.tracker.storage.core.StateStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-
 open class CouchbaseStateStorage<T>(
     couchbase: CouchbaseDB,
     private val defaultVal: T,
@@ -25,12 +24,6 @@ open class CouchbaseStateStorage<T>(
     init {
         _stateFlow.value = get()
         Log.d("CouchbaseStateStorage", "initialize")
-//        CoroutineScope(Dispatchers.IO).launch{
-//            collection.documentChangeFlow(collectionName).collect { documentChange ->
-//                Log.d("CouchbaseStateStorage", "init: ${get()}")
-//            }
-//        }
-//        Log.d("CouchbaseStateStorage", "init: ${_stateFlow.value}")
     }
 
     override fun set(value: T) {
@@ -56,7 +49,23 @@ open class CouchbaseStateStorage<T>(
             set(defaultVal)
             return defaultVal
         }
-        val json = document.toJSON()
-        return gson.fromJson(json, clazz)
+        
+        return try {
+            val json = document.toJSON()
+            gson.fromJson(json, clazz) ?: defaultVal
+        } catch (e: Exception) {
+            // Handle data migration or corrupted data gracefully
+            Log.w(TAG, "Error deserializing '$collectionName': ${e.message}. Clearing corrupted data.")
+            try {
+                collection.delete(document)
+            } catch (deleteError: Exception) {
+                Log.e(TAG, "Error deleting corrupted document: ${deleteError.message}")
+            }
+            defaultVal
+        }
+    }
+    
+    companion object {
+        private const val TAG = "CouchbaseStateStorage"
     }
 }

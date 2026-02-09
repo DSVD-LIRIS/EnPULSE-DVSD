@@ -3,6 +3,7 @@ package kaist.iclab.mobiletracker.repository
 import androidx.room.withTransaction
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.Wearable
+import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.data.DeviceType
 import kaist.iclab.mobiletracker.db.TrackerRoomDB
 import kaist.iclab.mobiletracker.db.dao.common.BaseDao
@@ -35,16 +36,6 @@ class WatchSensorRepositoryImpl(
     private val supabaseHelper: SupabaseHelper
 ) : WatchSensorRepository {
 
-    companion object {
-        // Watch sensor IDs (matching handler sensorId values)
-        private const val HEART_RATE_SENSOR_ID = "WatchHeartRate"
-        private const val ACCELEROMETER_SENSOR_ID = "WatchAccelerometer"
-        private const val EDA_SENSOR_ID = "WatchEDA"
-        private const val PPG_SENSOR_ID = "WatchPPG"
-        private const val SKIN_TEMPERATURE_SENSOR_ID = "WatchSkinTemperature"
-        private const val LOCATION_SENSOR_ID = "WatchLocation"
-    }
-
     override suspend fun insertHeartRateData(entities: List<WatchHeartRateEntity>): Result<Unit> {
         return runCatchingSuspend {
             if (entities.isNotEmpty()) {
@@ -54,7 +45,7 @@ class WatchSensorRepositoryImpl(
                 db.withTransaction {
                     @Suppress("UNCHECKED_CAST")
                     val dao =
-                        watchSensorDaos[HEART_RATE_SENSOR_ID] as? BaseDao<WatchHeartRateEntity, *>
+                        watchSensorDaos[Constants.SensorId.HEART_RATE] as? BaseDao<WatchHeartRateEntity, *>
                     if (dao != null) {
                         dao.insertBatch(entitiesWithUuid, userUuid)
                     } else {
@@ -74,7 +65,7 @@ class WatchSensorRepositoryImpl(
                 db.withTransaction {
                     @Suppress("UNCHECKED_CAST")
                     val dao =
-                        watchSensorDaos[ACCELEROMETER_SENSOR_ID] as? BaseDao<WatchAccelerometerEntity, *>
+                        watchSensorDaos[Constants.SensorId.ACCELEROMETER] as? BaseDao<WatchAccelerometerEntity, *>
                     if (dao != null) {
                         dao.insertBatch(entitiesWithUuid, userUuid)
                     } else {
@@ -94,7 +85,7 @@ class WatchSensorRepositoryImpl(
                 db.withTransaction {
                     @Suppress("UNCHECKED_CAST")
                     val dao =
-                        watchSensorDaos[EDA_SENSOR_ID] as? BaseDao<WatchEDAEntity, *>
+                        watchSensorDaos[Constants.SensorId.EDA] as? BaseDao<WatchEDAEntity, *>
                     if (dao != null) {
                         dao.insertBatch(entitiesWithUuid, userUuid)
                     } else {
@@ -114,7 +105,7 @@ class WatchSensorRepositoryImpl(
                 db.withTransaction {
                     @Suppress("UNCHECKED_CAST")
                     val dao =
-                        watchSensorDaos[PPG_SENSOR_ID] as? BaseDao<WatchPPGEntity, *>
+                        watchSensorDaos[Constants.SensorId.PPG] as? BaseDao<WatchPPGEntity, *>
                     if (dao != null) {
                         dao.insertBatch(entitiesWithUuid, userUuid)
                     } else {
@@ -134,7 +125,7 @@ class WatchSensorRepositoryImpl(
                 db.withTransaction {
                     @Suppress("UNCHECKED_CAST")
                     val dao =
-                        watchSensorDaos[SKIN_TEMPERATURE_SENSOR_ID] as? BaseDao<WatchSkinTemperatureEntity, *>
+                        watchSensorDaos[Constants.SensorId.SKIN_TEMPERATURE] as? BaseDao<WatchSkinTemperatureEntity, *>
                     if (dao != null) {
                         dao.insertBatch(entitiesWithUuid, userUuid)
                     } else {
@@ -153,7 +144,7 @@ class WatchSensorRepositoryImpl(
                 val entitiesWithUuid = entities.map { it.copy(uuid = userUuid) }
                 db.withTransaction {
                     val dao =
-                        watchSensorDaos[LOCATION_SENSOR_ID] as? LocationDao
+                        watchSensorDaos[Constants.SensorId.LOCATION] as? LocationDao
                     if (dao != null) {
                         dao.insertLocationEntities(entitiesWithUuid)
                     } else {
@@ -167,7 +158,7 @@ class WatchSensorRepositoryImpl(
     override suspend fun getLatestTimestamp(sensorId: String): Long? {
         return runCatchingSuspend {
             // Special handling for Location sensor to only count watch data
-            if (sensorId == LOCATION_SENSOR_ID) {
+            if (sensorId == Constants.SensorId.LOCATION) {
                 val locationDao = watchSensorDaos[sensorId] as? LocationDao
                 locationDao?.getLatestTimestampByDeviceType(DeviceType.WATCH.value)
             } else {
@@ -181,7 +172,7 @@ class WatchSensorRepositoryImpl(
     override suspend fun getRecordCount(sensorId: String): Int {
         return runCatchingSuspend {
             // Special handling for Location sensor to only count watch data
-            if (sensorId == LOCATION_SENSOR_ID) {
+            if (sensorId == Constants.SensorId.LOCATION) {
                 val locationDao = watchSensorDaos[sensorId] as? LocationDao
                 locationDao?.getRecordCountByDeviceType(DeviceType.WATCH.value) ?: 0
             } else {

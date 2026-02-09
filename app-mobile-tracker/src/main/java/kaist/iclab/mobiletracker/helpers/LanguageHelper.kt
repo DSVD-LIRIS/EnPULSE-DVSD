@@ -3,6 +3,8 @@ package kaist.iclab.mobiletracker.helpers
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import androidx.core.content.edit
+import kaist.iclab.mobiletracker.Constants
 import java.util.Locale
 
 /**
@@ -11,25 +13,19 @@ import java.util.Locale
  */
 class LanguageHelper(private val context: Context) {
 
-    companion object {
-        private const val PREFS_NAME = "language_preferences"
-        private const val KEY_LANGUAGE = "selected_language"
-        private const val LANGUAGE_ENGLISH = "en"
-        private const val LANGUAGE_KOREAN = "ko"
-    }
 
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences(
-        PREFS_NAME,
+        Constants.Prefs.PREFS_NAME,
         Context.MODE_PRIVATE
     )
 
     /**
      * Save selected language preference
      */
-    fun saveLanguage(language: String) {
-        sharedPreferences.edit()
-            .putString(KEY_LANGUAGE, language)
-            .apply()
+    fun saveLanguage(languageCode: String) {
+        sharedPreferences.edit {
+            putString(Constants.Prefs.KEY_LANGUAGE, languageCode)
+        }
     }
 
     /**
@@ -37,10 +33,10 @@ class LanguageHelper(private val context: Context) {
      * @return Language code (en or ko), defaults to device language or "en"
      */
     fun getLanguage(): String {
-        return sharedPreferences.getString(KEY_LANGUAGE, null) ?: run {
+        return sharedPreferences.getString(Constants.Prefs.KEY_LANGUAGE, null) ?: run {
             // If no saved preference, use device language if it's Korean, otherwise English
             val deviceLang = Locale.getDefault().language
-            if (deviceLang == "ko") LANGUAGE_KOREAN else LANGUAGE_ENGLISH
+            if (deviceLang == "ko") Constants.Language.KOREAN else Constants.Language.ENGLISH
         }
     }
 
@@ -85,8 +81,8 @@ class LanguageHelper(private val context: Context) {
      */
     fun getLanguageDisplayName(language: String): String {
         return when (language) {
-            LANGUAGE_KOREAN -> "한국어"
-            LANGUAGE_ENGLISH -> "English"
+            Constants.Language.KOREAN -> "한국어"
+            Constants.Language.ENGLISH -> "English"
             else -> "English"
         }
     }
@@ -95,7 +91,7 @@ class LanguageHelper(private val context: Context) {
      * Check if current language is Korean
      */
     fun isKorean(): Boolean {
-        return getLanguage() == LANGUAGE_KOREAN
+        return getLanguage() == Constants.Language.KOREAN
     }
 
     /**
@@ -103,10 +99,10 @@ class LanguageHelper(private val context: Context) {
      */
     fun toggleLanguage(): String {
         val currentLang = getLanguage()
-        val newLang = if (currentLang == LANGUAGE_KOREAN) {
-            LANGUAGE_ENGLISH
+        val newLang = if (currentLang == Constants.Language.KOREAN) {
+            Constants.Language.ENGLISH
         } else {
-            LANGUAGE_KOREAN
+            Constants.Language.KOREAN
         }
         saveLanguage(newLang)
         return newLang

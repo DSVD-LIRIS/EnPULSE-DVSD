@@ -298,6 +298,33 @@ private fun SummaryCard(
                 value = lastSuccessfulUpload ?: "--"
             )
 
+            // Progress Indicators with labels
+            if (isUploading || isDeleting || isExporting) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = AppColors.PrimaryColor,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = when {
+                            isUploading -> stringResource(R.string.sync_status_uploading)
+                            isDeleting -> stringResource(R.string.sync_status_deleting)
+                            true -> stringResource(R.string.sync_status_exporting)
+                            else -> ""
+                        },
+                        fontSize = 12.sp,
+                        color = AppColors.TextSecondary
+                    )
+                }
+            }
+
             if (totalRecords > 0) {
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -308,18 +335,10 @@ private fun SummaryCard(
                         .fillMaxWidth()
                         .height(36.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppColors.SecondaryColor),
-                    enabled = !isUploading && !isDeleting && !isExporting,
+                    enabled = !isExporting && !isDeleting,
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    if (isExporting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            color = AppColors.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text(text = stringResource(R.string.sensor_export_csv), fontSize = 12.sp)
-                    }
+                    Text(text = stringResource(R.string.sensor_export_csv), fontSize = 12.sp)
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -335,7 +354,7 @@ private fun SummaryCard(
                             .weight(1f)
                             .height(36.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryColor),
-                        enabled = !isUploading && !isDeleting && !isExporting,
+                        enabled = !isUploading && !isDeleting,
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         if (isUploading) {
@@ -452,7 +471,7 @@ private fun SensorListItem(
                         Spacer(modifier = Modifier.width(Styles.BADGE_SPACING))
                         Icon(
                             imageVector = Icons.Default.Smartphone,
-                            contentDescription = "Phone sensor",
+                            contentDescription = stringResource(R.string.phone_sensor_badge_description), // Added label
                             tint = AppColors.TextSecondary,
                             modifier = Modifier.size(Styles.BADGE_SIZE)
                         )
@@ -461,7 +480,7 @@ private fun SensorListItem(
                         Spacer(modifier = Modifier.width(Styles.BADGE_SPACING))
                         Icon(
                             imageVector = Icons.Default.Watch,
-                            contentDescription = "Watch sensor",
+                            contentDescription = stringResource(R.string.watch_sensor_badge_description), // Added label
                             tint = AppColors.TextSecondary,
                             modifier = Modifier.size(Styles.BADGE_SIZE)
                         )

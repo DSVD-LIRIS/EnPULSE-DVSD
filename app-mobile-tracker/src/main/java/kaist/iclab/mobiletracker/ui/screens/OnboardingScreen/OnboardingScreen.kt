@@ -25,23 +25,21 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.helpers.ImageAsset
 import kaist.iclab.mobiletracker.ui.theme.AppColors
+import kaist.iclab.mobiletracker.utils.AppToast
 import kaist.iclab.mobiletracker.viewmodels.onboarding.OnboardingViewModel
 import org.koin.androidx.compose.koinViewModel
 
@@ -64,6 +62,18 @@ fun OnboardingScreen(
     // Load campaigns on first composition
     LaunchedEffect(Unit) {
         viewModel.loadCampaigns()
+    }
+
+    // Show toast if there's an error (like survey fetch failure)
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { error ->
+            val message = if (error == "onboarding_survey_fetch_error") {
+                context.getString(R.string.onboarding_survey_fetch_error)
+            } else {
+                error
+            }
+            AppToast.show(context, message)
+        }
     }
 
     Column(
@@ -135,15 +145,16 @@ fun OnboardingScreen(
                 } else if (uiState.campaigns.isEmpty()) {
                     Box(modifier = Modifier.padding(Styles.SPACING_L)) {
                         Text(
-                            text = context.getString(R.string.onboarding_no_campaigns),
+                            text = uiState.error
+                                ?: context.getString(R.string.onboarding_no_campaigns),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
-                            color = AppColors.TextSecondary
+                            color = if (uiState.error != null) AppColors.ErrorColor else AppColors.TextSecondary
                         )
                     }
                 } else {
                     LazyColumn(
-                        modifier = Modifier.heightIn(min = Styles.LIST_MIN_HEIGHT, max = Styles.LIST_MAX_HEIGHT)
+                        modifier = Modifier.heightIn(max = Styles.LIST_MAX_HEIGHT)
                     ) {
                         itemsIndexed(uiState.campaigns) { index, campaign ->
                             CampaignListItem(
@@ -239,7 +250,10 @@ fun CampaignListItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onClick() }
-                .padding(horizontal = Styles.ITEM_HORIZONTAL_PADDING, vertical = Styles.ITEM_VERTICAL_PADDING),
+                .padding(
+                    horizontal = Styles.ITEM_HORIZONTAL_PADDING,
+                    vertical = Styles.ITEM_VERTICAL_PADDING
+                ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(

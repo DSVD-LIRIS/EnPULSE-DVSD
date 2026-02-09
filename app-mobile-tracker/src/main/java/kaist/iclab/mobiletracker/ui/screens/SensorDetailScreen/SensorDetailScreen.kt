@@ -302,7 +302,7 @@ private fun SensorDetailHeader(
             Spacer(modifier = Modifier.width(Dimens.SpacingSmall))
             Icon(
                 imageVector = Icons.Default.Smartphone,
-                contentDescription = "Phone sensor",
+                contentDescription = stringResource(R.string.phone_sensor_badge_description),
                 tint = AppColors.TextSecondary,
                 modifier = Modifier.size(Styles.WATCH_BADGE_SIZE)
             )
@@ -311,7 +311,7 @@ private fun SensorDetailHeader(
             Spacer(modifier = Modifier.width(Dimens.SpacingSmall))
             Icon(
                 imageVector = Icons.Default.Watch,
-                contentDescription = stringResource(R.string.sensor_watch_badge_desc),
+                contentDescription = stringResource(R.string.watch_sensor_badge_description),
                 tint = AppColors.TextSecondary,
                 modifier = Modifier.size(Styles.WATCH_BADGE_SIZE)
             )

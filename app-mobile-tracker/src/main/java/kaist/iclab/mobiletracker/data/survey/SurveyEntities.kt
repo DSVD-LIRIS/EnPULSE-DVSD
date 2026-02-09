@@ -1,0 +1,51 @@
+package kaist.iclab.mobiletracker.data.survey
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+
+/**
+ * Supabase entity for the 'survey' table
+ */
+@Serializable
+data class SurveyEntity(
+    val id: Int,
+    @SerialName("campaign_id") val campaignId: Int,
+    @SerialName("schedule_method") val scheduleMethod: JsonObject? = null,
+    val title: String,
+    val description: String? = null
+)
+
+/**
+ * Supabase entity for the 'survey_question' table
+ */
+@Serializable
+data class SurveyQuestionEntity(
+    val id: Int,
+    @SerialName("survey_id") val surveyId: Int,
+    val question: String,
+    @SerialName("is_mandatory") val isMandatory: Boolean,
+    @SerialName("answer_type") val answerType: String,
+    @SerialName("triggered_by") val triggeredBy: Int? = null
+)
+
+/**
+ * Supabase entity for the 'survey_question_option' table
+ */
+@Serializable
+data class SurveyQuestionOptionEntity(
+    val id: Int,
+    @SerialName("question_id") val questionId: Int,
+    val display: String,
+    @SerialName("allow_free_response") val allowFreeResponse: Boolean
+)
+
+/**
+ * Supabase entity for the 'survey_question_trigger' table
+ */
+@Serializable
+data class SurveyQuestionTriggerEntity(
+    val id: Int,
+    @SerialName("question_id") val questionId: Int,
+    val expression: JsonObject
+)

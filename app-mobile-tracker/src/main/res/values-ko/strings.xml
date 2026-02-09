@@ -15,6 +15,7 @@
     <string name="home_status_stopped">중지됨</string>
     <string name="home_daily_highlights">오늘의 데이터 현황</string>
     <string name="home_logs_unit">%1$d개 로그</string>
+    <string name="home_empty_state_message">데이터 수집을 시작해주세요</string>
     <string name="home_watch_status_label">갤럭시 워치 기기</string>
     <string name="home_watch_connected">연결됨</string>
     <string name="home_watch_disconnected">연결 안 됨</string>
@@ -198,7 +199,6 @@
     <string name="sync_interval_option_15_min">15분마다</string>
     <string name="sync_interval_option_30_min">30분마다</string>
     <string name="sync_interval_option_60_min">1시간마다</string>
-    <string name="sync_interval_option_120_min">2시간마다</string>
 
     <string name="sync_network_title">동기화 네트워크</string>
     <string name="sync_network_description">선택한 네트워크 유형이 사용 가능할 때만 데이터를 자동으로 업로드합니다.</string>
@@ -213,6 +213,9 @@
     <string name="sync_clear_data_message">모든 로컬 센서 데이터가 삭제됩니다. 서버에 이미 업로드된 데이터는 영향을 받지 않습니다.\n\n이 작업은 취소할 수 없습니다.</string>
     <string name="sync_clear_data_confirm">삭제</string>
     <string name="sync_clear_data_cancel">취소</string>
+    <string name="sync_status_uploading">업로드 중…</string>
+    <string name="sync_status_exporting">내보내는 중…</string>
+    <string name="sync_status_deleting">삭제 중…</string>
 
     <!-- Sensor Sync Status -->
     <string name="sensor_upload_data">데이터 업로드</string>
@@ -248,6 +251,7 @@
 
     <!-- Toast Messages -->
     <string name="toast_experiment_group_selected">실험 그룹이 성공적으로 선택되었습니다</string>
+    <string name="toast_experiment_group_selected_partial_error">실험 그룹은 선택되었으나, 설문 동기화에 실패했습니다</string>
     <string name="toast_data_deleted">데이터가 성공적으로 삭제되었습니다</string>
     <string name="toast_sensor_data_deleted">센서 데이터가 성공적으로 삭제되었습니다</string>
     <string name="toast_sensor_data_uploaded">데이터가 성공적으로 업로드되었습니다</string>
@@ -270,6 +274,7 @@
     <string name="onboarding_ok">확인</string>
     <string name="onboarding_loading">캠페인 로딩 중…</string>
     <string name="onboarding_no_campaigns">사용 가능한 캠페인이 없습니다</string>
+    <string name="onboarding_survey_fetch_error">캠페인은 저장되었으나, 설문 로딩에 실패했습니다. 나중에 설정에서 다시 시도할 수 있습니다.</string>
     <string name="onboarding_start">시작</string>
     <string name="onboarding_help_text">본인에게 적합한 실험 그룹 선택은 연구자에게 문의해주세요.</string>
 
@@ -277,6 +282,7 @@
     <string name="pagination_page_format">%1$d / %2$d 페이지</string>
     <string name="pagination_previous">이전 페이지</string>
     <string name="pagination_next">다음 페이지</string>
-    <string name="sensor_watch_badge_desc">워치 센서</string>
+    <string name="phone_sensor_badge_description">폰 센서</string>
+    <string name="watch_sensor_badge_description">워치 센서</string>
 </resources>
 

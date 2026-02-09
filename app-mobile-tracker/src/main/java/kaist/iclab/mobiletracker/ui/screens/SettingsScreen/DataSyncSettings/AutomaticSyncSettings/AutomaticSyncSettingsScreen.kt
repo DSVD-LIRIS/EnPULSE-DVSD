@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.ui.components.Popup.DialogButtonConfig
@@ -249,13 +250,7 @@ private fun AutomaticSyncSettingCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    if (isEnabled) {
-                        Modifier.clickable { onClick() }
-                    } else {
-                        Modifier
-                    }
-                )
+                .clickable { onClick() }
                 .padding(
                     horizontal = Styles.CARD_HORIZONTAL_PADDING,
                     vertical = Styles.CARD_VERTICAL_PADDING
@@ -297,15 +292,13 @@ private fun AutomaticSyncSettingCard(
                         )
                 )
             }
-            if (isEnabled) {
-                Spacer(Modifier.width(Styles.SPACER_WIDTH))
-                Icon(
-                    imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = null,
-                    tint = AppColors.TextSecondary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            Spacer(Modifier.width(Styles.SPACER_WIDTH))
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = AppColors.TextSecondary,
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }
@@ -318,13 +311,12 @@ private fun IntervalSelectionDialog(
 ) {
     val context = LocalContext.current
     val options = listOf(
-        SyncTimestampService.AUTO_SYNC_INTERVAL_NONE,
-        SyncTimestampService.AUTO_SYNC_INTERVAL_30_SEC,
-        SyncTimestampService.AUTO_SYNC_INTERVAL_1_MIN,
-        SyncTimestampService.AUTO_SYNC_INTERVAL_15_MIN,
-        SyncTimestampService.AUTO_SYNC_INTERVAL_30_MIN,
-        SyncTimestampService.AUTO_SYNC_INTERVAL_60_MIN,
-        SyncTimestampService.AUTO_SYNC_INTERVAL_120_MIN
+        Constants.AutoSync.INTERVAL_NONE,
+        Constants.AutoSync.INTERVAL_30_SEC,
+        Constants.AutoSync.INTERVAL_1_MIN,
+        Constants.AutoSync.INTERVAL_15_MIN,
+        Constants.AutoSync.INTERVAL_30_MIN,
+        Constants.AutoSync.INTERVAL_60_MIN
     )
     var selected by remember { mutableStateOf(selectedIntervalMs) }
 
@@ -386,9 +378,9 @@ private fun NetworkSelectionDialog(
 ) {
     val context = LocalContext.current
     val options = listOf(
-        SyncTimestampService.AUTO_SYNC_NETWORK_WIFI_MOBILE,
-        SyncTimestampService.AUTO_SYNC_NETWORK_WIFI_ONLY,
-        SyncTimestampService.AUTO_SYNC_NETWORK_MOBILE_ONLY
+        Constants.AutoSync.NETWORK_WIFI_MOBILE,
+        Constants.AutoSync.NETWORK_WIFI_ONLY,
+        Constants.AutoSync.NETWORK_MOBILE_ONLY
     )
     var selected by remember { mutableStateOf(selectedMode) }
 
@@ -444,22 +436,21 @@ private fun NetworkSelectionDialog(
 
 private fun getIntervalLabel(context: android.content.Context, intervalMs: Long): String {
     return when (intervalMs) {
-        SyncTimestampService.AUTO_SYNC_INTERVAL_NONE -> context.getString(R.string.sync_interval_option_none)
-        SyncTimestampService.AUTO_SYNC_INTERVAL_15_MIN -> context.getString(R.string.sync_interval_option_15_min)
-        SyncTimestampService.AUTO_SYNC_INTERVAL_30_MIN -> context.getString(R.string.sync_interval_option_30_min)
-        SyncTimestampService.AUTO_SYNC_INTERVAL_60_MIN -> context.getString(R.string.sync_interval_option_60_min)
-        SyncTimestampService.AUTO_SYNC_INTERVAL_120_MIN -> context.getString(R.string.sync_interval_option_120_min)
-        SyncTimestampService.AUTO_SYNC_INTERVAL_30_SEC -> context.getString(R.string.sync_interval_option_30_sec)
-        SyncTimestampService.AUTO_SYNC_INTERVAL_1_MIN -> context.getString(R.string.sync_interval_option_1_min)
+        Constants.AutoSync.INTERVAL_NONE -> context.getString(R.string.sync_interval_option_none)
+        Constants.AutoSync.INTERVAL_15_MIN -> context.getString(R.string.sync_interval_option_15_min)
+        Constants.AutoSync.INTERVAL_30_MIN -> context.getString(R.string.sync_interval_option_30_min)
+        Constants.AutoSync.INTERVAL_60_MIN -> context.getString(R.string.sync_interval_option_60_min)
+        Constants.AutoSync.INTERVAL_30_SEC -> context.getString(R.string.sync_interval_option_30_sec)
+        Constants.AutoSync.INTERVAL_1_MIN -> context.getString(R.string.sync_interval_option_1_min)
         else -> context.getString(R.string.sync_interval_option_none)
     }
 }
 
 private fun getNetworkLabel(context: android.content.Context, mode: Int): String {
     return when (mode) {
-        SyncTimestampService.AUTO_SYNC_NETWORK_WIFI_MOBILE -> context.getString(R.string.sync_network_option_all)
-        SyncTimestampService.AUTO_SYNC_NETWORK_WIFI_ONLY -> context.getString(R.string.sync_network_option_wifi_only)
-        SyncTimestampService.AUTO_SYNC_NETWORK_MOBILE_ONLY -> context.getString(R.string.sync_network_option_mobile_only)
+        Constants.AutoSync.NETWORK_WIFI_MOBILE -> context.getString(R.string.sync_network_option_all)
+        Constants.AutoSync.NETWORK_WIFI_ONLY -> context.getString(R.string.sync_network_option_wifi_only)
+        Constants.AutoSync.NETWORK_MOBILE_ONLY -> context.getString(R.string.sync_network_option_mobile_only)
         else -> context.getString(R.string.sync_network_option_all)
     }
 }

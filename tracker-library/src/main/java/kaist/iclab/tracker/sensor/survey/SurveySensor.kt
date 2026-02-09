@@ -83,7 +83,17 @@ class SurveySensor(
 
     data class Config (
         val survey: Map<String, Survey>
-    ): SensorConfig
+    ): SensorConfig {
+        companion object {
+            fun fromJson(jsonString: String): Config {
+                val surveyConfigs = Json.decodeFromString<Map<String, kaist.iclab.tracker.sensor.survey.config.SurveyConfig>>(jsonString)
+                val surveys = surveyConfigs.mapValues { (_, config) ->
+                    kaist.iclab.tracker.sensor.survey.config.SurveyBuilder.build(config)
+                }
+                return Config(surveys)
+            }
+        }
+    }
 
     @Serializable
     data class Entity (
@@ -91,8 +101,6 @@ class SurveySensor(
         val actualTriggerTime: Long? = null,
         val surveyStartTime: Long? = null,
         val responseSubmissionTime: Long? = null,
-//        val title: String,
-//        val message: String,
         val response: JsonElement,
     ): SensorEntity()
 
@@ -134,8 +142,6 @@ class SurveySensor(
             val interval = ((actualMaxInterval - actualMinInterval) * skewedRandom + actualMinInterval).toLong()
             intervals.add(interval)
         }
-
-        Log.v(TAG, "Intervals: ${intervals.map{ it.formatLapsedTime() }}")
 
         val intervalSum = intervals.sum()
         val startMargin = (Math.random() * (lengthOfDay - intervalSum)).toLong()
@@ -253,7 +259,7 @@ class SurveySensor(
 
         val surveyActivityIntent = Intent(context, DefaultSurveyActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            putExtra("id", id)
+            putExtra("id", surveyId)
             putExtra("scheduleId", scheduleId)
         }
 
@@ -279,13 +285,10 @@ class SurveySensor(
     }
 
     private val surveyResultCallback = surveyResultCallback@{ intent: Intent? ->
-        Log.d(TAG, "surveyResultCallback invoked")
-
         if(intent == null) return@surveyResultCallback
-        val scheduleId = intent.getStringExtra("scheduleId")!!
-        val result = intent.getStringExtra("result")!!
+        val scheduleId = intent.getStringExtra("scheduleId") ?: return@surveyResultCallback
+        val result = intent.getStringExtra("result") ?: return@surveyResultCallback
         val responseTime = intent.getLongExtra("responseTime", -1)
-
 
         scheduleStorage.setResponseSubmissionTime(scheduleId, responseTime)
         val schedule = scheduleStorage.getScheduleByScheduleId(scheduleId)!!
