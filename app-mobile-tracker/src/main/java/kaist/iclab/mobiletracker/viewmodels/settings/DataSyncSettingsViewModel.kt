@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.repository.PhoneSensorRepository
-import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.WatchSensorRepository
 import kaist.iclab.mobiletracker.repository.onFailure
 import kaist.iclab.mobiletracker.repository.onSuccess
@@ -156,9 +155,11 @@ class DataSyncSettingsViewModel(
                     uploadedCount > 0 -> {
                         AppToast.show(context, R.string.toast_upload_all_summary, uploadedCount)
                     }
+
                     skippedCount == totalSensorsCount -> {
                         AppToast.show(context, R.string.toast_no_data_to_upload)
                     }
+
                     failedCount > 0 && uploadedCount == 0 -> {
                         AppToast.show(context, R.string.toast_sensor_data_upload_error)
                     }

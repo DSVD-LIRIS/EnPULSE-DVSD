@@ -84,13 +84,10 @@ android {
     buildTypes {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
-            // Skip login is now disabled - require real authentication
-            buildConfigField("Boolean", "SKIP_LOGIN", "false")
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            buildConfigField("Boolean", "SKIP_LOGIN", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

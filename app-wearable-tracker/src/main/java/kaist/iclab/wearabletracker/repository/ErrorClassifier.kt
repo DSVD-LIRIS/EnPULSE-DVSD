@@ -49,6 +49,7 @@ object ErrorClassifier {
                 when {
                     className.contains("SQLite", ignoreCase = true) ->
                         AppError.Database(msg, e)
+
                     else ->
                         AppError.Unknown(msg, e)
                 }

@@ -162,8 +162,8 @@ class DataRepositoryImpl(
         }
         // Return positive for success count, negative if failures occurred but no successes
         return if (successCount > 0) successCount
-               else if (failedCount > 0) -1
-               else 0
+        else if (failedCount > 0) -1
+        else 0
     }
 
     override suspend fun deleteAllAllData() {

@@ -5,6 +5,7 @@ import android.content.Context
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.android.gms.wearable.Wearable
 import kaist.iclab.tracker.listener.SamsungHealthSensorInitializer
 import kaist.iclab.tracker.sensor.controller.BackgroundController
@@ -12,12 +13,10 @@ import kaist.iclab.tracker.sensor.controller.ControllerState
 import kaist.iclab.wearabletracker.data.DeviceInfo
 import kaist.iclab.wearabletracker.data.PhoneCommunicationManager
 import kaist.iclab.wearabletracker.helpers.NotificationHelper
-import kaist.iclab.wearabletracker.repository.WatchSensorRepository
 import kaist.iclab.wearabletracker.repository.Result
+import kaist.iclab.wearabletracker.repository.WatchSensorRepository
 import kaist.iclab.wearabletracker.storage.SensorDataReceiver
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -142,14 +141,19 @@ class SettingsViewModel(
             val result = withContext(Dispatchers.IO) {
                 repository.deleteAllSensorData()
             }
-            
+
             when (result) {
                 is Result.Success -> {
                     NotificationHelper.showFlushSuccess(context)
                 }
+
                 is Result.Error -> {
                     // Logging is handled by runClassified inside the repository
-                    NotificationHelper.showFlushFailure(context, result.exception, "Failed to delete sensor data")
+                    NotificationHelper.showFlushFailure(
+                        context,
+                        result.exception,
+                        "Failed to delete sensor data"
+                    )
                 }
             }
         }

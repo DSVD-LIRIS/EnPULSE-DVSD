@@ -50,10 +50,13 @@ object ErrorClassifier {
                 when {
                     className.contains("Auth", ignoreCase = true) ->
                         AppError.Auth(msg, e)
+
                     className.contains("UnauthorizedRestException", ignoreCase = true) ->
                         AppError.Auth(msg, e)
+
                     className.contains("SQLite", ignoreCase = true) ->
                         AppError.Database(msg, e)
+
                     else ->
                         AppError.Unknown(msg, e)
                 }

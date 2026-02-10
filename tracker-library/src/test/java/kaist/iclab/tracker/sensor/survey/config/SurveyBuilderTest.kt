@@ -6,7 +6,9 @@ import kaist.iclab.tracker.sensor.survey.question.NumberQuestion
 import kaist.iclab.tracker.sensor.survey.question.RadioQuestion
 import kaist.iclab.tracker.sensor.survey.question.TextQuestion
 import kotlinx.serialization.json.JsonPrimitive
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.TimeUnit
 

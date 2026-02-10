@@ -4,7 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
 import kaist.iclab.mobiletracker.data.survey.SurveyConfig
-import kaist.iclab.mobiletracker.repository.*
+import kaist.iclab.mobiletracker.repository.CampaignRepository
+import kaist.iclab.mobiletracker.repository.Result
+import kaist.iclab.mobiletracker.repository.SurveyRepository
+import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.repository.onFailure
+import kaist.iclab.mobiletracker.repository.onSuccess
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

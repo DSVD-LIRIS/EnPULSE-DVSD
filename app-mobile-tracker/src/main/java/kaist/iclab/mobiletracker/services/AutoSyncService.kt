@@ -11,7 +11,6 @@ import androidx.lifecycle.lifecycleScope
 import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.helpers.LanguageHelper
-import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.onFailure
 import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.mobiletracker.services.upload.PhoneSensorUploadService

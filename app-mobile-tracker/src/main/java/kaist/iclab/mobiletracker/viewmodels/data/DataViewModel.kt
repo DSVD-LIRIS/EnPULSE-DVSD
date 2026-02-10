@@ -6,10 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.repository.DataRepository
-import kaist.iclab.mobiletracker.repository.DateFilter
 import kaist.iclab.mobiletracker.repository.SensorInfo
 import kaist.iclab.mobiletracker.utils.AppToast
-import kaist.iclab.mobiletracker.utils.CsvExportHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -159,7 +157,7 @@ class DataViewModel(
             _uiState.value = _uiState.value.copy(isExporting = true)
             try {
                 val zipFile = dataExportHelper.exportAllData(context)
-                
+
                 if (zipFile != null && zipFile.exists()) {
                     shareExportFile(zipFile)
                 } else {

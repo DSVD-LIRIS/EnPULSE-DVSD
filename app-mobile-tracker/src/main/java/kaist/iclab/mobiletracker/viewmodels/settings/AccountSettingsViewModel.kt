@@ -5,7 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
-import kaist.iclab.mobiletracker.repository.*
+import kaist.iclab.mobiletracker.repository.CampaignRepository
+import kaist.iclab.mobiletracker.repository.Result
+import kaist.iclab.mobiletracker.repository.SurveyRepository
+import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.repository.onFailure
+import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.mobiletracker.utils.AppToast
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -97,6 +102,7 @@ class AccountSettingsViewModel(
                     AppToast.show(context, R.string.toast_experiment_group_selected_partial_error)
                 }
             }
+
             is Result.Error -> {
                 // Error handling if needed, or just let error classifier log it
             }

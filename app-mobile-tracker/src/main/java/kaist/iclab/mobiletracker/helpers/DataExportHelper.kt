@@ -11,7 +11,6 @@ import java.io.FileOutputStream
 import java.io.FileWriter
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlin.reflect.full.memberProperties
 
 /**
  * Helper class to export all sensor data from the Room database to a ZIP file containing CSVs.
@@ -44,7 +43,7 @@ class DataExportHelper(
             for (handler in handlers) {
                 val sensorId = handler.sensorId
                 val csvFile = File(tempDir, "${sensorId}.csv")
-                
+
                 if (exportSensorToCsv(handler, csvFile)) {
                     csvFiles.add(csvFile)
                 }
@@ -58,7 +57,7 @@ class DataExportHelper(
             // Create ZIP file in the external files directory
             val exportDir = context.getExternalFilesDir("exports") ?: context.filesDir
             if (!exportDir.exists()) exportDir.mkdirs()
-            
+
             val zipFile = File(exportDir, "mobile_tracker_export_${System.currentTimeMillis()}.zip")
             createZip(csvFiles, zipFile)
 
@@ -73,7 +72,10 @@ class DataExportHelper(
         }
     }
 
-    private suspend fun exportSensorToCsv(handler: kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandler, file: File): Boolean {
+    private suspend fun exportSensorToCsv(
+        handler: kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandler,
+        file: File
+    ): Boolean {
         return try {
             val totalCount = handler.getRecordCount()
             if (totalCount == 0) return false

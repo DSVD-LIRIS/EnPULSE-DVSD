@@ -4,9 +4,9 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.util.Log
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.core.Sensor
@@ -15,14 +15,13 @@ import kaist.iclab.wearabletracker.Constants.DB.BATCH_SIZE
 import kaist.iclab.wearabletracker.Constants.DB.BUFFER_SIZE
 import kaist.iclab.wearabletracker.Constants.DB.FLUSH_INTERVAL_MS
 import kaist.iclab.wearabletracker.db.dao.BaseDao
+import kaist.iclab.wearabletracker.repository.ErrorClassifier.runClassified
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
@@ -115,8 +114,11 @@ class SensorDataReceiver(
                 try {
                     while (isActive) {
                         // Calculate remaining time until next scheduled flush
-                        val nextFlushDelay = maxOf(0L, FLUSH_INTERVAL_MS - (System.currentTimeMillis() - lastFlushTime))
-                        
+                        val nextFlushDelay = maxOf(
+                            0L,
+                            FLUSH_INTERVAL_MS - (System.currentTimeMillis() - lastFlushTime)
+                        )
+
                         // Wait for data OR for the flush interval to hit
                         val result = withTimeoutOrNull(nextFlushDelay) {
                             eventChannel.receive()
@@ -151,13 +153,14 @@ class SensorDataReceiver(
         private suspend fun flushBuffer(buffer: MutableMap<String, MutableList<SensorEntity>>) {
             buffer.forEach { (sensorId, entities) ->
                 if (entities.isNotEmpty()) {
-                    try {
-                        // Make a copy to insert and clear original list
-                        val batchToInsert = entities.toList()
-                        entities.clear()
+                    // Make a copy to insert and clear original list
+                    val batchToInsert = entities.toList()
+                    entities.clear()
+                    runClassified(
+                        "SensorDataReceiver",
+                        "flush batch for $sensorId"
+                    ) {
                         sensorDataStorages[sensorId]?.insert(batchToInsert)
-                    } catch (e: Exception) {
-                        Log.e("SensorDataReceiver", "Error flushing batch for sensor $sensorId: ${e.message}", e)
                     }
                 }
             }

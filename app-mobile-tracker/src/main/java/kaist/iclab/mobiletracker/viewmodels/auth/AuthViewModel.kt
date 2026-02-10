@@ -4,7 +4,9 @@ import android.app.Activity
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kaist.iclab.mobiletracker.repository.*
+import kaist.iclab.mobiletracker.repository.AuthRepository
+import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.repository.onFailure
 import kaist.iclab.tracker.auth.Authentication
 import kaist.iclab.tracker.auth.UserState
 import kotlinx.coroutines.flow.StateFlow

@@ -60,7 +60,10 @@ abstract class BaseSupabaseService<T : @Serializable Any>(
     ): Result<Unit> {
         if (dataList.isEmpty()) return Result.Success(Unit)
         return SupabaseLoadingInterceptor.withLoading {
-            ErrorClassifier.runClassified(sensorName, "upsert ${dataList.size} $sensorName entries") {
+            ErrorClassifier.runClassified(
+                sensorName,
+                "upsert ${dataList.size} $sensorName entries"
+            ) {
                 supabaseClient.from(tableName).upsert(dataList)
                 Unit
             }

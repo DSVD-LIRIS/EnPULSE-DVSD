@@ -133,6 +133,7 @@ inline fun <T, R> Result<T>.flatMap(transform: (T) -> Result<R>): Result<R> {
         } catch (e: Throwable) {
             Result.Error(e)
         }
+
         is Result.Error -> this
     }
 }

@@ -31,7 +31,8 @@ class LocationUploadHandler(
                 throw IllegalStateException("No new $sensorId data to upload")
             }
 
-            val supabaseDataList = entities.map { entity -> PhoneLocationMapper.map(entity, userUuid) }
+            val supabaseDataList =
+                entities.map { entity -> PhoneLocationMapper.map(entity, userUuid) }
             service.insertLocationSensorDataBatch(supabaseDataList)
                 .getOrElse { error -> throw error }
             entities.maxOf { entity -> entity.timestamp }

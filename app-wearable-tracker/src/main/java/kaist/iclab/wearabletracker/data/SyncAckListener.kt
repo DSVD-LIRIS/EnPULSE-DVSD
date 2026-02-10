@@ -5,13 +5,9 @@ import kaist.iclab.tracker.sync.ble.BLEDataChannel
 import kaist.iclab.wearabletracker.Constants
 import kaist.iclab.wearabletracker.db.dao.BaseDao
 import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import kaist.iclab.wearabletracker.repository.ErrorClassifier
-import kaist.iclab.wearabletracker.repository.Result
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 
 /**

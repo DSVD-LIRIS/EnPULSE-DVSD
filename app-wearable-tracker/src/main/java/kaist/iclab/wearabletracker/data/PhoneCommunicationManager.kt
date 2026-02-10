@@ -11,6 +11,8 @@ import kaist.iclab.wearabletracker.R
 import kaist.iclab.wearabletracker.db.dao.BaseDao
 import kaist.iclab.wearabletracker.helpers.NotificationHelper
 import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
+import kaist.iclab.wearabletracker.repository.ErrorClassifier
+import kaist.iclab.wearabletracker.repository.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -19,9 +21,6 @@ import kotlinx.coroutines.withContext
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kaist.iclab.wearabletracker.repository.ErrorClassifier
-import kaist.iclab.wearabletracker.repository.Result
-import kaist.iclab.wearabletracker.data.SyncBatch
 
 class PhoneCommunicationManager(
     private val androidContext: Context,
@@ -112,7 +111,10 @@ class PhoneCommunicationManager(
 
                         try {
                             bleChannel.send(Constants.BLE.KEY_SENSOR_DATA, csvBuilder.toString())
-                            Log.d(TAG, "[$sensorId] Sent chunk: ${data.size} records, maxTs=$chunkMaxTimestamp")
+                            Log.d(
+                                TAG,
+                                "[$sensorId] Sent chunk: ${data.size} records, maxTs=$chunkMaxTimestamp"
+                            )
                         } catch (e: Exception) {
                             Log.e(TAG, "[$sensorId] Error sending chunk: ${e.message}", e)
                             failedSensorId = sensorId
@@ -154,6 +156,7 @@ class PhoneCommunicationManager(
                             )
                         }
                     }
+
                     is Result.Error -> {
                         NotificationHelper.showPhoneCommunicationFailure(
                             androidContext,

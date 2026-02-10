@@ -46,7 +46,6 @@ val koinModule = module {
             TrackerRoomDB::class.java,
             "wearable_tracker_db"
         )
-            .fallbackToDestructiveMigration(true)
             .build()
     }
 
