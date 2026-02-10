@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "kaist.iclab.wearabletracker"
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "kaist.iclab.trackerSystem"
@@ -16,7 +16,9 @@ android {
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
     }
 
     signingConfigs {
@@ -54,7 +56,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildToolsVersion = "36.1.0"
+    buildToolsVersion = libs.versions.buildTools.get()
 
 }
 

@@ -13,19 +13,24 @@ import kotlinx.coroutines.flow.asStateFlow
 class CampaignRepositoryImpl(
     private val campaignService: CampaignService
 ) : CampaignRepository {
+    companion object {
+        private const val TAG = "CampaignRepo"
+    }
 
     private val _campaignsFlow = MutableStateFlow<List<CampaignData>>(emptyList())
     override val campaignsFlow: StateFlow<List<CampaignData>> = _campaignsFlow.asStateFlow()
 
-    override suspend fun fetchCampaigns(): kotlin.Result<List<CampaignData>> {
-        return when (val result = campaignService.getAllCampaigns()) {
-            is Result.Success -> {
-                _campaignsFlow.value = result.data
-                kotlin.Result.success(result.data)
-            }
+    override suspend fun fetchCampaigns(): Result<List<CampaignData>> {
+        return ErrorClassifier.runClassified(TAG, "fetch campaigns") {
+            when (val result = campaignService.getAllCampaigns()) {
+                is Result.Success -> {
+                    _campaignsFlow.value = result.data
+                    result.data
+                }
 
-            is Result.Error -> {
-                kotlin.Result.failure(result.exception)
+                is Result.Error -> {
+                    throw result.exception ?: Exception(result.message)
+                }
             }
         }
     }

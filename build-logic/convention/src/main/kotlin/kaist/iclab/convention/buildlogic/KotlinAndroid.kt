@@ -3,17 +3,20 @@ package kaist.iclab.convention.buildlogic
 import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 
 internal fun Project.configureKotlinAndroid(
     commonExtension: CommonExtension<*, *, *, *, *, *>,
 ) {
+    val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
     commonExtension.apply {
-        compileSdk = 36
+        compileSdk = libs.findVersion("compileSdk").get().requiredVersion.toInt()
 
         defaultConfig {
-            minSdk = 30
+            minSdk = libs.findVersion("minSdk").get().requiredVersion.toInt()
 
             testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
             vectorDrawables.useSupportLibrary = true

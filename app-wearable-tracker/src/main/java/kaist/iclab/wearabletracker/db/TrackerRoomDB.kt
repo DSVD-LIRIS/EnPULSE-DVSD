@@ -26,7 +26,7 @@ import kaist.iclab.wearabletracker.db.entity.SkinTemperatureEntity
         EDAEntity::class,
         LocationEntity::class,
     ],
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(Converter::class)
 abstract class TrackerRoomDB : RoomDatabase() {

@@ -92,7 +92,7 @@ android {
             )
         }
     }
-    buildToolsVersion = "36.1.0"
+    buildToolsVersion = libs.versions.buildTools.get()
 }
 
 dependencies {

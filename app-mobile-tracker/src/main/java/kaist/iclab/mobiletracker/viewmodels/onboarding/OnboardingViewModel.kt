@@ -4,9 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
 import kaist.iclab.mobiletracker.data.survey.SurveyConfig
-import kaist.iclab.mobiletracker.repository.CampaignRepository
-import kaist.iclab.mobiletracker.repository.SurveyRepository
-import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.repository.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -61,8 +59,8 @@ class OnboardingViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            userProfileRepository.updateCampaignId(selectedCampaign.id)
-                .onSuccess {
+            when (val result = userProfileRepository.updateCampaignId(selectedCampaign.id)) {
+                is Result.Success -> {
                     // Fetch surveys
                     val surveyResult = surveyRepository.fetchAndPersistSurveys(selectedCampaign.id)
 
@@ -73,13 +71,15 @@ class OnboardingViewModel(
                         it.copy(
                             isLoading = false,
                             isComplete = true,
-                            error = if (surveyResult.isFailure) "Campaign saved, but failed to load surveys" else null
+                            error = if (surveyResult.isError) "Campaign saved, but failed to load surveys" else null
                         )
                     }
                 }
-                .onFailure { error ->
-                    _uiState.update { it.copy(isLoading = false, error = error.message) }
+
+                is Result.Error -> {
+                    _uiState.update { it.copy(isLoading = false, error = result.message) }
                 }
+            }
         }
     }
 }
