@@ -19,6 +19,9 @@ import kotlinx.coroutines.withContext
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kaist.iclab.wearabletracker.repository.ErrorClassifier
+import kaist.iclab.wearabletracker.repository.Result
+import kaist.iclab.wearabletracker.data.SyncBatch
 
 class PhoneCommunicationManager(
     private val androidContext: Context,
@@ -54,25 +57,14 @@ class PhoneCommunicationManager(
      */
     fun sendDataToPhone() {
         coroutineScope.launch {
-            try {
+            val result = ErrorClassifier.runClassified(TAG, "send data to phone") {
                 if (!isPhoneAvailable()) {
-                    Log.e(
-                        TAG,
-                        "Error sending data to phone: Phone is not available or not connected"
-                    )
-                    withContext(Dispatchers.Main) {
-                        NotificationHelper.showPhoneCommunicationFailure(
-                            androidContext,
-                            androidContext.getString(R.string.notification_phone_not_available)
-                        )
-                    }
-                    return@launch
+                    throw IllegalStateException(androidContext.getString(R.string.notification_phone_not_available))
                 }
 
                 // Global start time for this sync session
                 val lastSyncTime = syncPreferencesHelper.getLastSyncTimestamp() ?: 0L
                 var dataSent = false
-                var errorOccurred = false
 
                 // Track max timestamp seen across all sensors to update global pref at end
                 var maxTimestampSeen = lastSyncTime
@@ -85,9 +77,6 @@ class PhoneCommunicationManager(
 
                 // Iterate each sensor and send its data in chunks
                 daos.forEach { (sensorId, dao) ->
-                    // Guard to stop processing if error occurred
-                    if (errorOccurred) return@forEach
-
                     var currentSensorLastTimestamp = lastSyncTime
 
                     while (coroutineContext.isActive) {
@@ -126,15 +115,14 @@ class PhoneCommunicationManager(
                             Log.d(TAG, "[$sensorId] Sent chunk: ${data.size} records, maxTs=$chunkMaxTimestamp")
                         } catch (e: Exception) {
                             Log.e(TAG, "[$sensorId] Error sending chunk: ${e.message}", e)
-                            errorOccurred = true
                             failedSensorId = sensorId
-                            break // Stop this sensor loop
+                            throw e // Propagate to runClassified
                         }
                     }
-                    if (!errorOccurred) successSensorCount++
+                    successSensorCount++
                 }
 
-                if (dataSent && !errorOccurred) {
+                if (dataSent) {
                     Log.i(TAG, "Sync payload sent: $successSensorCount sensors, batchId=$batchId")
 
                     // Save as pending batch - do NOT delete yet.
@@ -148,36 +136,31 @@ class PhoneCommunicationManager(
                             createdAt = System.currentTimeMillis()
                         )
                     )
-
-                    withContext(Dispatchers.Main) {
-                        NotificationHelper.showPhoneCommunicationSuccess(androidContext)
-                    }
-                } else if (!dataSent) {
-                    Log.w(TAG, "No new data to send")
-                    withContext(Dispatchers.Main) {
-                        NotificationHelper.showPhoneCommunicationFailure(
-                            androidContext,
-                            androidContext.getString(R.string.notification_no_data)
-                        )
-                    }
+                    true
                 } else {
-                    Log.w(TAG, "Sync aborted at sensor '$failedSensorId' after $successSensorCount sensors")
-                    withContext(Dispatchers.Main) {
+                    false
+                }
+            }
+
+            withContext(Dispatchers.Main) {
+                when (result) {
+                    is Result.Success -> {
+                        if (result.data) {
+                            NotificationHelper.showPhoneCommunicationSuccess(androidContext)
+                        } else {
+                            NotificationHelper.showPhoneCommunicationFailure(
+                                androidContext,
+                                androidContext.getString(R.string.notification_no_data)
+                            )
+                        }
+                    }
+                    is Result.Error -> {
                         NotificationHelper.showPhoneCommunicationFailure(
                             androidContext,
-                            androidContext.getString(R.string.notification_send_failed)
+                            result.exception,
+                            "Sync failed"
                         )
                     }
-                }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in sendDataToPhone: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    NotificationHelper.showPhoneCommunicationFailure(
-                        androidContext,
-                        e,
-                        "Error in sendDataToPhone"
-                    )
                 }
             }
         }
