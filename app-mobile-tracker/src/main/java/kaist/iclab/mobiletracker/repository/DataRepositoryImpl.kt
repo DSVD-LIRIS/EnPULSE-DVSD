@@ -140,17 +140,25 @@ class DataRepositoryImpl(
     override suspend fun uploadAllData(): Int {
         val allSensors = getAllSensorInfo()
         var successCount = 0
+        var failedCount = 0
         for (sensor in allSensors) {
             try {
                 val result = uploadSensorData(sensor.sensorId)
                 if (result > 0) {
                     successCount++
+                } else if (result == -1) {
+                    failedCount++
                 }
+                // result == 0 means no data for this sensor (skip)
+                // result == -2 means already syncing (skip)
             } catch (e: Exception) {
-                // Continue to next sensor
+                failedCount++
             }
         }
-        return successCount
+        // Return positive for success count, negative if failures occurred but no successes
+        return if (successCount > 0) successCount
+               else if (failedCount > 0) -1
+               else 0
     }
 
     override suspend fun deleteAllAllData() {
