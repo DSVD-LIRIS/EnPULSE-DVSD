@@ -12,10 +12,12 @@ class WatchSensorRepositoryImpl(
     private val sensorDataStorages: Map<String, BaseDao<*>>,
     private val syncPreferencesHelper: SyncPreferencesHelper
 ) : WatchSensorRepository {
+    private val TAG = WatchSensorRepositoryImpl::class.simpleName ?: "WatchSensorRepositoryImpl"
 
-    override suspend fun deleteAllSensorData() {
-        sensorDataStorages.values.forEach { it.deleteAll() }
-    }
+    override suspend fun deleteAllSensorData(): Result<Unit> =
+        ErrorClassifier.runClassified(TAG, "delete all sensor data") {
+            sensorDataStorages.values.forEach { it.deleteAll() }
+        }
 
     override fun getLastSyncTimestamp(): Long? {
         return syncPreferencesHelper.getLastSyncTimestamp()

@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.util.Log
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -141,7 +142,7 @@ class SensorDataReceiver(
                     }
                 } catch (e: Exception) {
                     if (isActive) {
-                        e.printStackTrace()
+                        Log.e("SensorDataReceiver", "Batch processing error: ${e.message}", e)
                     }
                 }
             }
@@ -156,7 +157,7 @@ class SensorDataReceiver(
                         entities.clear()
                         sensorDataStorages[sensorId]?.insert(batchToInsert)
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        Log.e("SensorDataReceiver", "Error flushing batch for sensor $sensorId: ${e.message}", e)
                     }
                 }
             }

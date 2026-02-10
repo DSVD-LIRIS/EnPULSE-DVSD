@@ -13,6 +13,7 @@ import kaist.iclab.wearabletracker.data.DeviceInfo
 import kaist.iclab.wearabletracker.data.PhoneCommunicationManager
 import kaist.iclab.wearabletracker.helpers.NotificationHelper
 import kaist.iclab.wearabletracker.repository.WatchSensorRepository
+import kaist.iclab.wearabletracker.repository.Result
 import kaist.iclab.wearabletracker.storage.SensorDataReceiver
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -138,14 +139,18 @@ class SettingsViewModel(
 
     fun flush(context: Context) {
         viewModelScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    repository.deleteAllSensorData()
+            val result = withContext(Dispatchers.IO) {
+                repository.deleteAllSensorData()
+            }
+            
+            when (result) {
+                is Result.Success -> {
+                    NotificationHelper.showFlushSuccess(context)
                 }
-                NotificationHelper.showFlushSuccess(context)
-            } catch (e: Exception) {
-                Log.e(TAG, "FLUSH - Error deleting sensor data: ${e.message}", e)
-                NotificationHelper.showFlushFailure(context, e, "Failed to delete sensor data")
+                is Result.Error -> {
+                    // Logging is handled by runClassified inside the repository
+                    NotificationHelper.showFlushFailure(context, result.exception, "Failed to delete sensor data")
+                }
             }
         }
     }

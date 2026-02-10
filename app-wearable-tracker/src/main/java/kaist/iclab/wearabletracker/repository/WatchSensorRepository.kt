@@ -10,7 +10,7 @@ interface WatchSensorRepository {
     /**
      * Delete all sensor data from local storage.
      */
-    suspend fun deleteAllSensorData()
+    suspend fun deleteAllSensorData(): Result<Unit>
 
     /**
      * Get the last sync timestamp.
