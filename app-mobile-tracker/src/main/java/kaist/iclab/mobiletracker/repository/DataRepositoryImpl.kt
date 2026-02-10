@@ -25,6 +25,10 @@ class DataRepositoryImpl(
     private val supabaseHelper: SupabaseHelper
 ) : DataRepository {
 
+    companion object {
+        private const val TAG = "DataRepository"
+    }
+
     private val syncingSensors = ConcurrentHashMap<String, Boolean>()
 
     override suspend fun getAllSensorInfo(): List<SensorInfo> =
@@ -153,6 +157,7 @@ class DataRepositoryImpl(
                 // result == -2 means already syncing (skip)
             } catch (e: Exception) {
                 failedCount++
+                Log.e(TAG, "Unexpected error uploading ${sensor.sensorId}", e)
             }
         }
         // Return positive for success count, negative if failures occurred but no successes
@@ -167,7 +172,7 @@ class DataRepositoryImpl(
             try {
                 deleteAllSensorData(sensor.sensorId)
             } catch (e: Exception) {
-                // Continue to next sensor
+                Log.e(TAG, "Error deleting data for ${sensor.sensorId}", e)
             }
         }
     }
