@@ -121,3 +121,29 @@ inline fun <T> Result<T>.onFailure(action: (Throwable) -> Unit): Result<T> {
     if (this is Result.Error) action(exception)
     return this
 }
+
+/**
+ * Chains a Result-returning operation on success, propagating errors.
+ * Replaces the common `when (result) { is Success -> ...; is Error -> throw ... }` pattern.
+ */
+inline fun <T, R> Result<T>.flatMap(transform: (T) -> Result<R>): Result<R> {
+    return when (this) {
+        is Result.Success -> try {
+            transform(data)
+        } catch (e: Throwable) {
+            Result.Error(e)
+        }
+        is Result.Error -> this
+    }
+}
+
+/**
+ * Transforms the exception inside a [Result.Error] while leaving [Result.Success] unchanged.
+ * Useful for classifying raw exceptions into typed [AppError] subtypes.
+ */
+inline fun <T> Result<T>.mapError(transform: (Throwable) -> Throwable): Result<T> {
+    return when (this) {
+        is Result.Success -> this
+        is Result.Error -> Result.Error(transform(exception))
+    }
+}

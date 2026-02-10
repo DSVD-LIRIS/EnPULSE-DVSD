@@ -12,6 +12,8 @@ import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.helpers.LanguageHelper
 import kaist.iclab.mobiletracker.repository.Result
+import kaist.iclab.mobiletracker.repository.onFailure
+import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.mobiletracker.services.upload.PhoneSensorUploadService
 import kaist.iclab.mobiletracker.services.upload.WatchSensorUploadService
 import kaist.iclab.mobiletracker.utils.NotificationHelper
@@ -195,21 +197,13 @@ class AutoSyncService : LifecycleService(), KoinComponent {
         try {
             sensors.forEach { sensor ->
                 if (phoneSensorUploadService.hasDataToUpload(sensor.id)) {
-                    when (val result = phoneSensorUploadService.uploadSensorData(sensor.id)) {
-                        is Result.Success -> {
-                            successCount++
-                        }
-
-                        is Result.Error -> {
+                    phoneSensorUploadService.uploadSensorData(sensor.id)
+                        .onSuccess { successCount++ }
+                        .onFailure { e ->
                             failureCount++
                             failedSensors.add(sensor.name)
-                            Log.e(
-                                TAG,
-                                "Error uploading data for ${sensor.name}: ${result.message}",
-                                result.exception
-                            )
+                            Log.e(TAG, "Upload failed for ${sensor.name}: ${e.message}", e)
                         }
-                    }
                 } else {
                     skippedCount++
                 }
@@ -218,27 +212,19 @@ class AutoSyncService : LifecycleService(), KoinComponent {
             // Upload all watch sensors
             SensorTypeHelper.watchSensorIds.forEach { sensorId ->
                 if (watchSensorUploadService.hasDataToUpload(sensorId)) {
-                    when (val result = watchSensorUploadService.uploadSensorData(sensorId)) {
-                        is Result.Success -> {
-                            successCount++
-                        }
-
-                        is Result.Error -> {
+                    watchSensorUploadService.uploadSensorData(sensorId)
+                        .onSuccess { successCount++ }
+                        .onFailure { e ->
                             failureCount++
                             failedSensors.add(sensorId)
-                            Log.e(
-                                TAG,
-                                "Error uploading watch data for $sensorId: ${result.message}",
-                                result.exception
-                            )
+                            Log.e(TAG, "Upload failed for $sensorId: ${e.message}", e)
                         }
-                    }
                 } else {
                     skippedCount++
                 }
             }
 
-            // Show notification based on results (show success OR failure, not both)
+            // Show notification based on results
             if (successCount > 0) {
                 showSuccessNotification(successCount)
             } else if (failureCount > 0) {

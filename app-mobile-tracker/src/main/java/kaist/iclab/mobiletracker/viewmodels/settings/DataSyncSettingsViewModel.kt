@@ -8,6 +8,8 @@ import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.repository.PhoneSensorRepository
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.WatchSensorRepository
+import kaist.iclab.mobiletracker.repository.onFailure
+import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.services.upload.PhoneSensorUploadService
 import kaist.iclab.mobiletracker.services.upload.WatchSensorUploadService
@@ -86,40 +88,21 @@ class DataSyncSettingsViewModel(
         viewModelScope.launch {
             _isFlushing.value = true
 
-            // Delete all phone sensor data
             val phoneResult = phoneSensorRepository.flushAllData()
-
-            // Delete all watch sensor data
             val watchResult = watchSensorRepository.flushAllData()
 
-            // Check if both operations succeeded
-            when {
-                phoneResult is Result.Success && watchResult is Result.Success -> {
-                    // Both deletions succeeded
-                    // Clear all sync-related timestamps (except next scheduled upload)
-                    timestampService.clearAllSyncTimestamps()
-                    AppToast.show(context, R.string.toast_data_deleted)
-                }
+            phoneResult.onFailure { e ->
+                Log.e(TAG, "Error flushing phone sensor data: ${e.message}", e)
+            }
+            watchResult.onFailure { e ->
+                Log.e(TAG, "Error flushing watch sensor data: ${e.message}", e)
+            }
 
-                phoneResult is Result.Error -> {
-                    Log.e(
-                        TAG,
-                        "Error flushing phone sensor data: ${phoneResult.message}",
-                        phoneResult.exception
-                    )
-                    // Still try to clear timestamps even if deletion partially failed
-                    timestampService.clearAllSyncTimestamps()
-                }
+            // Clear timestamps regardless of partial failure
+            timestampService.clearAllSyncTimestamps()
 
-                watchResult is Result.Error -> {
-                    Log.e(
-                        TAG,
-                        "Error flushing watch sensor data: ${watchResult.message}",
-                        watchResult.exception
-                    )
-                    // Still try to clear timestamps even if deletion partially failed
-                    timestampService.clearAllSyncTimestamps()
-                }
+            if (phoneResult.isSuccess && watchResult.isSuccess) {
+                AppToast.show(context, R.string.toast_data_deleted)
             }
 
             _isFlushing.value = false
@@ -142,95 +125,45 @@ class DataSyncSettingsViewModel(
 
                 // Upload all phone sensors
                 sensors.forEach { sensor ->
-                    val sensorId = sensor.id
-
-                    try {
-                        // Check if data is available (but don't show toast for individual sensors)
-                        if (!phoneSensorUploadService.hasDataToUpload(sensorId)) {
-                            skippedCount++
-                        } else {
-                            // Upload data using the upload service
-                            when (val result =
-                                phoneSensorUploadService.uploadSensorData(sensorId)) {
-                                is Result.Success -> {
-                                    uploadedCount++
-                                }
-
-                                is Result.Error -> {
-                                    failedCount++
-                                    Log.e(
-                                        TAG,
-                                        "Error uploading sensor data for ${sensor.name}: ${result.message}",
-                                        result.exception
-                                    )
-                                }
+                    if (!phoneSensorUploadService.hasDataToUpload(sensor.id)) {
+                        skippedCount++
+                    } else {
+                        phoneSensorUploadService.uploadSensorData(sensor.id)
+                            .onSuccess { uploadedCount++ }
+                            .onFailure { e ->
+                                failedCount++
+                                Log.e(TAG, "Upload failed for ${sensor.name}: ${e.message}", e)
                             }
-                        }
-                    } catch (e: Exception) {
-                        failedCount++
-                        Log.e(
-                            TAG,
-                            "Exception uploading sensor data for ${sensor.name}: ${e.message}",
-                            e
-                        )
                     }
                 }
 
                 // Upload all watch sensors
                 SensorTypeHelper.watchSensorIds.forEach { sensorId ->
-                    try {
-                        if (!watchSensorUploadService.hasDataToUpload(sensorId)) {
-                            skippedCount++
-                        } else {
-                            when (val result =
-                                watchSensorUploadService.uploadSensorData(sensorId)) {
-                                is Result.Success -> {
-                                    uploadedCount++
-                                }
-
-                                is Result.Error -> {
-                                    failedCount++
-                                    Log.e(
-                                        TAG,
-                                        "Error uploading watch sensor data for $sensorId: ${result.message}",
-                                        result.exception
-                                    )
-                                }
+                    if (!watchSensorUploadService.hasDataToUpload(sensorId)) {
+                        skippedCount++
+                    } else {
+                        watchSensorUploadService.uploadSensorData(sensorId)
+                            .onSuccess { uploadedCount++ }
+                            .onFailure { e ->
+                                failedCount++
+                                Log.e(TAG, "Upload failed for $sensorId: ${e.message}", e)
                             }
-                        }
-                    } catch (e: Exception) {
-                        failedCount++
-                        Log.e(
-                            TAG,
-                            "Exception uploading watch sensor data for $sensorId: ${e.message}",
-                            e
-                        )
                     }
                 }
 
                 // Show summary toast
                 when {
                     uploadedCount > 0 -> {
-                        // Show how many sensors successfully uploaded
-                        AppToast.show(
-                            context,
-                            R.string.toast_upload_all_summary,
-                            uploadedCount
-                        )
+                        AppToast.show(context, R.string.toast_upload_all_summary, uploadedCount)
                     }
-
                     skippedCount == totalSensorsCount -> {
-                        // All sensors skipped (no new data)
                         AppToast.show(context, R.string.toast_no_data_to_upload)
                     }
-
                     failedCount > 0 && uploadedCount == 0 -> {
-                        // All attempts failed and none were successful
                         AppToast.show(context, R.string.toast_sensor_data_upload_error)
                     }
                 }
 
-                // Refresh timestamps
                 loadTimestamps()
             } catch (e: Exception) {
                 Log.e(TAG, "Error uploading all sensor data: ${e.message}", e)

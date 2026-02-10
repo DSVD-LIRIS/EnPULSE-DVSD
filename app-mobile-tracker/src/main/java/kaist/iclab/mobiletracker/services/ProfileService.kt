@@ -1,11 +1,12 @@
 package kaist.iclab.mobiletracker.services
 
-import android.util.Log
 import io.github.jan.supabase.postgrest.from
 import kaist.iclab.mobiletracker.data.sensors.phone.ProfileData
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
+import kaist.iclab.mobiletracker.repository.AppError
+import kaist.iclab.mobiletracker.repository.ErrorClassifier
 import kaist.iclab.mobiletracker.repository.Result
-import kaist.iclab.mobiletracker.repository.runCatchingSuspend
+import kaist.iclab.mobiletracker.repository.flatMap
 import kaist.iclab.mobiletracker.utils.SupabaseLoadingInterceptor
 
 /**
@@ -28,21 +29,14 @@ class ProfileService(
      */
     suspend fun profileExists(uuid: String): Result<Boolean> {
         return SupabaseLoadingInterceptor.withLoading {
-            runCatchingSuspend {
-                try {
-                    val response = supabaseClient.from(tableName)
-                        .select {
-                            filter {
-                                eq("uuid", uuid)
-                            }
+            ErrorClassifier.runClassified(TAG, "profileExists($uuid)") {
+                val response = supabaseClient.from(tableName)
+                    .select {
+                        filter {
+                            eq("uuid", uuid)
                         }
-                    val profiles = response.decodeList<ProfileData>()
-                    val exists = profiles.isNotEmpty()
-                    exists
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error checking if profile exists (UUID: $uuid): ${e.message}", e)
-                    throw e
-                }
+                    }
+                response.decodeList<ProfileData>().isNotEmpty()
             }
         }
     }
@@ -55,19 +49,9 @@ class ProfileService(
      */
     private suspend fun saveProfile(profile: ProfileData): Result<Unit> {
         return SupabaseLoadingInterceptor.withLoading {
-            runCatchingSuspend {
-                try {
-                    // Use upsert to insert if not exists, update if exists
-                    supabaseClient.from(tableName).upsert(profile)
-                    Unit // Explicitly return Unit
-                } catch (e: Exception) {
-                    Log.e(
-                        TAG,
-                        "Error saving profile (UUID: ${profile.uuid}, Email: ${profile.email}): ${e.message}",
-                        e
-                    )
-                    throw e
-                }
+            ErrorClassifier.runClassified(TAG, "saveProfile(${profile.uuid})") {
+                supabaseClient.from(tableName).upsert(profile)
+                Unit
             }
         }
     }
@@ -84,40 +68,17 @@ class ProfileService(
         email: String,
         campaignId: Int? = null
     ): Result<Unit> {
-        return SupabaseLoadingInterceptor.withLoading {
-            runCatchingSuspend {
-                try {
-                    // Check if profile exists
-                    val existsResult = profileExists(uuid)
-                    val exists = when (existsResult) {
-                        is Result.Success -> existsResult.data
-                        is Result.Error -> throw existsResult.exception
-                    }
-
-                    if (!exists) {
-                        // Create new profile
-                        val profile = ProfileData(
-                            uuid = uuid,
-                            email = email,
-                            campaign_id = campaignId
-                        )
-                        val saveResult = saveProfile(profile)
-                        when (saveResult) {
-                            is Result.Success -> {
-                                // Profile saved successfully, do nothing here
-                            }
-
-                            is Result.Error -> throw saveResult.exception
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e(
-                        TAG,
-                        "Error creating profile if not exists (UUID: $uuid, Email: $email): ${e.message}",
-                        e
+        return profileExists(uuid).flatMap { exists ->
+            if (exists) {
+                Result.Success(Unit)
+            } else {
+                saveProfile(
+                    ProfileData(
+                        uuid = uuid,
+                        email = email,
+                        campaign_id = campaignId
                     )
-                    throw e
-                }
+                )
             }
         }
     }
@@ -129,25 +90,17 @@ class ProfileService(
      */
     suspend fun getProfileByUuid(uuid: String): Result<ProfileData> {
         return SupabaseLoadingInterceptor.withLoading {
-            runCatchingSuspend {
-                try {
-                    val response = supabaseClient.from(tableName)
-                        .select {
-                            filter {
-                                eq("uuid", uuid)
-                            }
+            ErrorClassifier.runClassified(TAG, "getProfileByUuid($uuid)") {
+                val profiles = supabaseClient.from(tableName)
+                    .select {
+                        filter {
+                            eq("uuid", uuid)
                         }
-                    val profiles = response.decodeList<ProfileData>()
-                    if (profiles.isEmpty()) {
-                        val error = NoSuchElementException("Profile with UUID $uuid not found")
-                        Log.e(TAG, "Profile not found: $uuid", error)
-                        throw error
                     }
-                    profiles.first()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error getting profile by UUID ($uuid): ${e.message}", e)
-                    throw e
-                }
+                    .decodeList<ProfileData>()
+
+                profiles.firstOrNull()
+                    ?: throw AppError.NotFound("Profile with UUID $uuid not found")
             }
         }
     }
@@ -159,36 +112,8 @@ class ProfileService(
      * @return Result containing Unit on success or error
      */
     suspend fun updateCampaignId(uuid: String, campaignId: Int?): Result<Unit> {
-        return SupabaseLoadingInterceptor.withLoading {
-            runCatchingSuspend {
-                try {
-                    // Get existing profile to preserve email
-                    val profileResult = getProfileByUuid(uuid)
-                    val existingProfile = when (profileResult) {
-                        is Result.Success -> profileResult.data
-                        is Result.Error -> throw profileResult.exception
-                    }
-
-                    // Update profile with new campaign_id
-                    val updatedProfile = existingProfile.copy(campaign_id = campaignId)
-                    val saveResult = saveProfile(updatedProfile)
-                    when (saveResult) {
-                        is Result.Success -> {
-                            // Profile updated successfully
-                        }
-
-                        is Result.Error -> throw saveResult.exception
-                    }
-                } catch (e: Exception) {
-                    Log.e(
-                        TAG,
-                        "Error updating campaign ID (UUID: $uuid, Campaign ID: $campaignId): ${e.message}",
-                        e
-                    )
-                    throw e
-                }
-            }
+        return getProfileByUuid(uuid).flatMap { existingProfile ->
+            saveProfile(existingProfile.copy(campaign_id = campaignId))
         }
     }
 }
-

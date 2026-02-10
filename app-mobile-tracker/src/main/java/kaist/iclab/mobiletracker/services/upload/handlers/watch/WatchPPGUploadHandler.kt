@@ -2,6 +2,7 @@ package kaist.iclab.mobiletracker.services.upload.handlers.watch
 
 import kaist.iclab.mobiletracker.db.dao.watch.WatchPPGDao
 import kaist.iclab.mobiletracker.db.mapper.PPGMapper
+import kaist.iclab.mobiletracker.repository.ErrorClassifier
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.services.supabase.PPGSensorService
 import kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandler
@@ -21,23 +22,16 @@ class WatchPPGUploadHandler(
     }
 
     override suspend fun uploadData(userUuid: String, lastUploadTimestamp: Long): Result<Long> {
-        return try {
+        return ErrorClassifier.runClassified(sensorId, "upload $sensorId") {
             val entities = dao.getDataAfterTimestamp(lastUploadTimestamp)
             if (entities.isEmpty()) {
-                return Result.Error(IllegalStateException("No new data available to upload"))
+                throw IllegalStateException("No new $sensorId data to upload")
             }
 
             val supabaseDataList = entities.map { PPGMapper.map(it, userUuid) }
-            val result = service.insertPPGSensorDataBatch(supabaseDataList)
-
-            if (result is Result.Success) {
-                val maxTimestamp = entities.maxOf { it.timestamp }
-                Result.Success(maxTimestamp)
-            } else {
-                result as Result.Error
-            }
-        } catch (e: Exception) {
-            Result.Error(e)
+            service.insertPPGSensorDataBatch(supabaseDataList)
+                .getOrElse { throw it }
+            entities.maxOf { it.timestamp }
         }
     }
 }
