@@ -54,10 +54,10 @@ interface CallLogDao : BaseDao<CallLogSensor.Entity, CallLogEntity> {
     override suspend fun getRecordCount(): Int
 
     @Query("SELECT COUNT(*) FROM CallLogEntity WHERE timestamp >= :afterTimestamp")
-    suspend fun getRecordCountAfterTimestamp(afterTimestamp: Long): Int
+    override suspend fun getRecordCountAfterTimestamp(afterTimestamp: Long): Int
 
     @Query("SELECT * FROM CallLogEntity WHERE timestamp >= :afterTimestamp ORDER BY CASE WHEN :isAscending = 1 THEN timestamp END ASC, CASE WHEN :isAscending = 0 THEN timestamp END DESC LIMIT :limit OFFSET :offset")
-    suspend fun getRecordsPaginated(
+    override suspend fun getRecordsPaginated(
         afterTimestamp: Long,
         isAscending: Boolean,
         limit: Int,
@@ -65,10 +65,10 @@ interface CallLogDao : BaseDao<CallLogSensor.Entity, CallLogEntity> {
     ): List<CallLogEntity>
 
     @Query("DELETE FROM CallLogEntity WHERE id = :recordId")
-    suspend fun deleteById(recordId: Long)
+    override suspend fun deleteById(recordId: Long)
 
     @Query("SELECT eventId FROM CallLogEntity WHERE id = :recordId")
-    suspend fun getEventIdById(recordId: Long): String?
+    override suspend fun getEventIdById(recordId: Long): String?
 
     @Query("DELETE FROM CallLogEntity")
     suspend fun deleteAllCallLogData()

@@ -36,10 +36,10 @@ interface WatchHeartRateDao : BaseDao<WatchHeartRateEntity, WatchHeartRateEntity
     fun getDailyHeartRateCount(afterTimestamp: Long): Flow<Int>
 
     @Query("SELECT COUNT(*) FROM watch_heart_rate WHERE timestamp >= :afterTimestamp")
-    suspend fun getRecordCountAfterTimestamp(afterTimestamp: Long): Int
+    override suspend fun getRecordCountAfterTimestamp(afterTimestamp: Long): Int
 
     @Query("SELECT * FROM watch_heart_rate WHERE timestamp >= :afterTimestamp ORDER BY CASE WHEN :isAscending = 1 THEN timestamp END ASC, CASE WHEN :isAscending = 0 THEN timestamp END DESC LIMIT :limit OFFSET :offset")
-    suspend fun getRecordsPaginated(
+    override suspend fun getRecordsPaginated(
         afterTimestamp: Long,
         isAscending: Boolean,
         limit: Int,
@@ -47,10 +47,10 @@ interface WatchHeartRateDao : BaseDao<WatchHeartRateEntity, WatchHeartRateEntity
     ): List<WatchHeartRateEntity>
 
     @Query("DELETE FROM watch_heart_rate WHERE id = :recordId")
-    suspend fun deleteById(recordId: Long)
+    override suspend fun deleteById(recordId: Long)
 
     @Query("SELECT eventId FROM watch_heart_rate WHERE id = :recordId")
-    suspend fun getEventIdById(recordId: Long): String?
+    override suspend fun getEventIdById(recordId: Long): String?
 
     @Query("DELETE FROM watch_heart_rate")
     override suspend fun deleteAll()
