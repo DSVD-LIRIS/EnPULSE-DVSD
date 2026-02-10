@@ -39,6 +39,29 @@ class WatchLocationUploadHandler(
     }
 
     override suspend fun pruneData(beforeTimestamp: Long) {
-        dao.deleteDataBefore(DeviceType.WATCH.value, beforeTimestamp)
+        dao.deleteDataBeforeByDeviceType(beforeTimestamp, DeviceType.WATCH.value)
+    }
+
+    override suspend fun getRecordCount(): Int {
+        return dao.getRecordCountByDeviceType(DeviceType.WATCH.value)
+    }
+
+    override suspend fun getRecordsPaginated(limit: Int, offset: Int): List<Any> {
+        return dao.getRecordsPaginatedByDeviceType(
+            0L,
+            true,
+            limit,
+            offset,
+            DeviceType.WATCH.value
+        )
+    }
+
+    override fun getCsvHeader(): String {
+        return "eventId,uuid,deviceType,received,timestamp,latitude,longitude,altitude,speed,accuracy"
+    }
+
+    override fun recordToCsvRow(record: Any): String {
+        val entity = record as kaist.iclab.mobiletracker.db.entity.common.LocationEntity
+        return "${entity.eventId},${entity.uuid},${entity.deviceType},${entity.received},${entity.timestamp},${entity.latitude},${entity.longitude},${entity.altitude},${entity.speed},${entity.accuracy}"
     }
 }

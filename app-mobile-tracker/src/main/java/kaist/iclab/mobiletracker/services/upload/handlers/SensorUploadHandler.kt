@@ -31,4 +31,28 @@ interface SensorUploadHandler {
      * @param beforeTimestamp The timestamp threshold for deletion
      */
     suspend fun pruneData(beforeTimestamp: Long)
+
+    /**
+     * Get the total record count available locally.
+     */
+    suspend fun getRecordCount(): Int
+
+    /**
+     * Get paginated records.
+     * @param limit Maximum number of records
+     * @param offset Number of records to skip
+     * @return List of records (type generic to the handler)
+     */
+    suspend fun getRecordsPaginated(limit: Int, offset: Int): List<Any>
+
+    /**
+     * Get the CSV header for this sensor's data.
+     */
+    fun getCsvHeader(): String
+
+    /**
+     * Convert a record to a CSV row string.
+     * @param record The record to convert
+     */
+    fun recordToCsvRow(record: Any): String
 }

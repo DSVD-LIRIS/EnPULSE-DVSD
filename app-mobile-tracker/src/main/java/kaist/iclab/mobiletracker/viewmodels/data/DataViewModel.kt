@@ -37,6 +37,7 @@ data class DataUiState(
  */
 class DataViewModel(
     private val dataRepository: DataRepository,
+    private val dataExportHelper: kaist.iclab.mobiletracker.helpers.DataExportHelper,
     private val context: Context
 ) : ViewModel() {
 
@@ -149,7 +150,7 @@ class DataViewModel(
 
 
     /**
-     * Export all sensor data to CSV files.
+     * Export all sensor data to a ZIP file containing CSVs.
      */
     fun exportAllToCsv() {
         if (_uiState.value.isExporting) return
@@ -157,44 +158,43 @@ class DataViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isExporting = true)
             try {
-                // Collect data for all active sensors
-                val allSensors = dataRepository.getAllSensorInfo()
-                val sensorsWithData = allSensors.filter { it.recordCount > 0 }
-
-                if (sensorsWithData.isEmpty()) {
-                    AppToast.show(context, R.string.toast_no_data_to_export)
-                    _uiState.value = _uiState.value.copy(isExporting = false)
-                    return@launch
-                }
-
-                val uris = mutableListOf<android.net.Uri>()
-
-                for (sensor in sensorsWithData) {
-                    val records = dataRepository.getAllSensorRecordsForExport(
-                        sensorId = sensor.sensorId,
-                        dateFilter = DateFilter.ALL_TIME
-                    )
-
-                    if (records.isNotEmpty()) {
-                        val uri = CsvExportHelper.exportToCsv(context, sensor.displayName, records)
-                        if (uri != null) {
-                            uris.add(uri)
-                        }
-                    }
-                }
-
-                if (uris.isNotEmpty()) {
-                    CsvExportHelper.shareMultipleCsv(context, uris, "All Sensor Data Export")
+                val zipFile = dataExportHelper.exportAllData(context)
+                
+                if (zipFile != null && zipFile.exists()) {
+                    shareExportFile(zipFile)
                 } else {
                     AppToast.show(context, R.string.toast_export_failed)
                 }
-
             } catch (e: Exception) {
                 Log.e("DataViewModel", "Error exporting all data", e)
                 AppToast.show(context, R.string.toast_export_failed)
             } finally {
                 _uiState.value = _uiState.value.copy(isExporting = false)
             }
+        }
+    }
+
+    private fun shareExportFile(file: java.io.File) {
+        try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
+            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "application/zip"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "Mobile Tracker Data Export")
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            val chooser = android.content.Intent.createChooser(shareIntent, "Share Data Export")
+            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
+        } catch (e: Exception) {
+            Log.e("DataViewModel", "Error sharing export file", e)
+            AppToast.show(context, R.string.toast_export_failed)
         }
     }
 }

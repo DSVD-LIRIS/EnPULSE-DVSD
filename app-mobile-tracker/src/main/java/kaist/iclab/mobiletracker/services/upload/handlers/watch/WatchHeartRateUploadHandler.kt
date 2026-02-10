@@ -38,4 +38,23 @@ class WatchHeartRateUploadHandler(
     override suspend fun pruneData(beforeTimestamp: Long) {
         dao.deleteDataBefore(beforeTimestamp)
     }
+
+    override suspend fun getRecordCount(): Int {
+        return dao.getRecordCount()
+    }
+
+    override suspend fun getRecordsPaginated(limit: Int, offset: Int): List<Any> {
+        return dao.getRecordsPaginated(0L, true, limit, offset)
+    }
+
+    override fun getCsvHeader(): String {
+        return "eventId,uuid,received,timestamp,hr,hrStatus,ibi,ibiStatus"
+    }
+
+    override fun recordToCsvRow(record: Any): String {
+        val entity = record as kaist.iclab.mobiletracker.db.entity.watch.WatchHeartRateEntity
+        val escapedIbi = entity.ibi.joinToString(",").replace("\"", "\"\"")
+        val escapedIbiStatus = entity.ibiStatus.joinToString(",").replace("\"", "\"\"")
+        return "${entity.eventId},${entity.uuid},${entity.received},${entity.timestamp},${entity.hr},${entity.hrStatus},\"[$escapedIbi]\",\"[$escapedIbiStatus]\""
+    }
 }

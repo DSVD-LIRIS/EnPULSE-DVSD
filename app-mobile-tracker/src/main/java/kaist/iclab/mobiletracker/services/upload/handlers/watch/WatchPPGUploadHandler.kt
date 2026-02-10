@@ -38,4 +38,21 @@ class WatchPPGUploadHandler(
     override suspend fun pruneData(beforeTimestamp: Long) {
         dao.deleteDataBefore(beforeTimestamp)
     }
+
+    override suspend fun getRecordCount(): Int {
+        return dao.getRecordCount()
+    }
+
+    override suspend fun getRecordsPaginated(limit: Int, offset: Int): List<Any> {
+        return dao.getRecordsPaginated(0L, true, limit, offset)
+    }
+
+    override fun getCsvHeader(): String {
+        return "eventId,uuid,received,timestamp,green,greenStatus,red,redStatus,ir,irStatus"
+    }
+
+    override fun recordToCsvRow(record: Any): String {
+        val entity = record as kaist.iclab.mobiletracker.db.entity.watch.WatchPPGEntity
+        return "${entity.eventId},${entity.uuid},${entity.received},${entity.timestamp},${entity.green},${entity.greenStatus},${entity.red},${entity.redStatus},${entity.ir},${entity.irStatus}"
+    }
 }

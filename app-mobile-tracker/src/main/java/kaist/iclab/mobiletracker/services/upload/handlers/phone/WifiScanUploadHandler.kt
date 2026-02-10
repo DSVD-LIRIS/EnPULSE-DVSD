@@ -38,4 +38,22 @@ class WifiScanUploadHandler(
     override suspend fun pruneData(beforeTimestamp: Long) {
         dao.deleteDataBefore(beforeTimestamp)
     }
+
+    override suspend fun getRecordCount(): Int {
+        return dao.getRecordCount()
+    }
+
+    override suspend fun getRecordsPaginated(limit: Int, offset: Int): List<Any> {
+        return dao.getRecordsPaginated(0L, true, limit, offset)
+    }
+
+    override fun getCsvHeader(): String {
+        return "eventId,uuid,received,timestamp,ssid,bssid,frequency,level"
+    }
+
+    override fun recordToCsvRow(record: Any): String {
+        val entity = record as kaist.iclab.mobiletracker.db.entity.phone.WifiScanEntity
+        val escapedSsid = entity.ssid.replace("\"", "\"\"")
+        return "${entity.eventId},${entity.uuid},${entity.received},${entity.timestamp},\"$escapedSsid\",${entity.bssid},${entity.frequency},${entity.level}"
+    }
 }

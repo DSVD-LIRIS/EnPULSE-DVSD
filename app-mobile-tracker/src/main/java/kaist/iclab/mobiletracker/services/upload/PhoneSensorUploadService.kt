@@ -52,11 +52,15 @@ class PhoneSensorUploadService(
                     syncTimestampService.updateLastSuccessfulUpload(sensorId, result.data)
 
                     // Prune data that is BOTH synced AND older than PRUNE_BUFFER_MS
+                    // NOTE: This is currently disabled as per user preference for infinite local retention.
+                    // Infrastructure is kept for future manual activation.
+                    /*
                     val pruneThreshold = minOf(
                         result.data,
                         System.currentTimeMillis() - PRUNE_BUFFER_MS
                     )
                     handler.pruneData(pruneThreshold)
+                    */
 
                     Result.Success(Unit)
                 }

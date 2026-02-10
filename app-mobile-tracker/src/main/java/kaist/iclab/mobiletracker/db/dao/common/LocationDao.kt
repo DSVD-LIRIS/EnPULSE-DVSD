@@ -104,6 +104,15 @@ interface LocationDao : BaseDao<LocationSensor.Entity, LocationEntity> {
         offset: Int
     ): List<LocationEntity>
 
+    @Query("SELECT * FROM location WHERE deviceType = :deviceType AND timestamp >= :afterTimestamp ORDER BY CASE WHEN :isAscending = 1 THEN timestamp END ASC, CASE WHEN :isAscending = 0 THEN timestamp END DESC LIMIT :limit OFFSET :offset")
+    suspend fun getRecordsPaginatedByDeviceType(
+        afterTimestamp: Long,
+        isAscending: Boolean,
+        limit: Int,
+        offset: Int,
+        deviceType: Int
+    ): List<LocationEntity>
+
     @Query("DELETE FROM location WHERE id = :recordId")
     override suspend fun deleteById(recordId: Long)
 
@@ -111,10 +120,10 @@ interface LocationDao : BaseDao<LocationSensor.Entity, LocationEntity> {
     override suspend fun getEventIdById(recordId: Long): String?
 
     @Query("DELETE FROM location WHERE deviceType = :deviceType AND timestamp < :timestamp")
-    suspend fun deleteDataBefore(deviceType: Int, timestamp: Long)
+    suspend fun deleteDataBeforeByDeviceType(timestamp: Long, deviceType: Int)
 
     override suspend fun deleteDataBefore(timestamp: Long) {
-        deleteDataBefore(DeviceType.PHONE.value, timestamp)
+        deleteDataBeforeByDeviceType(timestamp, DeviceType.PHONE.value)
     }
 
     @Query("DELETE FROM location")

@@ -1,5 +1,6 @@
 package kaist.iclab.mobiletracker.di
 
+import kaist.iclab.mobiletracker.helpers.DataExportHelper
 import kaist.iclab.mobiletracker.helpers.BLEHelper
 import kaist.iclab.mobiletracker.repository.WatchSensorRepository
 import kaist.iclab.mobiletracker.services.CampaignService
@@ -36,6 +37,13 @@ val helperModule = module {
     single {
         SurveyService(
             supabaseHelper = get()
+        )
+    }
+
+    // DataExportHelper
+    single {
+        DataExportHelper(
+            handlerRegistry = get()
         )
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Cache directory for exported CSV files -->
-    <cache-path
-        name="exports"
+    <!-- External files directory for ZIP exports -->
+    <external-files-path
+        name="export_files"
         path="exports/" />
 </paths>
