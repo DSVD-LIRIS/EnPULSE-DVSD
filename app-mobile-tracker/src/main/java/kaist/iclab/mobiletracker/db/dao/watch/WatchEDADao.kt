@@ -52,6 +52,9 @@ interface WatchEDADao : BaseDao<WatchEDAEntity, WatchEDAEntity> {
     @Query("SELECT eventId FROM watch_eda WHERE id = :recordId")
     override suspend fun getEventIdById(recordId: Long): String?
 
+    @Query("DELETE FROM watch_eda WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     @Query("DELETE FROM watch_eda")
     override suspend fun deleteAll()
 }

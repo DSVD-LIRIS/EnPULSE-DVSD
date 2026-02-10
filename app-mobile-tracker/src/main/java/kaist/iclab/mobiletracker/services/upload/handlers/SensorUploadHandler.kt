@@ -25,4 +25,10 @@ interface SensorUploadHandler {
      * @return Result containing the max timestamp of uploaded data on success
      */
     suspend fun uploadData(userUuid: String, lastUploadTimestamp: Long): Result<Long>
+
+    /**
+     * Delete local data older than the specified timestamp.
+     * @param beforeTimestamp The timestamp threshold for deletion
+     */
+    suspend fun pruneData(beforeTimestamp: Long)
 }

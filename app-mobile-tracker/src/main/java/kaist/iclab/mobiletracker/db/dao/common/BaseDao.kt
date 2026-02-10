@@ -31,6 +31,12 @@ interface BaseDao<TEntity, TRoom> {
     suspend fun deleteAll()
 
     /**
+     * Delete data older than a specific timestamp.
+     * @param timestamp The timestamp threshold (in milliseconds)
+     */
+    suspend fun deleteDataBefore(timestamp: Long)
+
+    /**
      * Get the latest timestamp from stored data
      */
     suspend fun getLatestTimestamp(): Long?

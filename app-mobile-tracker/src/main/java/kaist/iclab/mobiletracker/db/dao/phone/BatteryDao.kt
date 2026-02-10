@@ -79,6 +79,9 @@ interface BatteryDao : BaseDao<BatterySensor.Entity, BatteryEntity> {
     @Query("DELETE FROM BatteryEntity")
     suspend fun deleteAllBatteryData()
 
+    @Query("DELETE FROM BatteryEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllBatteryData()
     }

@@ -88,6 +88,9 @@ interface MediaDao : BaseDao<MediaSensor.Entity, MediaEntity> {
     @Query("SELECT COUNT(*) FROM MediaEntity WHERE timestamp >= :afterTimestamp")
     fun getDailyMediaCount(afterTimestamp: Long): kotlinx.coroutines.flow.Flow<Int>
 
+    @Query("DELETE FROM MediaEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllMediaData()
     }

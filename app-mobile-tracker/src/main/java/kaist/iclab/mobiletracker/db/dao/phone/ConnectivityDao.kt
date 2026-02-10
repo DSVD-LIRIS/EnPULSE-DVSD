@@ -79,6 +79,9 @@ interface ConnectivityDao : BaseDao<ConnectivitySensor.Entity, ConnectivityEntit
     @Query("DELETE FROM ConnectivityEntity")
     suspend fun deleteAllConnectivityData()
 
+    @Query("DELETE FROM ConnectivityEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllConnectivityData()
     }

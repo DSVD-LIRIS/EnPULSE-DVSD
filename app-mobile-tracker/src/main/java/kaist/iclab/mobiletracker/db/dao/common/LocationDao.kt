@@ -110,6 +110,13 @@ interface LocationDao : BaseDao<LocationSensor.Entity, LocationEntity> {
     @Query("SELECT eventId FROM location WHERE id = :recordId")
     override suspend fun getEventIdById(recordId: Long): String?
 
+    @Query("DELETE FROM location WHERE deviceType = :deviceType AND timestamp < :timestamp")
+    suspend fun deleteDataBefore(deviceType: Int, timestamp: Long)
+
+    override suspend fun deleteDataBefore(timestamp: Long) {
+        deleteDataBefore(DeviceType.PHONE.value, timestamp)
+    }
+
     @Query("DELETE FROM location")
     override suspend fun deleteAll()
 }

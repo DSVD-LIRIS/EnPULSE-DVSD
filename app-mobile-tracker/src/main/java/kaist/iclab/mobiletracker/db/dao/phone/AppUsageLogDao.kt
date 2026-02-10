@@ -79,6 +79,9 @@ interface AppUsageLogDao : BaseDao<AppUsageLogSensor.Entity, AppUsageLogEntity> 
     @Query("DELETE FROM AppUsageLogEntity")
     suspend fun deleteAllAppUsageLogData()
 
+    @Query("DELETE FROM AppUsageLogEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllAppUsageLogData()
     }

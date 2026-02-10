@@ -52,6 +52,9 @@ interface WatchAccelerometerDao : BaseDao<WatchAccelerometerEntity, WatchAcceler
     @Query("SELECT eventId FROM watch_accelerometer WHERE id = :recordId")
     override suspend fun getEventIdById(recordId: Long): String?
 
+    @Query("DELETE FROM watch_accelerometer WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     @Query("DELETE FROM watch_accelerometer")
     override suspend fun deleteAll()
 }

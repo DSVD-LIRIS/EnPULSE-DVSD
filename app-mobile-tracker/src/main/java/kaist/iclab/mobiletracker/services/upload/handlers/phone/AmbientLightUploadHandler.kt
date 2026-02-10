@@ -34,4 +34,8 @@ class AmbientLightUploadHandler(
             entities.maxOf { it.timestamp }
         }
     }
+
+    override suspend fun pruneData(beforeTimestamp: Long) {
+        dao.deleteDataBefore(beforeTimestamp)
+    }
 }

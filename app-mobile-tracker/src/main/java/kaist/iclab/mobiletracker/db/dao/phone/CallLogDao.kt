@@ -76,6 +76,9 @@ interface CallLogDao : BaseDao<CallLogSensor.Entity, CallLogEntity> {
     @Query("SELECT COUNT(*) FROM CallLogEntity WHERE timestamp >= :afterTimestamp")
     fun getDailyCallLogCount(afterTimestamp: Long): kotlinx.coroutines.flow.Flow<Int>
 
+    @Query("DELETE FROM CallLogEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllCallLogData()
     }

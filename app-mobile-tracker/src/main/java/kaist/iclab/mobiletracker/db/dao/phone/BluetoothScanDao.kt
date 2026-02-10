@@ -90,6 +90,9 @@ interface BluetoothScanDao : BaseDao<BluetoothScanSensor.Entity, BluetoothScanEn
     @Query("DELETE FROM BluetoothScanEntity")
     suspend fun deleteAllBluetoothScanData()
 
+    @Query("DELETE FROM BluetoothScanEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllBluetoothScanData()
     }

@@ -52,6 +52,9 @@ interface WatchPPGDao : BaseDao<WatchPPGEntity, WatchPPGEntity> {
     @Query("SELECT eventId FROM watch_ppg WHERE id = :recordId")
     override suspend fun getEventIdById(recordId: Long): String?
 
+    @Query("DELETE FROM watch_ppg WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     @Query("DELETE FROM watch_ppg")
     override suspend fun deleteAll()
 }

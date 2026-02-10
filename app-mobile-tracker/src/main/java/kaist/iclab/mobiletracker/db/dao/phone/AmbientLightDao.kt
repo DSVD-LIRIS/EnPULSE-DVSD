@@ -74,6 +74,9 @@ interface AmbientLightDao : BaseDao<AmbientLightSensor.Entity, AmbientLightEntit
     @Query("SELECT COUNT(*) FROM AmbientLightEntity WHERE timestamp >= :afterTimestamp")
     fun getDailyAmbientLightCount(afterTimestamp: Long): kotlinx.coroutines.flow.Flow<Int>
 
+    @Query("DELETE FROM AmbientLightEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllAmbientLightData()
     }

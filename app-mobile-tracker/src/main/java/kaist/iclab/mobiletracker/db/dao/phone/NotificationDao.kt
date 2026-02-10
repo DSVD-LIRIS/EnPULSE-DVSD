@@ -83,6 +83,9 @@ interface NotificationDao : BaseDao<NotificationSensor.Entity, NotificationEntit
     @Query("DELETE FROM NotificationEntity")
     suspend fun deleteAllNotificationData()
 
+    @Query("DELETE FROM NotificationEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllNotificationData()
     }

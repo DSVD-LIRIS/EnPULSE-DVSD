@@ -37,4 +37,8 @@ class WatchLocationUploadHandler(
             entities.maxOf { entity -> entity.timestamp }
         }
     }
+
+    override suspend fun pruneData(beforeTimestamp: Long) {
+        dao.deleteDataBefore(DeviceType.WATCH.value, beforeTimestamp)
+    }
 }

@@ -77,6 +77,9 @@ interface StepDao : BaseDao<StepSensor.Entity, StepEntity> {
     @Query("DELETE FROM StepEntity")
     suspend fun deleteAllStepData()
 
+    @Query("DELETE FROM StepEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllStepData()
     }

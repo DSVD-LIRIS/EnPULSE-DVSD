@@ -78,6 +78,9 @@ interface DataTrafficDao : BaseDao<DataTrafficSensor.Entity, DataTrafficEntity> 
     @Query("SELECT COUNT(*) FROM DataTrafficEntity WHERE timestamp >= :afterTimestamp")
     fun getDailyDataTrafficCount(afterTimestamp: Long): kotlinx.coroutines.flow.Flow<Int>
 
+    @Query("DELETE FROM DataTrafficEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllDataTrafficData()
     }

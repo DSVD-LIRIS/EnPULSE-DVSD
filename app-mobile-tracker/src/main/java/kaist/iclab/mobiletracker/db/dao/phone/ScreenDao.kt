@@ -73,6 +73,9 @@ interface ScreenDao : BaseDao<ScreenSensor.Entity, ScreenEntity> {
     @Query("DELETE FROM ScreenEntity")
     suspend fun deleteAllScreenData()
 
+    @Query("DELETE FROM ScreenEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     override suspend fun deleteAll() {
         deleteAllScreenData()
     }

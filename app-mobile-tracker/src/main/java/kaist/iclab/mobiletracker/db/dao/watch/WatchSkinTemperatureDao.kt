@@ -56,6 +56,9 @@ interface WatchSkinTemperatureDao :
     @Query("SELECT eventId FROM watch_skin_temperature WHERE id = :recordId")
     override suspend fun getEventIdById(recordId: Long): String?
 
+    @Query("DELETE FROM watch_skin_temperature WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
+
     @Query("DELETE FROM watch_skin_temperature")
     override suspend fun deleteAll()
 }
