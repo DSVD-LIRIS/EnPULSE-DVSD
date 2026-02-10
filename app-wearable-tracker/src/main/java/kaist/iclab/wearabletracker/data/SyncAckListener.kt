@@ -19,10 +19,10 @@ import kotlinx.serialization.json.JsonPrimitive
 class SyncAckListener(
     private val bleChannel: BLEDataChannel,
     private val daos: Map<String, BaseDao<*>>,
-    private val syncPreferencesHelper: SyncPreferencesHelper
+    private val syncPreferencesHelper: SyncPreferencesHelper,
+    private val coroutineScope: CoroutineScope
 ) {
     private val TAG = javaClass.simpleName
-    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * Start listening for ACK messages from the phone.
@@ -42,7 +42,7 @@ class SyncAckListener(
      * Format: "batchId:OK" or "batchId:FAIL"
      */
     private fun handleAck(ackData: String) {
-        ioScope.launch {
+        coroutineScope.launch {
             try {
                 val parts = ackData.split(":")
                 if (parts.size != 2) {
@@ -103,6 +103,6 @@ class SyncAckListener(
      * Cleanup method - call when listener is no longer needed.
      */
     fun cleanup() {
-        ioScope.cancel()
+        // Handled by injected scope lifecycle
     }
 }

@@ -2,6 +2,7 @@ package kaist.iclab.wearabletracker.repository
 
 import kaist.iclab.wearabletracker.db.dao.BaseDao
 import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Implementation of WatchSensorRepository.
@@ -19,6 +20,8 @@ class WatchSensorRepositoryImpl(
     override fun getLastSyncTimestamp(): Long? {
         return syncPreferencesHelper.getLastSyncTimestamp()
     }
+
+    override val lastSyncTimestampFlow: Flow<Long?> = syncPreferencesHelper.lastSyncTimestampFlow
 
     override fun saveLastSyncTimestamp(timestamp: Long) {
         syncPreferencesHelper.saveLastSyncTimestamp(timestamp)

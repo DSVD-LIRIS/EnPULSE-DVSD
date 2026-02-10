@@ -14,7 +14,7 @@ import kaist.iclab.wearabletracker.data.PhoneCommunicationManager
 import kaist.iclab.wearabletracker.helpers.NotificationHelper
 import kaist.iclab.wearabletracker.repository.WatchSensorRepository
 import kaist.iclab.wearabletracker.storage.SensorDataReceiver
-import kotlinx.coroutines.CoroutineScope
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,7 +54,13 @@ class SettingsViewModel(
     }
 
     init {
-        CoroutineScope(Dispatchers.IO).launch {
+        viewModelScope.launch {
+            repository.lastSyncTimestampFlow.collect {
+                _lastSyncTimestamp.value = it
+            }
+        }
+
+        viewModelScope.launch {
             sensorController.controllerStateFlow.collect {
                 if (it.flag == ControllerState.FLAG.RUNNING) sensorDataReceiver.startBackgroundCollection()
                 else sensorDataReceiver.stopBackgroundCollection()
@@ -63,7 +69,7 @@ class SettingsViewModel(
 
         // Stop controller immediately when SDK Policy Error is detected
         // This ensures the Start button doesn't show "recording" state while error popup is visible
-        CoroutineScope(Dispatchers.IO).launch {
+        viewModelScope.launch {
             sdkPolicyError.collect { hasError ->
                 if (hasError) {
                     sensorController.stop()
@@ -116,13 +122,10 @@ class SettingsViewModel(
     }
 
     fun upload() {
-        phoneCommunicationManager.sendDataToPhone()
-        // Refresh last sync timestamp after a delay to allow async sync to complete
-        // Note: SharedPreferences operations are synchronous, but we still delay to allow
-        // the sync operation to complete first
-        CoroutineScope(Dispatchers.IO).launch {
-            delay(2000) // Wait 2 seconds for sync to complete
-            refreshLastSyncTimestamp()
+        viewModelScope.launch {
+            phoneCommunicationManager.sendDataToPhone()
+            // The timestamp will update automatically via repository.lastSyncTimestampFlow
+            // when SyncPreferencesHelper is updated by SyncAckListener
         }
     }
 
@@ -130,26 +133,19 @@ class SettingsViewModel(
      * Load the last sync timestamp from repository.
      */
     fun refreshLastSyncTimestamp() {
-        try {
-            val timestamp = repository.getLastSyncTimestamp()
-            _lastSyncTimestamp.value = timestamp
-        } catch (e: Exception) {
-            Log.e(TAG, "Error loading last sync timestamp: ${e.message}", e)
-        }
+        // Now reactive, no manual work needed unless we want to force a one-shot read
     }
 
     fun flush(context: Context) {
-        CoroutineScope(Dispatchers.IO).launch {
+        viewModelScope.launch {
             try {
-                repository.deleteAllSensorData()
-                withContext(Dispatchers.Main) {
-                    NotificationHelper.showFlushSuccess(context)
+                withContext(Dispatchers.IO) {
+                    repository.deleteAllSensorData()
                 }
+                NotificationHelper.showFlushSuccess(context)
             } catch (e: Exception) {
                 Log.e(TAG, "FLUSH - Error deleting sensor data: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    NotificationHelper.showFlushFailure(context, e, "Failed to delete sensor data")
-                }
+                NotificationHelper.showFlushFailure(context, e, "Failed to delete sensor data")
             }
         }
     }

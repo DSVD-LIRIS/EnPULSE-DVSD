@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
 
@@ -79,7 +80,7 @@ class SensorDataReceiver(
                 .build()
 
             val serviceType =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH else 0
 
             this.startForeground(
                 serviceNotification.notificationId,
@@ -110,24 +111,37 @@ class SensorDataReceiver(
                 val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
                 var lastFlushTime = System.currentTimeMillis()
 
-                while (isActive) {
-                    val result = eventChannel.tryReceive()
-                    if (result.isSuccess) {
-                        val (sensorId, entity) = result.getOrThrow()
-                        buffer.getOrPut(sensorId) { mutableListOf() }.add(entity)
-                    } else {
-                        // If channel is empty, wait a bit to avoid tight loop
-                        delay(100)
+                try {
+                    while (isActive) {
+                        // Calculate remaining time until next scheduled flush
+                        val nextFlushDelay = maxOf(0L, FLUSH_INTERVAL_MS - (System.currentTimeMillis() - lastFlushTime))
+                        
+                        // Wait for data OR for the flush interval to hit
+                        val result = withTimeoutOrNull(nextFlushDelay) {
+                            eventChannel.receive()
+                        }
+
+                        if (result != null) {
+                            val (sensorId, entity) = result
+                            val sensorBuffer = buffer.getOrPut(sensorId) { mutableListOf() }
+                            sensorBuffer.add(entity)
+
+                            // Flush immediately if this sensor hit the batch limit
+                            if (sensorBuffer.size >= BATCH_SIZE) {
+                                flushBuffer(buffer)
+                                lastFlushTime = System.currentTimeMillis()
+                            }
+                        } else {
+                            // Timeout reached: periodic flush of all sensors
+                            if (buffer.isNotEmpty()) {
+                                flushBuffer(buffer)
+                            }
+                            lastFlushTime = System.currentTimeMillis()
+                        }
                     }
-
-                    // Flush if thresholds met
-                    val currentTime = System.currentTimeMillis()
-                    val shouldFlush = buffer.values.any { it.size >= BATCH_SIZE } ||
-                            (currentTime - lastFlushTime >= FLUSH_INTERVAL_MS && buffer.isNotEmpty())
-
-                    if (shouldFlush) {
-                        flushBuffer(buffer)
-                        lastFlushTime = currentTime
+                } catch (e: Exception) {
+                    if (isActive) {
+                        e.printStackTrace()
                     }
                 }
             }
@@ -154,21 +168,26 @@ class SensorDataReceiver(
                 sensor.removeListener(listener[sensor.id]!!)
             }
 
-            // Flush remaining data
-            runBlocking {
-                val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
-                while (true) {
-                    val result = eventChannel.tryReceive()
-                    if (result.isSuccess) {
-                        val (sensorId, entity) = result.getOrThrow()
-                        buffer.getOrPut(sensorId) { mutableListOf() }.add(entity)
-                    } else {
-                        break
-                    }
-                }
-                flushBuffer(buffer)
-            }
+            // Cancel incoming data processing job
             batchJob?.cancel()
+
+            // Drain remaining data and flush in the app-level scope
+            // This prevents ANRs while ensuring data is still written to DB
+            val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
+            while (true) {
+                val result = eventChannel.tryReceive()
+                if (result.isSuccess) {
+                    val (sensorId, entity) = result.getOrThrow()
+                    buffer.getOrPut(sensorId) { mutableListOf() }.add(entity)
+                } else {
+                    break
+                }
+            }
+            if (buffer.isNotEmpty()) {
+                coroutineScope.launch {
+                    flushBuffer(buffer)
+                }
+            }
         }
     }
 }

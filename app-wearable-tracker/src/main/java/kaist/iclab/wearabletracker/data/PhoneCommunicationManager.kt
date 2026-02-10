@@ -76,6 +76,8 @@ class PhoneCommunicationManager(
 
                 // Track max timestamp seen across all sensors to update global pref at end
                 var maxTimestampSeen = lastSyncTime
+                var totalRecordCount = 0
+                val batchId = UUID.randomUUID().toString()
 
                 // Per-sensor tracking
                 var successSensorCount = 0
@@ -86,10 +88,12 @@ class PhoneCommunicationManager(
                     // Guard to stop processing if error occurred
                     if (errorOccurred) return@forEach
 
+                    var currentSensorLastTimestamp = lastSyncTime
+
                     while (coroutineContext.isActive) {
                         // Fetch a page of data
                         val data = dao.getDataSince(
-                            lastSyncTime,
+                            currentSensorLastTimestamp,
                             kaist.iclab.wearabletracker.Constants.DB.SYNC_BATCH_LIMIT
                         )
 
@@ -98,12 +102,12 @@ class PhoneCommunicationManager(
                         }
 
                         dataSent = true
+                        totalRecordCount += data.size
 
                         // Calculate max timestamp in this chunk
                         val chunkMaxTimestamp = data.maxOf { it.timestamp }
                         maxTimestampSeen = maxOf(maxTimestampSeen, chunkMaxTimestamp)
-
-                        val batchId = UUID.randomUUID().toString()
+                        currentSensorLastTimestamp = chunkMaxTimestamp
 
                         // Build CSV for this chunk
                         val csvBuilder = StringBuilder()
@@ -119,9 +123,6 @@ class PhoneCommunicationManager(
 
                         try {
                             bleChannel.send(Constants.BLE.KEY_SENSOR_DATA, csvBuilder.toString())
-
-                            // Send/Delete succeeded for this chunk
-                            dao.deleteDataBefore(chunkMaxTimestamp)
                             Log.d(TAG, "[$sensorId] Sent chunk: ${data.size} records, maxTs=$chunkMaxTimestamp")
                         } catch (e: Exception) {
                             Log.e(TAG, "[$sensorId] Error sending chunk: ${e.message}", e)
@@ -134,8 +135,19 @@ class PhoneCommunicationManager(
                 }
 
                 if (dataSent && !errorOccurred) {
-                    Log.i(TAG, "Sync complete: $successSensorCount sensors synced")
-                    syncPreferencesHelper.saveLastSyncTimestamp(System.currentTimeMillis())
+                    Log.i(TAG, "Sync payload sent: $successSensorCount sensors, batchId=$batchId")
+
+                    // Save as pending batch - do NOT delete yet.
+                    // SyncAckListener will perform cleanup after phone confirms receipt.
+                    syncPreferencesHelper.savePendingBatch(
+                        SyncBatch(
+                            batchId = batchId,
+                            startTimestamp = lastSyncTime,
+                            endTimestamp = maxTimestampSeen,
+                            recordCount = totalRecordCount,
+                            createdAt = System.currentTimeMillis()
+                        )
+                    )
 
                     withContext(Dispatchers.Main) {
                         NotificationHelper.showPhoneCommunicationSuccess(androidContext)

@@ -252,7 +252,8 @@ val koinModule = module {
         SyncAckListener(
             bleChannel = get<PhoneCommunicationManager>().getBleChannel(),
             daos = get(named("sensorDataStorages")),
-            syncPreferencesHelper = get()
+            syncPreferencesHelper = get(),
+            coroutineScope = get()
         )
     }
 

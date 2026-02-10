@@ -3,6 +3,10 @@ package kaist.iclab.wearabletracker.helpers
 import android.content.Context
 import android.content.SharedPreferences
 import kaist.iclab.wearabletracker.data.SyncBatch
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.onStart
 
 /**
  * Helper utility for managing sync metadata using SharedPreferences.
@@ -30,6 +34,24 @@ class SyncPreferencesHelper(context: Context) {
     fun getLastSyncTimestamp(): Long? {
         val timestamp = sharedPreferences.getLong(KEY_LAST_SYNC_TIMESTAMP, -1L)
         return if (timestamp == -1L) null else timestamp
+    }
+
+    /**
+     * Flow of the last successful sync timestamp.
+     */
+    val lastSyncTimestampFlow: Flow<Long?> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+            if (key == KEY_LAST_SYNC_TIMESTAMP) {
+                val timestamp = prefs.getLong(KEY_LAST_SYNC_TIMESTAMP, -1L)
+                trySend(if (timestamp == -1L) null else timestamp)
+            }
+        }
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }.onStart {
+        emit(getLastSyncTimestamp())
     }
 
     /**
