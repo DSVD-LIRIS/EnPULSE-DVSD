@@ -58,6 +58,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    sourceSets.getByName("androidTest") {
+        assets.srcDir("schemas")
+    }
+
     kotlin {
         jvmToolchain(17)
     }
@@ -145,6 +149,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.gson) // for converter
+    androidTestImplementation(libs.androidx.room.testing)
 
     /* Google Play Services Wearable */
     implementation(libs.android.gms.wearable)
@@ -155,4 +160,6 @@ dependencies {
 
     /* Testing */
     testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
