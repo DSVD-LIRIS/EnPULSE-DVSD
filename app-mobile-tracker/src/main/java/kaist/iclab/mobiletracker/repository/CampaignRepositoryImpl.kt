@@ -38,4 +38,9 @@ class CampaignRepositoryImpl(
     override fun getCachedCampaigns(): List<CampaignData> {
         return _campaignsFlow.value
     }
+
+    override suspend fun verifyPassword(campaignId: String, password: String): Result<Boolean> {
+        // TODO: Call the real API for password hash checking
+        return Result.Success(true)
+    }
 }

@@ -111,6 +111,9 @@ fun AccountSettingsScreen(
             onDismiss = { showCampaignDialog = false },
             onSelect = { campaignId ->
                 accountSettingsViewModel.selectCampaign(campaignId)
+            },
+            onVerifyPassword = { campaignId, password ->
+                accountSettingsViewModel.verifyPassword(campaignId, password)
             }
         )
     }

@@ -58,6 +58,12 @@
     <string name="campaign_dialog_title">실험 그룹</string>
     <string name="campaign_dialog_select">선택</string>
     <string name="campaign_dialog_cancel">취소</string>
+    <string name="campaign_password_title">비밀번호 입력</string>
+    <string name="campaign_password_description">이 실험 그룹은 보호되어 있습니다. 참여하려면 비밀번호를 입력해주세요.</string>
+    <string name="campaign_password_input_label">비밀번호</string>
+    <string name="campaign_password_verify">확인</string>
+    <string name="campaign_password_invalid">비밀번호가 올바르지 않습니다</string>
+    <string name="campaign_password_error">비밀번호 확인 중 오류가 발생했습니다</string>
     <string name="menu_phone_sensor">폰 센서 설정</string>
     <string name="menu_permission">권한</string>
     <string name="menu_server_sync">자동 동기화</string>

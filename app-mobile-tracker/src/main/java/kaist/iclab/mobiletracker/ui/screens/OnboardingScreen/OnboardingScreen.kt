@@ -29,6 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,6 +54,7 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    var showPasswordDialog by remember { mutableStateOf(false) }
 
     // Navigate to home when onboarding is complete
     LaunchedEffect(uiState.isComplete) {
@@ -193,11 +197,17 @@ fun OnboardingScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
-                    onClick = { viewModel.confirmSelection() },
+                    onClick = { 
+                        if (uiState.selectedCampaign?.password_hash != null) {
+                            showPasswordDialog = true
+                        } else {
+                            viewModel.confirmSelection()
+                        }
+                    },
                     modifier = Modifier
                         .weight(3f)
                         .height(Styles.BUTTON_HEIGHT),
-                    enabled = uiState.selectedCampaign != null && !uiState.isLoading,
+                    enabled = uiState.selectedCampaign != null && !uiState.isLoading && !showPasswordDialog,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = AppColors.PrimaryColor,
                         contentColor = Color.White,
@@ -232,6 +242,20 @@ fun OnboardingScreen(
                 }
             }
         }
+    }
+
+    if (showPasswordDialog && uiState.selectedCampaign != null) {
+        kaist.iclab.mobiletracker.ui.components.CampaignDialog.PasswordDialog(
+            campaignName = uiState.selectedCampaign!!.name,
+            onDismiss = { showPasswordDialog = false },
+            onVerify = { password ->
+                viewModel.verifyPassword(password)
+            },
+            onSuccess = {
+                showPasswordDialog = false
+                viewModel.confirmSelection()
+            }
+        )
     }
 }
 

@@ -54,4 +54,30 @@ class CampaignService(
             }
         }
     }
+    /**
+     * Verify campaign password by checking if a record exists with the given ID and password hash
+     * @param campaignId The ID of the campaign
+     * @param passwordHash The hash of the password to verify
+     * @return Result containing boolean (true if valid, false otherwise) or error
+     */
+    suspend fun verifyPassword(campaignId: String, passwordHash: String): Result<Boolean> {
+        val campaignIdInt = campaignId.toIntOrNull()
+            ?: return Result.Error(
+                AppError.Validation("Invalid campaign ID format: $campaignId")
+            )
+
+        return SupabaseLoadingInterceptor.withLoading {
+            ErrorClassifier.runClassified(TAG, "verifyPassword") {
+                val count = supabaseClient.from(tableName).select {
+                    filter {
+                        eq("id", campaignIdInt)
+                        eq("password_hash", passwordHash)
+                    }
+                    count(io.github.jan.supabase.postgrest.query.Count.EXACT)
+                }.countOrNull() ?: 0
+
+                count > 0
+            }
+        }
+    }
 }

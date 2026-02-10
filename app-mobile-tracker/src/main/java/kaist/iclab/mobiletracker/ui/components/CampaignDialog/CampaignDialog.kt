@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
 import kaist.iclab.mobiletracker.ui.components.Popup.DialogButtonConfig
@@ -38,100 +39,137 @@ fun CampaignDialog(
     isLoading: Boolean = false,
     error: String? = null,
     onDismiss: () -> Unit,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
+    onVerifyPassword: suspend (String, String) -> Boolean
 ) {
     val context = LocalContext.current
     var selected by remember { mutableStateOf(selectedCampaignId) }
+    
+    // Password verification state
+    var showPasswordInput by remember { mutableStateOf(false) }
+    
+    // Helper to check if selected campaign has password
+    fun hasPassword(id: String?): Boolean {
+        return campaigns.find { it.idString == id }?.password_hash != null
+    }
 
-    PopupDialog(
-        title = context.getString(R.string.campaign_dialog_title),
-        content = {
-            when {
-                isLoading -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = AppColors.PrimaryColor
+    if (showPasswordInput) {
+        val selectedCampaign = campaigns.find { it.idString == selected }
+        
+        if (selectedCampaign != null) {
+            PasswordDialog(
+                campaignName = selectedCampaign.name,
+                onDismiss = { showPasswordInput = false },
+                onVerify = { password -> 
+                    onVerifyPassword(selectedCampaign.idString, password) 
+                },
+                onSuccess = {
+                    onSelect(selectedCampaign.idString)
+                    onDismiss()
+                }
+            )
+        } else {
+            showPasswordInput = false
+        }
+    } else {
+        PopupDialog(
+            title = context.getString(R.string.campaign_dialog_title),
+            content = {
+                when {
+                    isLoading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = AppColors.PrimaryColor
+                            )
+                        }
+                    }
+
+                    error != null -> {
+                        Text(
+                            text = error,
+                            fontSize = Styles.ExperimentNameFontSize,
+                            color = AppColors.TextSecondary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
                         )
                     }
-                }
 
-                error != null -> {
-                    Text(
-                        text = error,
-                        fontSize = Styles.ExperimentNameFontSize,
-                        color = AppColors.TextSecondary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp)
-                    )
-                }
+                    campaigns.isEmpty() -> {
+                        Text(
+                            text = context.getString(R.string.campaign_no_campaign_joined),
+                            fontSize = Styles.ExperimentNameFontSize,
+                            color = AppColors.TextSecondary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                        )
+                    }
 
-                campaigns.isEmpty() -> {
-                    Text(
-                        text = context.getString(R.string.campaign_no_campaign_joined),
-                        fontSize = Styles.ExperimentNameFontSize,
-                        color = AppColors.TextSecondary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp)
-                    )
-                }
-
-                else -> {
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        campaigns.forEach { campaign ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .selectable(
+                    else -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            campaigns.forEach { campaign ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .selectable(
+                                            selected = (selected == campaign.idString),
+                                            onClick = { selected = campaign.idString },
+                                            role = Role.RadioButton
+                                        ),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
                                         selected = (selected == campaign.idString),
                                         onClick = { selected = campaign.idString },
-                                        role = Role.RadioButton
-                                    ),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = (selected == campaign.idString),
-                                    onClick = { selected = campaign.idString },
-                                    colors = RadioButtonDefaults.colors(
-                                        selectedColor = AppColors.PrimaryColor
+                                        colors = RadioButtonDefaults.colors(
+                                            selectedColor = AppColors.PrimaryColor
+                                        )
                                     )
-                                )
-                                Text(
-                                    text = campaign.name,
-                                    fontSize = Styles.ExperimentNameFontSize,
-                                    color = Styles.ExperimentNameColor
-                                )
+                                    Column {
+                                        Text(
+                                            text = campaign.name,
+                                            fontSize = Styles.ExperimentNameFontSize,
+                                            color = Styles.ExperimentNameColor
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-        },
-        primaryButton = DialogButtonConfig(
-            text = context.getString(R.string.campaign_dialog_select),
-            onClick = {
-                selected?.let { onSelect(it) }
-                onDismiss()
             },
-            enabled = selected != null && !isLoading && error == null
-        ),
-        secondaryButton = DialogButtonConfig(
-            text = context.getString(R.string.campaign_dialog_cancel),
-            onClick = onDismiss,
-            isPrimary = false
-        ),
-        onDismiss = onDismiss
-    )
+            primaryButton = DialogButtonConfig(
+                text = context.getString(R.string.campaign_dialog_select),
+                onClick = {
+                    selected?.let { id ->
+                        if (hasPassword(id)) {
+                            showPasswordInput = true
+                        } else {
+                            onSelect(id)
+                            onDismiss()
+                        }
+                    }
+                },
+                enabled = selected != null && !isLoading && error == null
+            ),
+            secondaryButton = DialogButtonConfig(
+                text = context.getString(R.string.campaign_dialog_cancel),
+                onClick = onDismiss,
+                isPrimary = false
+            ),
+            onDismiss = onDismiss
+        )
+    }
 }
 

@@ -87,4 +87,12 @@ class OnboardingViewModel(
             }
         }
     }
+
+    suspend fun verifyPassword(password: String): Boolean {
+        val selectedCampaign = _uiState.value.selectedCampaign ?: return false
+        return when (val result = campaignRepository.verifyPassword(selectedCampaign.idString, password)) {
+            is Result.Success -> result.data
+            is Result.Error -> false
+        }
+    }
 }

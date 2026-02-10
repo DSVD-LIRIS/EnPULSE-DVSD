@@ -58,6 +58,12 @@
     <string name="campaign_dialog_title">Experiment Group</string>
     <string name="campaign_dialog_select">Select</string>
     <string name="campaign_dialog_cancel">Cancel</string>
+    <string name="campaign_password_title">Enter Password</string>
+    <string name="campaign_password_description">This experiment group is protected. Please enter the password to join.</string>
+    <string name="campaign_password_input_label">Password</string>
+    <string name="campaign_password_verify">Verify</string>
+    <string name="campaign_password_invalid">Invalid password</string>
+    <string name="campaign_password_error">Error checking password</string>
     <string name="menu_phone_sensor">Phone Sensors Config</string>
     <string name="menu_permission">Permissions</string>
     <string name="menu_server_sync">Automatic Sync</string>
