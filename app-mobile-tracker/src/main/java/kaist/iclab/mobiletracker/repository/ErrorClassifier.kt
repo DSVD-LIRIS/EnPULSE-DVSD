@@ -1,6 +1,7 @@
 package kaist.iclab.mobiletracker.repository
 
 import android.util.Log
+import kotlinx.coroutines.TimeoutCancellationException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -26,6 +27,10 @@ object ErrorClassifier {
         val msg = "$prefix${e.message ?: "Unknown error"}"
 
         return when (e) {
+            // Timeout (from withTimeout in SupabaseLoadingInterceptor)
+            is TimeoutCancellationException ->
+                AppError.Timeout(msg, e)
+
             // Network errors
             is UnknownHostException,
             is SocketTimeoutException,

@@ -27,6 +27,9 @@ sealed class AppError(message: String, cause: Throwable? = null) : Exception(mes
     /** Invalid input or parameters. */
     class Validation(message: String, cause: Throwable? = null) : AppError(message, cause)
 
+    /** Operation exceeded the allowed time limit. */
+    class Timeout(message: String, cause: Throwable? = null) : AppError(message, cause)
+
     /** Catch-all for unexpected / unclassifiable errors. */
     class Unknown(message: String, cause: Throwable? = null) : AppError(message, cause)
 }

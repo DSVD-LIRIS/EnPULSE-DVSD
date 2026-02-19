@@ -68,6 +68,14 @@ object Constants {
     }
 
     /**
+     * Network Constants
+     */
+    object Network {
+        /** Timeout for Supabase operations (e.g., edge function calls, DB queries) */
+        const val SUPABASE_REQUEST_TIMEOUT_MS = 30_000L
+    }
+
+    /**
      * Notification Constants
      */
     object Notification {
