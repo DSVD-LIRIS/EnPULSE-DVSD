@@ -260,8 +260,10 @@
     <string name="toast_upload_all_summary">Successfully uploaded %1$d sensor(s)</string>
     <string name="sensor_upload_data_confirm">Upload Sensor Data</string>
     <string name="sensor_upload_data_message">Are you sure you want to upload all stored data for this sensor to the server?</string>
-    <string name="toast_login_success">Login successful</string>
-    <string name="toast_logout_success">Logout successful</string>
+
+    <string name="toast_login_failed">Login failed. Please try again.</string>
+    <string name="toast_profile_setup_failed">Could not set up your profile. Please try again later.</string>
+
     <string name="toast_error_generic">An error occurred</string>
     <string name="toast_request_timeout">Request timed out. Please check your connection and try again.</string>
     <string name="toast_no_data_to_export">No data to export</string>

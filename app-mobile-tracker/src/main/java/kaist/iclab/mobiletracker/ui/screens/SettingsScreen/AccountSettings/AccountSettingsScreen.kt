@@ -96,7 +96,6 @@ fun AccountSettingsScreen(
             onConfirm = {
                 authViewModel.logout()
                 showLogoutDialog = false
-                AppToast.show(context, R.string.toast_logout_success)
             }
         )
     }

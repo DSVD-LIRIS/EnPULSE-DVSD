@@ -37,30 +37,21 @@ class UserProfileRepositoryImpl(
     }
 
     override suspend fun updateCampaignId(campaignId: Int): Result<Unit> {
-        return ErrorClassifier.runClassified(TAG, "update campaign id") {
-            val uuid = getCurrentUuid()
-                ?: throw IllegalStateException("User not logged in")
-
-            when (val result = profileService.updateCampaignId(uuid, campaignId)) {
-                is Result.Success -> Unit
-                is Result.Error -> throw result.exception ?: Exception(result.message)
-            }
-        }
+        val uuid = getCurrentUuid()
+            ?: return Result.Error(AppError.Unknown("User not logged in"))
+        return profileService.updateCampaignId(uuid, campaignId)
     }
 
-    override suspend fun refreshProfile(): Result<ProfileData> {
-        return ErrorClassifier.runClassified(TAG, "refresh profile") {
-            val uuid = getCurrentUuid()
-                ?: throw IllegalStateException("User not logged in")
+    override suspend fun refreshProfile(): Result<ProfileData?> {
+        val uuid = getCurrentUuid()
+            ?: return Result.Error(AppError.Unknown("User not logged in"))
 
-            when (val result = profileService.getProfileByUuid(uuid)) {
-                is Result.Success -> {
-                    _profile.value = result.data
-                    result.data
-                }
-
-                is Result.Error -> throw result.exception ?: Exception(result.message)
+        return when (val result = profileService.getProfileByUuid(uuid)) {
+            is Result.Success -> {
+                _profile.value = result.data
+                result
             }
+            is Result.Error -> result
         }
     }
 
@@ -68,16 +59,9 @@ class UserProfileRepositoryImpl(
         email: String,
         campaignId: Int?
     ): Result<Unit> {
-        return ErrorClassifier.runClassified(TAG, "create profile if not exists") {
-            val uuid = getCurrentUuid()
-                ?: throw IllegalStateException("User not logged in")
-
-            when (val result =
-                profileService.createProfileIfNotExists(uuid, email, campaignId)) {
-                is Result.Success -> Unit
-                is Result.Error -> throw result.exception ?: Exception(result.message)
-            }
-        }
+        val uuid = getCurrentUuid()
+            ?: return Result.Error(AppError.Unknown("User not logged in"))
+        return profileService.createProfileIfNotExists(uuid, email, campaignId)
     }
 }
 

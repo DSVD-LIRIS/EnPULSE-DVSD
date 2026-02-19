@@ -34,6 +34,7 @@ import kaist.iclab.mobiletracker.ui.screens.SettingsScreen.PhoneSensorConfigSett
 import kaist.iclab.mobiletracker.ui.screens.SettingsScreen.SettingsScreen
 import kaist.iclab.mobiletracker.ui.screens.SettingsScreen.SurveySettings.SurveySettingsScreen
 import kaist.iclab.mobiletracker.utils.AppToast
+import kaist.iclab.mobiletracker.viewmodels.auth.AuthUiEvent
 import kaist.iclab.mobiletracker.viewmodels.auth.AuthViewModel
 import kaist.iclab.mobiletracker.viewmodels.data.SensorDetailViewModel
 import kaist.iclab.tracker.permission.AndroidPermissionManager
@@ -53,19 +54,10 @@ fun NavGraph(
     val context = LocalContext.current
     val activity = context as? Activity
 
-    // Track previous login state to show toast on successful login
-    var previousLoginState by remember { mutableStateOf(userState.isLoggedIn) }
+    // Track previous error message to prevent duplicate toasts
     var previousErrorMessage by remember { mutableStateOf<String?>(userState.message) }
 
-    // Show toast when user successfully logs in
-    LaunchedEffect(userState.isLoggedIn) {
-        if (userState.isLoggedIn && !previousLoginState) {
-            AppToast.show(context, R.string.toast_login_success)
-        }
-        previousLoginState = userState.isLoggedIn
-    }
-
-    // Show toast when authentication error occurs
+    // Show toast when authentication error occurs via UserState
     LaunchedEffect(userState.message) {
         val currentMessage = userState.message
         // Only show toast if there's a new error message and user is not logged in
@@ -76,6 +68,17 @@ fun NavGraph(
             AppToast.show(context, currentMessage, AppToast.Duration.LONG)
         }
         previousErrorMessage = currentMessage
+    }
+
+    // Collect UI events from AuthViewModel (profile errors, etc.)
+    LaunchedEffect(Unit) {
+        authViewModel.uiEvent.collect { event ->
+            when (event) {
+                is AuthUiEvent.ShowError -> {
+                    AppToast.show(context, event.messageResId, AppToast.Duration.LONG)
+                }
+            }
+        }
     }
 
     // Get system animation duration (respects user's animation speed settings)
@@ -108,14 +111,16 @@ fun NavGraph(
 
             when (currentRoute) {
                 // User is on Login screen and needs onboarding
-                Screen.Login.route -> if (needsOnboarding) {
-                    navController.navigate(Screen.Onboarding.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                } else {
-                    // User is on Login screen and doesn't need onboarding
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+                Screen.Login.route -> {
+                    if (needsOnboarding) {
+                        navController.navigate(Screen.Onboarding.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    } else {
+                        // User is on Login screen and doesn't need onboarding
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
                     }
                 }
                 // User completed onboarding (on Onboarding screen and now doesn't need it)
@@ -127,7 +132,7 @@ fun NavGraph(
             }
         } else {
             // Navigate to Login when user logs out
-            if (currentRoute !in mainTabs && currentRoute != Screen.Login.route) {
+            if (currentRoute != Screen.Login.route) {
                 navController.navigate(Screen.Login.route) {
                     popUpTo(0) { inclusive = true }
                 }

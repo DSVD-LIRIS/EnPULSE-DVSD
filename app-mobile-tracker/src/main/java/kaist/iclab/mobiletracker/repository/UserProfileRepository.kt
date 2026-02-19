@@ -37,7 +37,7 @@ interface UserProfileRepository {
     /**
      * Refresh profile from remote source
      */
-    suspend fun refreshProfile(): Result<ProfileData>
+    suspend fun refreshProfile(): Result<ProfileData?>
 
     /**
      * Create profile if it doesn't exist

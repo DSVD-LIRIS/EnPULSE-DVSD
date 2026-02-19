@@ -76,7 +76,7 @@ class CampaignService(
         return SupabaseLoadingInterceptor.withLoading {
             ErrorClassifier.runClassified(TAG, "joinCampaign") {
                 val body = buildJsonObject {
-                    put("campaign_id", campaignIdInt)
+                    put("campaignId", campaignIdInt)
                     put("password", password)
                 }
                 supabaseClient.functions.invoke(

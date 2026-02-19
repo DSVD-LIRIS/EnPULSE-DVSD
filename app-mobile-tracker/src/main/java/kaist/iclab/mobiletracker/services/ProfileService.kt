@@ -86,9 +86,9 @@ class ProfileService(
     /**
      * Get profile by UUID
      * @param uuid The user UUID
-     * @return Result containing ProfileData if found, or error
+     * @return Result containing ProfileData if found (null if not), or error
      */
-    suspend fun getProfileByUuid(uuid: String): Result<ProfileData> {
+    suspend fun getProfileByUuid(uuid: String): Result<ProfileData?> {
         return SupabaseLoadingInterceptor.withLoading {
             ErrorClassifier.runClassified(TAG, "getProfileByUuid($uuid)") {
                 val profiles = supabaseClient.from(tableName)
@@ -100,7 +100,6 @@ class ProfileService(
                     .decodeList<ProfileData>()
 
                 profiles.firstOrNull()
-                    ?: throw AppError.NotFound("Profile with UUID $uuid not found")
             }
         }
     }
@@ -113,7 +112,11 @@ class ProfileService(
      */
     suspend fun updateCampaignId(uuid: String, campaignId: Int?): Result<Unit> {
         return getProfileByUuid(uuid).flatMap { existingProfile ->
-            saveProfile(existingProfile.copy(campaign_id = campaignId))
+            if (existingProfile == null) {
+                Result.Error(AppError.NotFound("Profile with UUID $uuid not found"))
+            } else {
+                saveProfile(existingProfile.copy(campaign_id = campaignId))
+            }
         }
     }
 }
