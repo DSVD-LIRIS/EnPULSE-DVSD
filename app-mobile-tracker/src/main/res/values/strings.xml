@@ -127,6 +127,8 @@
     <string name="data_screen_title">Collected Data</string>
     <string name="data_screen_description">View and manage all sensor data collected from your mobile and wearable devices.</string>
     <string name="data_screen_subtitle">Total %1$d Records</string>
+    <string name="data_screen_hide_empty_sensors">Hide Empty Data Sensors</string>
+    <string name="data_screen_no_result">No result</string>
 
 
     <!-- Sensor Detail Screen -->
@@ -189,8 +191,7 @@
     <string name="sync_current_time">Current Time</string>
     <string name="sync_last_watch_data">Last Watch Data Received</string>
     <string name="sync_last_successful_upload">Last Successful Upload</string>
-    <string name="sync_start_data_upload">Upload All</string>
-    <string name="sync_delete_data">Delete All</string>
+
     <string name="sync_automatic_sync">Automatic Sync</string>
     <string name="sync_automatic_sync_description">Configure automatic data synchronization settings. Set sync interval and network preferences for automatic uploads.</string>
     <string name="sync_interval_title">Sync Interval</string>

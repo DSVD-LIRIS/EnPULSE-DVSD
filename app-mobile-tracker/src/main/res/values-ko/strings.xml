@@ -127,6 +127,8 @@
     <string name="data_screen_title">수집된 데이터</string>
     <string name="data_screen_description">모바일 및 웨어러블 기기에서 수집된 모든 센서 데이터를 확인하고 관리할 수 있습니다.</string>
     <string name="data_screen_subtitle">총 %1$d개 레코드</string>
+    <string name="data_screen_hide_empty_sensors">빈 센서 숨기기</string>
+    <string name="data_screen_no_result">결과 없음</string>
 
 
     <!-- Sensor Detail Screen -->
@@ -189,8 +191,7 @@
     <string name="sync_current_time">현재 시간</string>
     <string name="sync_last_watch_data">마지막 워치 데이터 수신</string>
     <string name="sync_last_successful_upload">마지막 성공한 업로드</string>
-    <string name="sync_start_data_upload">모두 업로드</string>
-    <string name="sync_delete_data">모두 삭제</string>
+
     <string name="sync_automatic_sync">자동 동기화</string>
     <string name="sync_automatic_sync_description">자동 데이터 동기화 설정을 구성하세요. 자동 업로드를 위한 동기화 간격 및 네트워크 기본 설정을 설정합니다.</string>
     <string name="sync_interval_title">동기화 간격</string>
