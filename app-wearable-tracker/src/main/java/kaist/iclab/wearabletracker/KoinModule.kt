@@ -15,6 +15,7 @@ import kaist.iclab.tracker.sensor.galaxywatch.PPGSensor
 import kaist.iclab.tracker.sensor.galaxywatch.SkinTemperatureSensor
 import kaist.iclab.tracker.storage.couchbase.CouchbaseDB
 import kaist.iclab.tracker.storage.couchbase.CouchbaseStateStorage
+import kaist.iclab.wearabletracker.data.AutoSyncManager
 import kaist.iclab.wearabletracker.data.PhoneCommunicationManager
 import kaist.iclab.wearabletracker.data.SyncAckListener
 import kaist.iclab.wearabletracker.db.TrackerRoomDB
@@ -246,6 +247,16 @@ val koinModule = module {
         )
     }
 
+    // AutoSyncManager
+    single {
+        AutoSyncManager(
+            context = androidContext(),
+            phoneCommunicationManager = get(),
+            syncPreferencesHelper = get(),
+            coroutineScope = get()
+        )
+    }
+
     // SyncAckListener to handle acknowledgment messages from the phone and perform data cleanup
     single<SyncAckListener> {
         SyncAckListener(
@@ -272,7 +283,8 @@ val koinModule = module {
             phoneCommunicationManager = get(),
             repository = get(),
             samsungHealthSensorInitializer = get(),
-            applicationContext = androidContext()
+            applicationContext = androidContext(),
+            autoSyncManager = get()
         )
     }
 

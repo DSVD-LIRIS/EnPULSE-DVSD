@@ -84,6 +84,7 @@ dependencies {
     // Google Play Services
     implementation(libs.android.gms.wearable)
     implementation(libs.android.gms.location)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // koin
     implementation(libs.koin.android)

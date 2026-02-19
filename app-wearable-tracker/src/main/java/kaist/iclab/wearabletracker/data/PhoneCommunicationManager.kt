@@ -80,7 +80,7 @@ class PhoneCommunicationManager(
 
                     // Global start time for this sync session
                     val lastSyncTime = syncPreferencesHelper.getLastSyncTimestamp() ?: 0L
-                    
+
                     // Calculate total records to be synced across all sensors
                     val totalRecordsToSync = daos.values.sumOf { it.getCountSince(lastSyncTime) }
                     if (totalRecordsToSync == 0) {
@@ -116,7 +116,8 @@ class PhoneCommunicationManager(
 
                             dataSent = true
                             totalRecordsSentSoFar += data.size
-                            _syncProgress.value = totalRecordsSentSoFar.toFloat() / totalRecordsToSync
+                            _syncProgress.value =
+                                totalRecordsSentSoFar.toFloat() / totalRecordsToSync
 
                             // Calculate max timestamp in this chunk
                             val chunkMaxTimestamp = data.maxOf { it.timestamp }
@@ -136,7 +137,10 @@ class PhoneCommunicationManager(
                             csvBuilder.append("\n")
 
                             try {
-                                bleChannel.send(Constants.BLE.KEY_SENSOR_DATA, csvBuilder.toString())
+                                bleChannel.send(
+                                    Constants.BLE.KEY_SENSOR_DATA,
+                                    csvBuilder.toString()
+                                )
                                 Log.d(
                                     TAG,
                                     "[$sensorId] Sent chunk: ${data.size} records, maxTs=$chunkMaxTimestamp"
@@ -151,7 +155,10 @@ class PhoneCommunicationManager(
                     }
 
                     if (dataSent) {
-                        Log.i(TAG, "Sync payload sent: $successSensorCount sensors, batchId=$batchId")
+                        Log.i(
+                            TAG,
+                            "Sync payload sent: $successSensorCount sensors, batchId=$batchId"
+                        )
 
                         // Save as pending batch - do NOT delete yet.
                         // SyncAckListener will perform cleanup after phone confirms receipt.

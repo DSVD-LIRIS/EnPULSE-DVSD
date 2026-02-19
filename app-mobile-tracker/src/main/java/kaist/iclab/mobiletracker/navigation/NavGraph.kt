@@ -18,7 +18,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.ui.screens.DataScreen.DataScreen
 import kaist.iclab.mobiletracker.ui.screens.HomeScreen.HomeScreen
 import kaist.iclab.mobiletracker.ui.screens.LoginScreen.LoginScreen
@@ -32,7 +31,6 @@ import kaist.iclab.mobiletracker.ui.screens.SettingsScreen.LanguageSettings.Lang
 import kaist.iclab.mobiletracker.ui.screens.SettingsScreen.PermissionSettings.PermissionSettingsScreen
 import kaist.iclab.mobiletracker.ui.screens.SettingsScreen.PhoneSensorConfigSettings.PhoneSensorConfigSettingsScreen
 import kaist.iclab.mobiletracker.ui.screens.SettingsScreen.SettingsScreen
-
 import kaist.iclab.mobiletracker.utils.AppToast
 import kaist.iclab.mobiletracker.viewmodels.auth.AuthUiEvent
 import kaist.iclab.mobiletracker.viewmodels.auth.AuthViewModel

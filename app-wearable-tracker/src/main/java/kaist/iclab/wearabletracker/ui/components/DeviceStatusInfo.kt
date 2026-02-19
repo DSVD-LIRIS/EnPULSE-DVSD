@@ -79,9 +79,11 @@ fun DeviceStatusInfo(
                 val percentage = (syncProgress * 100).toInt()
                 stringResource(R.string.syncing_progress_format, percentage)
             }
+
             lastSyncTimestamp != null -> {
                 stringResource(R.string.last_sync_format, formatSyncTimestamp(lastSyncTimestamp))
             }
+
             else -> {
                 stringResource(R.string.last_sync_placeholder)
             }
@@ -111,7 +113,10 @@ fun DeviceStatusInfo(
 
             // Record count
             StatusChip(
-                text = stringResource(R.string.status_records_format, formatCount(totalRecordCount)),
+                text = stringResource(
+                    R.string.status_records_format,
+                    formatCount(totalRecordCount)
+                ),
                 color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
             )
 

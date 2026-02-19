@@ -104,6 +104,72 @@ class SyncPreferencesHelper(context: Context) {
         return sharedPreferences.getString(KEY_PENDING_BATCH_ID, null) != null
     }
 
+    /**
+     * Set whether auto-sync is enabled.
+     */
+    fun setAutoSyncEnabled(enabled: Boolean) {
+        sharedPreferences.edit()
+            .putBoolean(KEY_AUTO_SYNC_ENABLED, enabled)
+            .apply()
+    }
+
+    /**
+     * Check if auto-sync is enabled.
+     */
+    fun isAutoSyncEnabled(): Boolean {
+        return sharedPreferences.getBoolean(KEY_AUTO_SYNC_ENABLED, false)
+    }
+
+    /**
+     * Flow of the auto-sync enabled state.
+     */
+    val autoSyncEnabledFlow: Flow<Boolean> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+            if (key == KEY_AUTO_SYNC_ENABLED) {
+                trySend(prefs.getBoolean(KEY_AUTO_SYNC_ENABLED, false))
+            }
+        }
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }.onStart {
+        emit(isAutoSyncEnabled())
+    }
+
+    /**
+     * Set the auto-sync interval in milliseconds.
+     */
+    fun setAutoSyncInterval(intervalMs: Long) {
+        sharedPreferences.edit()
+            .putLong(KEY_AUTO_SYNC_INTERVAL, intervalMs)
+            .apply()
+    }
+
+    /**
+     * Get the auto-sync interval in milliseconds.
+     */
+    fun getAutoSyncInterval(): Long {
+        return sharedPreferences.getLong(KEY_AUTO_SYNC_INTERVAL, DEFAULT_AUTO_SYNC_INTERVAL_MS)
+    }
+
+    /**
+     * Flow of the auto-sync interval.
+     */
+    val autoSyncIntervalFlow: Flow<Long> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+            if (key == KEY_AUTO_SYNC_INTERVAL) {
+                trySend(prefs.getLong(KEY_AUTO_SYNC_INTERVAL, DEFAULT_AUTO_SYNC_INTERVAL_MS))
+            }
+        }
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }.onStart {
+        emit(getAutoSyncInterval())
+    }
+
     companion object {
         private const val TAG = "SyncPreferencesHelper"
         private const val PREFS_NAME = "sync_preferences"
@@ -113,6 +179,12 @@ class SyncPreferencesHelper(context: Context) {
         private const val KEY_PENDING_END_TS = "pending_end_timestamp"
         private const val KEY_PENDING_RECORD_COUNT = "pending_record_count"
         private const val KEY_PENDING_CREATED_AT = "pending_created_at"
+
+        private const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
+        private const val KEY_AUTO_SYNC_INTERVAL = "auto_sync_interval"
+
+        /** Default auto-sync interval: None (disabled) */
+        private const val DEFAULT_AUTO_SYNC_INTERVAL_MS = 0L
 
         /** Stale batch timeout: 5 minutes */
         private const val STALE_BATCH_TIMEOUT_MS = 5L * 60 * 1000
@@ -131,7 +203,7 @@ class SyncPreferencesHelper(context: Context) {
             Log.w(
                 TAG,
                 "Clearing stale pending batch ${pendingBatch.batchId} " +
-                    "(age: ${elapsed / 1000}s, records: ${pendingBatch.recordCount})"
+                        "(age: ${elapsed / 1000}s, records: ${pendingBatch.recordCount})"
             )
             clearPendingBatch()
             return true

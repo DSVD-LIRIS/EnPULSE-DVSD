@@ -38,4 +38,10 @@ interface WatchSensorRepository {
      * Get the total number of records across all sensors.
      */
     suspend fun getTotalRecordCount(): Int
+
+    // Auto-sync settings
+    val autoSyncEnabledFlow: Flow<Boolean>
+    val autoSyncIntervalFlow: Flow<Long>
+    fun setAutoSyncEnabled(enabled: Boolean)
+    fun setAutoSyncInterval(intervalMs: Long)
 }

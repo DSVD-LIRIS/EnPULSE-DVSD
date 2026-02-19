@@ -13,6 +13,7 @@ import com.google.android.gms.wearable.Wearable
 import kaist.iclab.tracker.listener.SamsungHealthSensorInitializer
 import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.controller.ControllerState
+import kaist.iclab.wearabletracker.data.AutoSyncManager
 import kaist.iclab.wearabletracker.data.DeviceInfo
 import kaist.iclab.wearabletracker.data.PhoneCommunicationManager
 import kaist.iclab.wearabletracker.helpers.NotificationHelper
@@ -22,8 +23,10 @@ import kaist.iclab.wearabletracker.storage.SensorDataReceiver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -33,7 +36,8 @@ class SettingsViewModel(
     private val phoneCommunicationManager: PhoneCommunicationManager,
     private val repository: WatchSensorRepository,
     private val samsungHealthSensorInitializer: SamsungHealthSensorInitializer,
-    private val applicationContext: Context
+    private val applicationContext: Context,
+    private val autoSyncManager: AutoSyncManager
 ) : ViewModel() {
     companion object {
         private val TAG = SettingsViewModel::class.simpleName
@@ -51,6 +55,21 @@ class SettingsViewModel(
 
     // Sync progress: 0.0 to 1.0, null if not syncing
     val syncProgress: StateFlow<Float?> = phoneCommunicationManager.syncProgress
+
+    // Auto-sync settings
+    val autoSyncEnabled: StateFlow<Boolean> = repository.autoSyncEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val autoSyncInterval: StateFlow<Long> = repository.autoSyncIntervalFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+    fun setAutoSyncEnabled(enabled: Boolean) {
+        repository.setAutoSyncEnabled(enabled)
+    }
+
+    fun setAutoSyncInterval(intervalMs: Long) {
+        repository.setAutoSyncInterval(intervalMs)
+    }
 
     // Battery level (0-100)
     private val _batteryLevel = MutableStateFlow(-1)
@@ -76,6 +95,8 @@ class SettingsViewModel(
     }
 
     init {
+        autoSyncManager.start()
+
         viewModelScope.launch {
             repository.lastSyncTimestampFlow.collect {
                 _lastSyncTimestamp.value = it
@@ -215,7 +236,10 @@ class SettingsViewModel(
     private fun refreshBatteryLevel() {
         try {
             val batteryStatus =
-                applicationContext.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                applicationContext.registerReceiver(
+                    null,
+                    IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+                )
             val level = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
             val scale = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
             _batteryLevel.value = if (level >= 0) (level * 100) / scale else -1

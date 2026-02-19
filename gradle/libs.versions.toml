@@ -4,6 +4,7 @@ authKt = "3.2.6"
 firebaseMessaging = "25.0.0"
 googleServices = "4.4.3"
 kotlin = "2.2.10"
+kotlinxCoroutines = "1.10.1"
 kotlinxSerializationJson = "1.9.0"
 ksp = "2.2.10-2.0.2"
 coreKtx = "1.17.0"
@@ -81,7 +82,7 @@ compose-material-icons-extended = { group = "androidx.compose.material", name = 
 #wear-compose
 firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebaseMessaging" }
 google-services = { module = "com.google.gms:google-services", version.ref = "googleServices" }
-kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services" }
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorClientOkhttp" }

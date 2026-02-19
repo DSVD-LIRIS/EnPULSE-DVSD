@@ -36,4 +36,15 @@ class WatchSensorRepositoryImpl(
     override suspend fun getRecordCountSince(timestamp: Long): Int {
         return sensorDataStorages.values.sumOf { it.getCountSince(timestamp) }
     }
+
+    override val autoSyncEnabledFlow: Flow<Boolean> = syncPreferencesHelper.autoSyncEnabledFlow
+    override val autoSyncIntervalFlow: Flow<Long> = syncPreferencesHelper.autoSyncIntervalFlow
+
+    override fun setAutoSyncEnabled(enabled: Boolean) {
+        syncPreferencesHelper.setAutoSyncEnabled(enabled)
+    }
+
+    override fun setAutoSyncInterval(intervalMs: Long) {
+        syncPreferencesHelper.setAutoSyncInterval(intervalMs)
+    }
 }

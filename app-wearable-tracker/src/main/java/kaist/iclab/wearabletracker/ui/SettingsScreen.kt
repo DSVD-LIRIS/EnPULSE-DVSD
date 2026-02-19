@@ -25,6 +25,7 @@ import kaist.iclab.tracker.sensor.core.SensorState
 import kaist.iclab.wearabletracker.data.DeviceInfo
 import kaist.iclab.wearabletracker.helpers.PermissionCheckResult
 import kaist.iclab.wearabletracker.helpers.PermissionHelper
+import kaist.iclab.wearabletracker.ui.components.AutoSyncSettings
 import kaist.iclab.wearabletracker.ui.components.DeviceStatusInfo
 import kaist.iclab.wearabletracker.ui.components.FlushConfirmationDialog
 import kaist.iclab.wearabletracker.ui.components.PermissionPermanentlyDeniedDialog
@@ -110,6 +111,10 @@ fun SettingsScreen(
     val recordingStartTime by settingsViewModel.recordingStartTime.collectAsState()
     val syncProgress by settingsViewModel.syncProgress.collectAsState()
 
+    // Observe auto-sync data
+    val autoSyncEnabled by settingsViewModel.autoSyncEnabled.collectAsState()
+    val autoSyncInterval by settingsViewModel.autoSyncInterval.collectAsState()
+
     //UI
     when {
         hasSdkPolicyError -> {
@@ -178,6 +183,14 @@ fun SettingsScreen(
                             .verticalScroll(rememberScrollState())
                             .padding(bottom = 24.dp)
                     ) {
+                        // Auto-Sync Settings
+                        AutoSyncSettings(
+                            enabled = autoSyncEnabled,
+                            onEnabledChange = { settingsViewModel.setAutoSyncEnabled(it) },
+                            intervalMs = autoSyncInterval,
+                            onIntervalChange = { settingsViewModel.setAutoSyncInterval(it) }
+                        )
+
                         availableSensors.forEach { (name, _) ->
                             SensorToggleChip(
                                 sensorId = name,
