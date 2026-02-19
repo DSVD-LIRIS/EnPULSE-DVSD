@@ -45,8 +45,8 @@ object CsvExportHelper {
             }
 
             // Generate filename with timestamp
-            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val sanitizedName = sensorName.replace(" ", "_").replace("/", "_")
+            val timestamp = SimpleDateFormat("yyyyMMdd_HH:mm:ss", Locale.getDefault()).format(Date())
+            val sanitizedName = sensorName.replace(" ", "").replace("/", "")
             val fileName = "${sanitizedName}_$timestamp.csv"
             val file = File(exportDir, fileName)
 

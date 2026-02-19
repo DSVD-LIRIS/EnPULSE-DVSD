@@ -9,6 +9,9 @@ import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.FileWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -58,7 +61,8 @@ class DataExportHelper(
             val exportDir = context.getExternalFilesDir("exports") ?: context.filesDir
             if (!exportDir.exists()) exportDir.mkdirs()
 
-            val zipFile = File(exportDir, "mobile_tracker_export_${System.currentTimeMillis()}.zip")
+            val timestamp = SimpleDateFormat("yyyyMMdd_HH:mm:ss", Locale.getDefault()).format(Date())
+            val zipFile = File(exportDir, "Data_${timestamp}.zip")
             createZip(csvFiles, zipFile)
 
             Log.i(TAG, "Export completed successfully: ${zipFile.absolutePath}")
