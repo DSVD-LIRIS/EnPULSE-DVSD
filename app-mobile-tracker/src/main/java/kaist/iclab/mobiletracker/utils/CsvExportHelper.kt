@@ -44,6 +44,9 @@ object CsvExportHelper {
                 exportDir.mkdirs()
             }
 
+            // Clean up previous export files
+            exportDir.listFiles()?.forEach { it.delete() }
+
             // Generate filename with timestamp
             val timestamp = SimpleDateFormat("yyyyMMdd_HH:mm:ss", Locale.getDefault()).format(Date())
             val sanitizedName = sensorName.replace(" ", "").replace("/", "")

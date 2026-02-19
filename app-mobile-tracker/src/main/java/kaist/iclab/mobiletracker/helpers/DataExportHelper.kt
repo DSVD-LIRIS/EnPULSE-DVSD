@@ -61,6 +61,9 @@ class DataExportHelper(
             val exportDir = context.getExternalFilesDir("exports") ?: context.filesDir
             if (!exportDir.exists()) exportDir.mkdirs()
 
+            // Clean up previous export files
+            exportDir.listFiles()?.forEach { it.delete() }
+
             val timestamp = SimpleDateFormat("yyyyMMdd_HH:mm:ss", Locale.getDefault()).format(Date())
             val zipFile = File(exportDir, "Data_${timestamp}.zip")
             createZip(csvFiles, zipFile)
