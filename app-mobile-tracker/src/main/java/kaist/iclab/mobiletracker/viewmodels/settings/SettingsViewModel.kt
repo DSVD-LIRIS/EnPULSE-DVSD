@@ -20,7 +20,7 @@ import kaist.iclab.tracker.sensor.core.Sensor
 import kaist.iclab.tracker.sensor.core.SensorState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.catch
+
 import kotlinx.coroutines.launch
 
 /**
@@ -66,13 +66,14 @@ class SettingsViewModel(
      */
     private fun observeControllerState() {
         viewModelScope.launch(Dispatchers.IO) {
-            backgroundController.controllerStateFlow
-                .catch { e ->
-                    Log.e(TAG, "Error observing controller state: ${e.message}", e)
-                }
-                .collect { state ->
-                    handleControllerStateChange(state)
-                }
+            try {
+                backgroundController.controllerStateFlow
+                    .collect { state ->
+                        handleControllerStateChange(state)
+                    }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error observing controller state: ${e.message}", e)
+            }
         }
     }
 
@@ -147,25 +148,26 @@ class SettingsViewModel(
     ) {
         var job: Job? = null
         job = viewModelScope.launch {
-            permissionManager.getPermissionFlow(permissions)
-                .catch { e ->
-                    Log.e(TAG, "Error observing permission flow for $errorContext: ${e.message}", e)
-                    job?.cancel()
-                }
-                .collect { permissionMap ->
-                    if (permissionMap.values.all { it == PermissionState.GRANTED }) {
-                        try {
-                            onGranted()
-                        } catch (e: Exception) {
-                            Log.e(
-                                TAG,
-                                "Error in onGranted callback for $errorContext: ${e.message}",
-                                e
-                            )
+            try {
+                permissionManager.getPermissionFlow(permissions)
+                    .collect { permissionMap ->
+                        if (permissionMap.values.all { it == PermissionState.GRANTED }) {
+                            try {
+                                onGranted()
+                            } catch (e: Exception) {
+                                Log.e(
+                                    TAG,
+                                    "Error in onGranted callback for $errorContext: ${e.message}",
+                                    e
+                                )
+                            }
+                            job?.cancel()
                         }
-                        job?.cancel()
                     }
-                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error observing permission flow for $errorContext: ${e.message}", e)
+                job?.cancel()
+            }
         }
     }
 
