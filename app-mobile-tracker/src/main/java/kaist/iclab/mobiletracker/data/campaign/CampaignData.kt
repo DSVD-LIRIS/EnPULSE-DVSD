@@ -10,8 +10,8 @@ import kotlinx.serialization.Serializable
 data class CampaignData(
     val id: Int,
     val name: String,
-    val created_at: String? = null,
-    val password_hash: String? = null
+    val description: String? = null,
+    val created_at: String? = null
 ) {
     /**
      * Get id as String for compatibility with UI components

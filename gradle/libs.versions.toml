@@ -86,6 +86,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorClientOkhttp" }
 postgrest-kt = { module = "io.github.jan-tennert.supabase:postgrest-kt", version.ref = "postgrestKt" }
+functions-kt = { module = "io.github.jan-tennert.supabase:functions-kt", version.ref = "supabaseKt" }
 realtime-kt = { module = "io.github.jan-tennert.supabase:realtime-kt", version.ref = "realtimeKt" }
 supabase-kt = { module = "io.github.jan-tennert.supabase:supabase-kt", version.ref = "supabaseKt" }
 wear-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "wearCompose" }

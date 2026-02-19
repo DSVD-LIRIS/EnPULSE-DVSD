@@ -112,8 +112,8 @@ fun AccountSettingsScreen(
             onSelect = { campaignId ->
                 accountSettingsViewModel.selectCampaign(campaignId)
             },
-            onVerifyPassword = { campaignId, password ->
-                accountSettingsViewModel.verifyPassword(campaignId, password)
+            onJoinCampaign = { campaignId, password ->
+                accountSettingsViewModel.joinCampaign(campaignId, password)
             }
         )
     }

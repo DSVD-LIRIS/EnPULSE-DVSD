@@ -40,7 +40,7 @@ fun CampaignDialog(
     error: String? = null,
     onDismiss: () -> Unit,
     onSelect: (String) -> Unit,
-    onVerifyPassword: suspend (String, String) -> Boolean
+    onJoinCampaign: suspend (String, String) -> Boolean
 ) {
     val context = LocalContext.current
     var selected by remember { mutableStateOf(selectedCampaignId) }
@@ -48,10 +48,6 @@ fun CampaignDialog(
     // Password verification state
     var showPasswordInput by remember { mutableStateOf(false) }
     
-    // Helper to check if selected campaign has password
-    fun hasPassword(id: String?): Boolean {
-        return campaigns.find { it.idString == id }?.password_hash != null
-    }
 
     if (showPasswordInput) {
         val selectedCampaign = campaigns.find { it.idString == selected }
@@ -61,7 +57,7 @@ fun CampaignDialog(
                 campaignName = selectedCampaign.name,
                 onDismiss = { showPasswordInput = false },
                 onVerify = { password -> 
-                    onVerifyPassword(selectedCampaign.idString, password) 
+                    onJoinCampaign(selectedCampaign.idString, password) 
                 },
                 onSuccess = {
                     onSelect(selectedCampaign.idString)
@@ -152,13 +148,8 @@ fun CampaignDialog(
             primaryButton = DialogButtonConfig(
                 text = context.getString(R.string.campaign_dialog_select),
                 onClick = {
-                    selected?.let { id ->
-                        if (hasPassword(id)) {
-                            showPasswordInput = true
-                        } else {
-                            onSelect(id)
-                            onDismiss()
-                        }
+                    selected?.let {
+                        showPasswordInput = true
                     }
                 },
                 enabled = selected != null && !isLoading && error == null

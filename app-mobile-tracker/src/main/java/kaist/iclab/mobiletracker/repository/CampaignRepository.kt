@@ -23,15 +23,12 @@ interface CampaignRepository {
     /**
      * Get cached campaigns (non-suspending)
      */
-    /**
-     * Get cached campaigns (non-suspending)
-     */
     fun getCachedCampaigns(): List<CampaignData>
 
     /**
-     * Verify campaign password
+     * Join a campaign
      * @param campaignId The ID of the campaign
-     * @param password The password to verify (will be hashed or checked against hash)
+     * @param password The password to join the campaign
      */
-    suspend fun verifyPassword(campaignId: String, password: String): Result<Boolean>
+    suspend fun joinCampaign(campaignId: String, password: String): Result<Boolean>
 }

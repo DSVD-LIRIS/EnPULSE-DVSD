@@ -198,11 +198,7 @@ fun OnboardingScreen(
             ) {
                 Button(
                     onClick = { 
-                        if (uiState.selectedCampaign?.password_hash != null) {
-                            showPasswordDialog = true
-                        } else {
-                            viewModel.confirmSelection()
-                        }
+                        showPasswordDialog = true
                     },
                     modifier = Modifier
                         .weight(3f)
@@ -249,7 +245,7 @@ fun OnboardingScreen(
             campaignName = uiState.selectedCampaign!!.name,
             onDismiss = { showPasswordDialog = false },
             onVerify = { password ->
-                viewModel.verifyPassword(password)
+                viewModel.joinCampaign(password)
             },
             onSuccess = {
                 showPasswordDialog = false

@@ -39,8 +39,7 @@ class CampaignRepositoryImpl(
         return _campaignsFlow.value
     }
 
-    override suspend fun verifyPassword(campaignId: String, password: String): Result<Boolean> {
-        // TODO: Call the real API for password hash checking
-        return Result.Success(true)
+    override suspend fun joinCampaign(campaignId: String, password: String): Result<Boolean> {
+        return campaignService.joinCampaign(campaignId, password)
     }
 }

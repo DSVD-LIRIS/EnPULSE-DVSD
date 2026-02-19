@@ -12,6 +12,8 @@ import kaist.iclab.mobiletracker.config.AppConfig
  * This is a general helper for Supabase operations.
  * For specific data operations, use services in the services package.
  */
+import io.github.jan.supabase.functions.Functions
+
 class SupabaseHelper {
     val supabaseClient: SupabaseClient = createSupabaseClient(
         supabaseUrl = AppConfig.SUPABASE_URL,
@@ -20,5 +22,6 @@ class SupabaseHelper {
         install(Postgrest)  // Database operations
         install(Realtime)  // Real-time subscriptions
         install(Auth)  // Authentication operations
+        install(Functions) // Edge Functions
     }
 }

@@ -1,5 +1,6 @@
 package kaist.iclab.mobiletracker.services
 
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.from
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
@@ -8,6 +9,10 @@ import kaist.iclab.mobiletracker.repository.ErrorClassifier
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.flatMap
 import kaist.iclab.mobiletracker.utils.SupabaseLoadingInterceptor
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Service for handling campaign data operations with Supabase
@@ -54,29 +59,34 @@ class CampaignService(
             }
         }
     }
+
     /**
-     * Verify campaign password by checking if a record exists with the given ID and password hash
+     * Join a campaign by invoking the 'join-campaign' edge function.
+     *
      * @param campaignId The ID of the campaign
-     * @param passwordHash The hash of the password to verify
-     * @return Result containing boolean (true if valid, false otherwise) or error
+     * @param password The raw password to verify (if required)
+     * @return Result containing boolean (true if joined successfully) or error
      */
-    suspend fun verifyPassword(campaignId: String, passwordHash: String): Result<Boolean> {
+    suspend fun joinCampaign(campaignId: String, password: String): Result<Boolean> {
         val campaignIdInt = campaignId.toIntOrNull()
             ?: return Result.Error(
                 AppError.Validation("Invalid campaign ID format: $campaignId")
             )
 
         return SupabaseLoadingInterceptor.withLoading {
-            ErrorClassifier.runClassified(TAG, "verifyPassword") {
-                val count = supabaseClient.from(tableName).select {
-                    filter {
-                        eq("id", campaignIdInt)
-                        eq("password_hash", passwordHash)
+            ErrorClassifier.runClassified(TAG, "joinCampaign") {
+                val body = buildJsonObject {
+                    put("campaign_id", campaignIdInt)
+                    put("password", password)
+                }
+                supabaseClient.functions.invoke(
+                    function = "join-campaign",
+                    body = body,
+                    headers = Headers.build {
+                        append(HttpHeaders.ContentType, "application/json")
                     }
-                    count(io.github.jan.supabase.postgrest.query.Count.EXACT)
-                }.countOrNull() ?: 0
-
-                count > 0
+                )
+                true
             }
         }
     }

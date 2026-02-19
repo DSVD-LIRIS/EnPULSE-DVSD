@@ -109,9 +109,9 @@ class AccountSettingsViewModel(
         }
     }
 
-    suspend fun verifyPassword(campaignId: String, password: String): Boolean {
-        return when (val result = campaignRepository.verifyPassword(campaignId, password)) {
-            is Result.Success -> result.data
+    suspend fun joinCampaign(campaignId: String, password: String): Boolean {
+        return when (val result = campaignRepository.joinCampaign(campaignId, password)) {
+            is Result.Success<Boolean> -> result.data
             is Result.Error -> false
         }
     }
