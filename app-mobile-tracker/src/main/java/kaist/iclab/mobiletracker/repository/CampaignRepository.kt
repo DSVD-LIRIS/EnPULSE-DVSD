@@ -18,10 +18,17 @@ interface CampaignRepository {
      * Fetch all campaigns from remote source.
      * Updates the campaignsFlow on success.
      */
-    suspend fun fetchCampaigns(): kotlin.Result<List<CampaignData>>
+    suspend fun fetchCampaigns(): Result<List<CampaignData>>
 
     /**
      * Get cached campaigns (non-suspending)
      */
     fun getCachedCampaigns(): List<CampaignData>
+
+    /**
+     * Join a campaign
+     * @param campaignId The ID of the campaign
+     * @param password The password to join the campaign
+     */
+    suspend fun joinCampaign(campaignId: String, password: String): Result<Boolean>
 }

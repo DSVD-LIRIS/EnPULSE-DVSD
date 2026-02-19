@@ -5,10 +5,8 @@ import kaist.iclab.tracker.sync.ble.BLEDataChannel
 import kaist.iclab.wearabletracker.Constants
 import kaist.iclab.wearabletracker.db.dao.BaseDao
 import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
+import kaist.iclab.wearabletracker.repository.ErrorClassifier
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -19,10 +17,10 @@ import kotlinx.serialization.json.JsonPrimitive
 class SyncAckListener(
     private val bleChannel: BLEDataChannel,
     private val daos: Map<String, BaseDao<*>>,
-    private val syncPreferencesHelper: SyncPreferencesHelper
+    private val syncPreferencesHelper: SyncPreferencesHelper,
+    private val coroutineScope: CoroutineScope
 ) {
     private val TAG = javaClass.simpleName
-    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * Start listening for ACK messages from the phone.
@@ -42,12 +40,11 @@ class SyncAckListener(
      * Format: "batchId:OK" or "batchId:FAIL"
      */
     private fun handleAck(ackData: String) {
-        ioScope.launch {
-            try {
+        coroutineScope.launch {
+            ErrorClassifier.runClassified(TAG, "handle sync ACK") {
                 val parts = ackData.split(":")
                 if (parts.size != 2) {
-                    Log.e(TAG, "Invalid ACK format: $ackData")
-                    return@launch
+                    throw IllegalArgumentException("Invalid ACK format: $ackData")
                 }
 
                 val receivedBatchId = parts[0]
@@ -56,7 +53,7 @@ class SyncAckListener(
                 val pendingBatch = syncPreferencesHelper.getPendingBatch()
                 if (pendingBatch == null) {
                     Log.w(TAG, "Received ACK but no pending batch: $receivedBatchId")
-                    return@launch
+                    return@runClassified
                 }
 
                 if (pendingBatch.batchId != receivedBatchId) {
@@ -64,20 +61,14 @@ class SyncAckListener(
                         TAG,
                         "ACK batch ID mismatch. Expected: ${pendingBatch.batchId}, Received: $receivedBatchId"
                     )
-                    return@launch
+                    return@runClassified
                 }
 
-                if (status == "OK") {
-                    onSyncConfirmed(pendingBatch)
-                } else if (status == "FAIL") {
-                    Log.e(TAG, "Received failure ACK for batch: $receivedBatchId")
-                    // Keep the data - phone failed to process it
-                    // User can retry later
-                } else {
-                    Log.e(TAG, "Received unknown status in ACK: $status")
+                when (status) {
+                    "OK" -> onSyncConfirmed(pendingBatch)
+                    "FAIL" -> Log.e(TAG, "Received failure ACK for batch: $receivedBatchId")
+                    else -> Log.e(TAG, "Received unknown status in ACK: $status")
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error handling ACK: ${e.message}", e)
             }
         }
     }
@@ -103,6 +94,6 @@ class SyncAckListener(
      * Cleanup method - call when listener is no longer needed.
      */
     fun cleanup() {
-        ioScope.cancel()
+        // Handled by injected scope lifecycle
     }
 }

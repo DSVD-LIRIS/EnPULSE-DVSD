@@ -3,6 +3,7 @@ package kaist.iclab.mobiletracker.services.upload.handlers.watch
 import kaist.iclab.mobiletracker.data.DeviceType
 import kaist.iclab.mobiletracker.db.dao.common.LocationDao
 import kaist.iclab.mobiletracker.db.mapper.LocationMapper
+import kaist.iclab.mobiletracker.repository.ErrorClassifier
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.services.supabase.LocationSensorService
 import kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandler
@@ -23,24 +24,44 @@ class WatchLocationUploadHandler(
     }
 
     override suspend fun uploadData(userUuid: String, lastUploadTimestamp: Long): Result<Long> {
-        return try {
+        return ErrorClassifier.runClassified(sensorId, "upload $sensorId") {
             val entities =
                 dao.getDataAfterTimestampByDeviceType(lastUploadTimestamp, DeviceType.WATCH.value)
             if (entities.isEmpty()) {
-                return Result.Error(IllegalStateException("No new data available to upload"))
+                throw IllegalStateException("No new $sensorId data to upload")
             }
 
-            val supabaseDataList = entities.map { LocationMapper.map(it, userUuid) }
-            val result = service.insertLocationSensorDataBatch(supabaseDataList)
-
-            if (result is Result.Success) {
-                val maxTimestamp = entities.maxOf { it.timestamp }
-                Result.Success(maxTimestamp)
-            } else {
-                result as Result.Error
-            }
-        } catch (e: Exception) {
-            Result.Error(e)
+            val supabaseDataList = entities.map { entity -> LocationMapper.map(entity, userUuid) }
+            service.insertLocationSensorDataBatch(supabaseDataList)
+                .getOrElse { error -> throw error }
+            entities.maxOf { entity -> entity.timestamp }
         }
+    }
+
+    override suspend fun pruneData(beforeTimestamp: Long) {
+        dao.deleteDataBeforeByDeviceType(beforeTimestamp, DeviceType.WATCH.value)
+    }
+
+    override suspend fun getRecordCount(): Int {
+        return dao.getRecordCountByDeviceType(DeviceType.WATCH.value)
+    }
+
+    override suspend fun getRecordsPaginated(limit: Int, offset: Int): List<Any> {
+        return dao.getRecordsPaginatedByDeviceType(
+            0L,
+            true,
+            limit,
+            offset,
+            DeviceType.WATCH.value
+        )
+    }
+
+    override fun getCsvHeader(): String {
+        return "eventId,uuid,deviceType,received,timestamp,latitude,longitude,altitude,speed,accuracy"
+    }
+
+    override fun recordToCsvRow(record: Any): String {
+        val entity = record as kaist.iclab.mobiletracker.db.entity.common.LocationEntity
+        return "${entity.eventId},${entity.uuid},${entity.deviceType},${entity.received},${entity.timestamp},${entity.latitude},${entity.longitude},${entity.altitude},${entity.speed},${entity.accuracy}"
     }
 }

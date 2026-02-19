@@ -2,6 +2,7 @@ package kaist.iclab.mobiletracker.services.upload.handlers.watch
 
 import kaist.iclab.mobiletracker.db.dao.watch.WatchEDADao
 import kaist.iclab.mobiletracker.db.mapper.EDAMapper
+import kaist.iclab.mobiletracker.repository.ErrorClassifier
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.services.supabase.EDASensorService
 import kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandler
@@ -21,23 +22,37 @@ class WatchEDAUploadHandler(
     }
 
     override suspend fun uploadData(userUuid: String, lastUploadTimestamp: Long): Result<Long> {
-        return try {
+        return ErrorClassifier.runClassified(sensorId, "upload $sensorId") {
             val entities = dao.getDataAfterTimestamp(lastUploadTimestamp)
             if (entities.isEmpty()) {
-                return Result.Error(IllegalStateException("No new data available to upload"))
+                throw IllegalStateException("No new $sensorId data to upload")
             }
 
             val supabaseDataList = entities.map { EDAMapper.map(it, userUuid) }
-            val result = service.insertEDASensorDataBatch(supabaseDataList)
-
-            if (result is Result.Success) {
-                val maxTimestamp = entities.maxOf { it.timestamp }
-                Result.Success(maxTimestamp)
-            } else {
-                result as Result.Error
-            }
-        } catch (e: Exception) {
-            Result.Error(e)
+            service.insertEDASensorDataBatch(supabaseDataList)
+                .getOrElse { throw it }
+            entities.maxOf { it.timestamp }
         }
+    }
+
+    override suspend fun pruneData(beforeTimestamp: Long) {
+        dao.deleteDataBefore(beforeTimestamp)
+    }
+
+    override suspend fun getRecordCount(): Int {
+        return dao.getRecordCount()
+    }
+
+    override suspend fun getRecordsPaginated(limit: Int, offset: Int): List<Any> {
+        return dao.getRecordsPaginated(0L, true, limit, offset)
+    }
+
+    override fun getCsvHeader(): String {
+        return "eventId,uuid,received,timestamp,skinConductance,status"
+    }
+
+    override fun recordToCsvRow(record: Any): String {
+        val entity = record as kaist.iclab.mobiletracker.db.entity.watch.WatchEDAEntity
+        return "${entity.eventId},${entity.uuid},${entity.received},${entity.timestamp},${entity.skinConductance},${entity.status}"
     }
 }

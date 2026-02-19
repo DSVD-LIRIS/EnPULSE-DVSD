@@ -2,6 +2,7 @@ package kaist.iclab.mobiletracker.services.upload.handlers.phone
 
 import kaist.iclab.mobiletracker.db.dao.phone.UserInteractionDao
 import kaist.iclab.mobiletracker.db.mapper.UserInteractionMapper
+import kaist.iclab.mobiletracker.repository.ErrorClassifier
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.services.supabase.UserInteractionSensorService
 import kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandler
@@ -21,23 +22,38 @@ class UserInteractionUploadHandler(
     }
 
     override suspend fun uploadData(userUuid: String, lastUploadTimestamp: Long): Result<Long> {
-        return try {
+        return ErrorClassifier.runClassified(sensorId, "upload $sensorId") {
             val entities = dao.getDataAfterTimestamp(lastUploadTimestamp)
             if (entities.isEmpty()) {
-                return Result.Error(IllegalStateException("No new data available to upload"))
+                throw IllegalStateException("No new $sensorId data to upload")
             }
 
             val supabaseDataList = entities.map { UserInteractionMapper.map(it, userUuid) }
-            val result = service.insertUserInteractionSensorDataBatch(supabaseDataList)
-
-            if (result is Result.Success) {
-                val maxTimestamp = entities.maxOf { it.timestamp }
-                Result.Success(maxTimestamp)
-            } else {
-                result as Result.Error
-            }
-        } catch (e: Exception) {
-            Result.Error(e)
+            service.insertUserInteractionSensorDataBatch(supabaseDataList)
+                .getOrElse { throw it }
+            entities.maxOf { it.timestamp }
         }
+    }
+
+    override suspend fun pruneData(beforeTimestamp: Long) {
+        dao.deleteDataBefore(beforeTimestamp)
+    }
+
+    override suspend fun getRecordCount(): Int {
+        return dao.getRecordCount()
+    }
+
+    override suspend fun getRecordsPaginated(limit: Int, offset: Int): List<Any> {
+        return dao.getRecordsPaginated(0L, true, limit, offset)
+    }
+
+    override fun getCsvHeader(): String {
+        return "eventId,uuid,received,timestamp,packageName,className,eventType,text"
+    }
+
+    override fun recordToCsvRow(record: Any): String {
+        val entity = record as kaist.iclab.mobiletracker.db.entity.phone.UserInteractionEntity
+        val escapedText = entity.text.replace("\"", "\"\"")
+        return "${entity.eventId},${entity.uuid},${entity.received},${entity.timestamp},${entity.packageName},${entity.className},${entity.eventType},\"$escapedText\""
     }
 }

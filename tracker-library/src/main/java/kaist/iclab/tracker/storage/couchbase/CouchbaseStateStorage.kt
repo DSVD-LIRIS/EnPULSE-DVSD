@@ -49,13 +49,16 @@ open class CouchbaseStateStorage<T>(
             set(defaultVal)
             return defaultVal
         }
-        
+
         return try {
             val json = document.toJSON()
             gson.fromJson(json, clazz) ?: defaultVal
         } catch (e: Exception) {
             // Handle data migration or corrupted data gracefully
-            Log.w(TAG, "Error deserializing '$collectionName': ${e.message}. Clearing corrupted data.")
+            Log.w(
+                TAG,
+                "Error deserializing '$collectionName': ${e.message}. Clearing corrupted data."
+            )
             try {
                 collection.delete(document)
             } catch (deleteError: Exception) {
@@ -64,7 +67,7 @@ open class CouchbaseStateStorage<T>(
             defaultVal
         }
     }
-    
+
     companion object {
         private const val TAG = "CouchbaseStateStorage"
     }

@@ -46,7 +46,6 @@ val koinModule = module {
             TrackerRoomDB::class.java,
             "wearable_tracker_db"
         )
-            .fallbackToDestructiveMigration(true)
             .build()
     }
 
@@ -252,7 +251,8 @@ val koinModule = module {
         SyncAckListener(
             bleChannel = get<PhoneCommunicationManager>().getBleChannel(),
             daos = get(named("sensorDataStorages")),
-            syncPreferencesHelper = get()
+            syncPreferencesHelper = get(),
+            coroutineScope = get()
         )
     }
 

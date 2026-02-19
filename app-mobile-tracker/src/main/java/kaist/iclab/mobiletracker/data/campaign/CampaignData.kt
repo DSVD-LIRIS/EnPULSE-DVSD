@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 data class CampaignData(
     val id: Int,
     val name: String,
+    val description: String? = null,
     val created_at: String? = null
 ) {
     /**

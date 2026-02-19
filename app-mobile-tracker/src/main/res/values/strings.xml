@@ -20,17 +20,14 @@
     <string name="home_watch_connected">Connected</string>
     <string name="home_watch_disconnected">Disconnected</string>
     <string name="home_watch_not_installed">App Not Found</string>
-    <string name="home_watch_name_label">Device Name</string>
+    <string name="home_watch_name_label">Paired Device</string>
     <string name="unknown">Unknown</string>
     <string name="email_label">Email</string>
     <string name="no_email">No email</string>
     <string name="version_label">Version</string>
     <string name="about_description">A mobile tracking application for research data collection</string>
     <string name="sign_out">Sign Out</string>
-    <string name="not_logged_in">Not logged in</string>
     <string name="sign_in_with_google">Sign in with Google</string>
-    <string name="start_sensors">Start Sensors</string>
-    <string name="stop_sensors">Stop Sensors</string>
 
     <!-- Enable Tracker -->
     <string name="enable_tracker_title">Start Data Collection</string>
@@ -58,10 +55,16 @@
     <string name="campaign_dialog_title">Experiment Group</string>
     <string name="campaign_dialog_select">Select</string>
     <string name="campaign_dialog_cancel">Cancel</string>
+    <string name="campaign_password_title">Enter Password</string>
+    <string name="campaign_password_description">This experiment group is protected. Please enter the password to join.</string>
+    <string name="campaign_password_input_label">Password</string>
+    <string name="campaign_password_verify">Verify</string>
+    <string name="campaign_password_invalid">Invalid password</string>
+    <string name="campaign_password_error">Error checking password</string>
     <string name="menu_phone_sensor">Phone Sensors Config</string>
     <string name="menu_permission">Permissions</string>
     <string name="menu_server_sync">Automatic Sync</string>
-    <string name="menu_survey">Survey</string>
+
     <string name="menu_about">About</string>
 
     <!-- Language Screen -->
@@ -70,8 +73,8 @@
     <string name="language_screen_description">Select your preferred language for the app interface. The app will display all text and menus in the selected language.</string>
     <string name="phone_sensor_screen_description">Enable or disable individual phone sensors for data collection. Toggle each sensor on or off to control what data is being tracked.</string>
     <string name="permission_screen_description">View and manage app permissions. Toggle permissions on or off to control what data the app can access.</string>
-    <string name="auto_sync_screen_description">Configure automatic data synchronization to the server. Set the sync interval and network preferences.</string>
-    <string name="survey_screen_description">View and manage survey configurations. Tap on a survey to edit trigger conditions and question settings.</string>
+
+
 
     <!-- Permission Names -->
     <string name="permission_name_notifications">Notifications</string>
@@ -124,8 +127,9 @@
     <string name="data_screen_title">Collected Data</string>
     <string name="data_screen_description">View and manage all sensor data collected from your mobile and wearable devices.</string>
     <string name="data_screen_subtitle">Total %1$d Records</string>
-    <string name="data_screen_refresh">Refresh</string>
-    <string name="data_screen_no_data">No data collected yet</string>
+    <string name="data_screen_hide_empty_sensors">Hide Empty Data Sensors</string>
+    <string name="data_screen_no_result">No result</string>
+
 
     <!-- Sensor Detail Screen -->
     <string name="sensor_detail_back">Back</string>
@@ -187,8 +191,7 @@
     <string name="sync_current_time">Current Time</string>
     <string name="sync_last_watch_data">Last Watch Data Received</string>
     <string name="sync_last_successful_upload">Last Successful Upload</string>
-    <string name="sync_start_data_upload">Upload All</string>
-    <string name="sync_delete_data">Delete All</string>
+
     <string name="sync_automatic_sync">Automatic Sync</string>
     <string name="sync_automatic_sync_description">Configure automatic data synchronization settings. Set sync interval and network preferences for automatic uploads.</string>
     <string name="sync_interval_title">Sync Interval</string>
@@ -244,10 +247,7 @@
     <string name="sensor_step">Step</string>
     <string name="sensor_user_interaction">User Interaction</string>
     <string name="sensor_wifi_scan">Wifi Scan</string>
-    <string name="sensor_last_sync_server">Last sync to server</string>
-    <string name="sensor_last_received_phone">Last received to phone</string>
-    <string name="sensor_last_recorded_data">Last recorded data</string>
-    <string name="sensor_record_count">Number of records</string>
+
 
     <!-- Toast Messages -->
     <string name="toast_experiment_group_selected">Experiment group selected successfully</string>
@@ -260,9 +260,12 @@
     <string name="toast_upload_all_summary">Successfully uploaded %1$d sensor(s)</string>
     <string name="sensor_upload_data_confirm">Upload Sensor Data</string>
     <string name="sensor_upload_data_message">Are you sure you want to upload all stored data for this sensor to the server?</string>
-    <string name="toast_login_success">Login successful</string>
-    <string name="toast_logout_success">Logout successful</string>
+
+    <string name="toast_login_failed">Login failed. Please try again.</string>
+    <string name="toast_profile_setup_failed">Could not set up your profile. Please try again later.</string>
+
     <string name="toast_error_generic">An error occurred</string>
+    <string name="toast_request_timeout">Request timed out. Please check your connection and try again.</string>
     <string name="toast_no_data_to_export">No data to export</string>
     <string name="toast_export_failed">Failed to export data</string>
     <string name="sensor_export_csv">Export CSV</string>
@@ -270,11 +273,10 @@
     <!-- Onboarding Screen -->
     <string name="onboarding_welcome">Welcome to EnPULSE!</string>
     <string name="onboarding_description">Please select your experiment group to start</string>
-    <string name="onboarding_select_campaign">Experiment Group</string>
-    <string name="onboarding_ok">OK</string>
+
     <string name="onboarding_loading">Loading campaigns…</string>
     <string name="onboarding_no_campaigns">No campaigns available</string>
-    <string name="onboarding_survey_fetch_error">Campaign saved, but failed to load surveys. You can retry from Settings later.</string>
+    <string name="onboarding_survey_fetch_error">Campaign saved, but failed to load surveys.</string>
     <string name="onboarding_start">Start</string>
     <string name="onboarding_help_text">Please consult the researcher to choose which experiment group is appropriate for you</string>
 

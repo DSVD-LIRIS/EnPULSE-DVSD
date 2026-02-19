@@ -66,10 +66,10 @@ interface UserInteractionDao : BaseDao<UserInteractionSensor.Entity, UserInterac
     override suspend fun getRecordCount(): Int
 
     @Query("SELECT COUNT(*) FROM UserInteractionEntity WHERE timestamp >= :afterTimestamp")
-    suspend fun getRecordCountAfterTimestamp(afterTimestamp: Long): Int
+    override suspend fun getRecordCountAfterTimestamp(afterTimestamp: Long): Int
 
     @Query("SELECT * FROM UserInteractionEntity WHERE timestamp >= :afterTimestamp ORDER BY CASE WHEN :isAscending = 1 THEN timestamp END ASC, CASE WHEN :isAscending = 0 THEN timestamp END DESC LIMIT :limit OFFSET :offset")
-    suspend fun getRecordsPaginated(
+    override suspend fun getRecordsPaginated(
         afterTimestamp: Long,
         isAscending: Boolean,
         limit: Int,
@@ -77,16 +77,19 @@ interface UserInteractionDao : BaseDao<UserInteractionSensor.Entity, UserInterac
     ): List<UserInteractionEntity>
 
     @Query("DELETE FROM UserInteractionEntity WHERE id = :recordId")
-    suspend fun deleteById(recordId: Long)
+    override suspend fun deleteById(recordId: Long)
 
     @Query("SELECT eventId FROM UserInteractionEntity WHERE id = :recordId")
-    suspend fun getEventIdById(recordId: Long): String?
+    override suspend fun getEventIdById(recordId: Long): String?
 
     @Query("DELETE FROM UserInteractionEntity")
     suspend fun deleteAllUserInteractionData()
 
     @Query("SELECT COUNT(*) FROM UserInteractionEntity WHERE timestamp >= :afterTimestamp")
     fun getDailyUserInteractionCount(afterTimestamp: Long): kotlinx.coroutines.flow.Flow<Int>
+
+    @Query("DELETE FROM UserInteractionEntity WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
 
     override suspend fun deleteAll() {
         deleteAllUserInteractionData()

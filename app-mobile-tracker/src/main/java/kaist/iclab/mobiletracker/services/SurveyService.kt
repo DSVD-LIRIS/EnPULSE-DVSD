@@ -1,6 +1,5 @@
 package kaist.iclab.mobiletracker.services
 
-import android.util.Log
 import io.github.jan.supabase.postgrest.from
 import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.data.survey.OptionConfig
@@ -13,6 +12,7 @@ import kaist.iclab.mobiletracker.data.survey.SurveyQuestionOptionEntity
 import kaist.iclab.mobiletracker.data.survey.SurveyQuestionResponseInsert
 import kaist.iclab.mobiletracker.data.survey.SurveyQuestionTriggerEntity
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
+import kaist.iclab.mobiletracker.repository.ErrorClassifier
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.runCatchingSuspend
 import kaist.iclab.mobiletracker.utils.SupabaseLoadingInterceptor
@@ -95,70 +95,65 @@ class SurveyService(
      */
     suspend fun getCampaignSurveys(campaignId: Int): Result<List<SurveyConfig>> {
         return SupabaseLoadingInterceptor.withLoading {
-            runCatchingSuspend {
-                try {
-                    // 1. Fetch all surveys for campaign
-                    val surveys = supabaseClient.from(Constants.DB.TABLE_SURVEY)
+            ErrorClassifier.runClassified(TAG, "getCampaignSurveys($campaignId)") {
+                // 1. Fetch all surveys for campaign
+                val surveys = supabaseClient.from(Constants.DB.TABLE_SURVEY)
+                    .select {
+                        filter {
+                            eq("campaign_id", campaignId)
+                        }
+                    }
+                    .decodeList<SurveyEntity>()
+
+                if (surveys.isEmpty()) {
+                    return@runClassified emptyList()
+                }
+
+                val surveyIds = surveys.map { s -> s.id }
+
+                // 2. Fetch all questions for these surveys
+                val questions = supabaseClient.from(Constants.DB.TABLE_QUESTION)
+                    .select {
+                        filter {
+                            isIn("survey_id", surveyIds)
+                        }
+                    }
+                    .decodeList<SurveyQuestionEntity>()
+
+                // 3. Fetch all options for these questions
+                val questionIds = questions.map { q -> q.id }
+                val options = if (questionIds.isNotEmpty()) {
+                    supabaseClient.from(Constants.DB.TABLE_OPTION)
                         .select {
                             filter {
-                                eq("campaign_id", campaignId)
+                                isIn("question_id", questionIds)
                             }
                         }
-                        .decodeList<SurveyEntity>()
+                        .decodeList<SurveyQuestionOptionEntity>()
+                } else emptyList()
 
-                    if (surveys.isEmpty()) {
-                        return@runCatchingSuspend emptyList()
-                    }
-
-                    val surveyIds = surveys.map { s -> s.id }
-
-                    // 2. Fetch all questions for these surveys
-                    val questions = supabaseClient.from(Constants.DB.TABLE_QUESTION)
+                // 4. Fetch all triggers
+                val triggerIds = questions.mapNotNull { q -> q.triggeredBy }
+                val triggers = if (triggerIds.isNotEmpty()) {
+                    supabaseClient.from(Constants.DB.TABLE_TRIGGER)
                         .select {
                             filter {
-                                isIn("survey_id", surveyIds)
+                                isIn("id", triggerIds)
                             }
                         }
-                        .decodeList<SurveyQuestionEntity>()
+                        .decodeList<SurveyQuestionTriggerEntity>()
+                } else emptyList()
 
-                    // 3. Fetch all options for these questions
-                    val questionIds = questions.map { q -> q.id }
-                    val options = if (questionIds.isNotEmpty()) {
-                        supabaseClient.from(Constants.DB.TABLE_OPTION)
-                            .select {
-                                filter {
-                                    isIn("question_id", questionIds)
-                                }
-                            }
-                            .decodeList<SurveyQuestionOptionEntity>()
-                    } else emptyList()
+                // 5. Assemble each survey
+                surveys.map { survey ->
+                    val surveyQuestions = questions.filter { q -> q.surveyId == survey.id }
+                    val surveyQuestionIds = surveyQuestions.map { q -> q.id }
+                    val surveyOptions =
+                        options.filter { o -> o.questionId in surveyQuestionIds }
+                    val surveyTriggerIds = surveyQuestions.mapNotNull { q -> q.triggeredBy }
+                    val surveyTriggers = triggers.filter { t -> t.id in surveyTriggerIds }
 
-                    // 4. Fetch all triggers
-                    val triggerIds = questions.mapNotNull { q -> q.triggeredBy }
-                    val triggers = if (triggerIds.isNotEmpty()) {
-                        supabaseClient.from(Constants.DB.TABLE_TRIGGER)
-                            .select {
-                                filter {
-                                    isIn("id", triggerIds)
-                                }
-                            }
-                            .decodeList<SurveyQuestionTriggerEntity>()
-                    } else emptyList()
-
-                    // 5. Assemble each survey
-                    surveys.map { survey ->
-                        val surveyQuestions = questions.filter { q -> q.surveyId == survey.id }
-                        val surveyQuestionIds = surveyQuestions.map { q -> q.id }
-                        val surveyOptions =
-                            options.filter { o -> o.questionId in surveyQuestionIds }
-                        val surveyTriggerIds = surveyQuestions.mapNotNull { q -> q.triggeredBy }
-                        val surveyTriggers = triggers.filter { t -> t.id in surveyTriggerIds }
-
-                        assembleConfig(survey, surveyQuestions, surveyOptions, surveyTriggers)
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error fetching campaign surveys: ${e.message}", e)
-                    throw e
+                    assembleConfig(survey, surveyQuestions, surveyOptions, surveyTriggers)
                 }
             }
         }
@@ -223,7 +218,7 @@ class SurveyService(
      * @return Result indicating success or failure
      */
     suspend fun submitSurveyResponses(responses: List<SurveyQuestionResponseInsert>): Result<Unit> {
-        return runCatchingSuspend {
+        return ErrorClassifier.runClassified(TAG, "submitSurveyResponses") {
             supabaseClient.from(Constants.DB.TABLE_RESPONSE).insert(responses)
         }
     }

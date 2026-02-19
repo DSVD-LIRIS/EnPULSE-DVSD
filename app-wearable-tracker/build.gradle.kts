@@ -8,15 +8,17 @@ plugins {
 
 android {
     namespace = "kaist.iclab.wearabletracker"
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "kaist.iclab.trackerSystem"
-        minSdk = 30
-        targetSdk = 36
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
     }
 
     signingConfigs {
@@ -33,7 +35,8 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -53,7 +56,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildToolsVersion = "36.1.0"
+    buildToolsVersion = libs.versions.buildTools.get()
 
 }
 
@@ -87,7 +90,7 @@ dependencies {
     implementation(libs.koin.androidx.compose)
 
     // icons
-    implementation(libs.material.icons.extended)
+    implementation(libs.compose.material.icons.extended)
 
     // tracker library
     implementation(project(":tracker-library"))

@@ -3,7 +3,7 @@ plugins {
     /* Parceler (for Samsung Health Data SDK) */
     id("kotlin-parcelize")
     alias(libs.plugins.kotlinCompose)
-    kotlin("plugin.serialization") version "2.2.10"
+    alias(libs.plugins.kotlinSerialization)
 }
 
 android {
@@ -53,4 +53,7 @@ dependencies {
     // Samsung Dependencies
     api(project(":samsung-health-data-api"))
     api(project(":samsung-health-sensor-api"))
+
+    // Testing
+    testImplementation(libs.junit)
 }

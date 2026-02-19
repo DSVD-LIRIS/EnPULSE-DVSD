@@ -19,32 +19,37 @@ class SurveyRepositoryImpl(
     private val inMemoryStorage: StateStorage<SurveySensor.Config>,
     private val scheduleStorage: SurveyScheduleStorage
 ) : SurveyRepository {
+    companion object {
+        private const val TAG = "SurveyRepo"
+    }
 
     override val surveysFlow: StateFlow<SurveyConfigList>
         get() = persistentStorage.stateFlow
 
-    override suspend fun fetchAndPersistSurveys(campaignId: Int): kotlin.Result<Int> {
-        return when (val result = surveyService.getCampaignSurveys(campaignId)) {
-            is Result.Success -> {
-                val configs = result.data
+    override suspend fun fetchAndPersistSurveys(campaignId: Int): Result<Int> {
+        return ErrorClassifier.runClassified(TAG, "fetch and persist surveys") {
+            when (val result = surveyService.getCampaignSurveys(campaignId)) {
+                is Result.Success -> {
+                    val configs = result.data
 
-                if (configs.isNotEmpty()) {
-                    // 1. Persist to Couchbase
-                    persistentStorage.set(SurveyConfigList(configs))
+                    if (configs.isNotEmpty()) {
+                        // 1. Persist to Couchbase
+                        persistentStorage.set(SurveyConfigList(configs))
 
-                    // 2. Apply to in-memory storage for SurveySensor
-                    val sensorConfig = SurveyConfigConverter.toSurveySensorConfig(configs)
-                    inMemoryStorage.set(sensorConfig)
-                } else {
-                    // Clear old surveys when new campaign has no surveys
-                    clearSurveys()
+                        // 2. Apply to in-memory storage for SurveySensor
+                        val sensorConfig = SurveyConfigConverter.toSurveySensorConfig(configs)
+                        inMemoryStorage.set(sensorConfig)
+                    } else {
+                        // Clear old surveys when new campaign has no surveys
+                        clearSurveys()
+                    }
+
+                    configs.size
                 }
 
-                kotlin.Result.success(configs.size)
-            }
-
-            is Result.Error -> {
-                kotlin.Result.failure(result.exception ?: Exception(result.message))
+                is Result.Error -> {
+                    throw result.exception ?: Exception(result.message)
+                }
             }
         }
     }

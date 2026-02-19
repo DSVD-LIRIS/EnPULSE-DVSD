@@ -11,6 +11,8 @@ import kaist.iclab.wearabletracker.R
 import kaist.iclab.wearabletracker.db.dao.BaseDao
 import kaist.iclab.wearabletracker.helpers.NotificationHelper
 import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
+import kaist.iclab.wearabletracker.repository.ErrorClassifier
+import kaist.iclab.wearabletracker.repository.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -50,48 +52,36 @@ class PhoneCommunicationManager(
     /**
      * Send new sensor data to the phone app via BLE (incremental sync).
      * Only sends data collected since the last successful sync.
-     */
-    /**
-     * Send new sensor data to the phone app via BLE (incremental sync).
-     * Only sends data collected since the last successful sync.
-     * Implementing Chunked Sync to avoid OOM.
+     * Implements chunked sync to avoid OOM.
      */
     fun sendDataToPhone() {
         coroutineScope.launch {
-            try {
+            val result = ErrorClassifier.runClassified(TAG, "send data to phone") {
                 if (!isPhoneAvailable()) {
-                    Log.e(
-                        TAG,
-                        "Error sending data to phone: Phone is not available or not connected"
-                    )
-                    withContext(Dispatchers.Main) {
-                        NotificationHelper.showPhoneCommunicationFailure(
-                            androidContext,
-                            androidContext.getString(R.string.notification_phone_not_available)
-                        )
-                    }
-                    return@launch
+                    throw IllegalStateException(androidContext.getString(R.string.notification_phone_not_available))
                 }
 
                 // Global start time for this sync session
                 val lastSyncTime = syncPreferencesHelper.getLastSyncTimestamp() ?: 0L
                 var dataSent = false
-                var errorOccurred = false
 
                 // Track max timestamp seen across all sensors to update global pref at end
                 var maxTimestampSeen = lastSyncTime
+                var totalRecordCount = 0
+                val batchId = UUID.randomUUID().toString()
+
+                // Per-sensor tracking
+                var successSensorCount = 0
+                var failedSensorId: String? = null
 
                 // Iterate each sensor and send its data in chunks
                 daos.forEach { (sensorId, dao) ->
-                    // Guard to stop processing if error occurred
-                    if (errorOccurred) return@forEach
+                    var currentSensorLastTimestamp = lastSyncTime
 
                     while (coroutineContext.isActive) {
                         // Fetch a page of data
-                        // We use lastSyncTime as base, because we delete sent data immediately.
-                        // So getting > lastSyncTime effectively gets the "next" available data.
                         val data = dao.getDataSince(
-                            lastSyncTime,
+                            currentSensorLastTimestamp,
                             kaist.iclab.wearabletracker.Constants.DB.SYNC_BATCH_LIMIT
                         )
 
@@ -100,12 +90,12 @@ class PhoneCommunicationManager(
                         }
 
                         dataSent = true
+                        totalRecordCount += data.size
 
-                        // Calculate max timestamp in this specific chunk
+                        // Calculate max timestamp in this chunk
                         val chunkMaxTimestamp = data.maxOf { it.timestamp }
                         maxTimestampSeen = maxOf(maxTimestampSeen, chunkMaxTimestamp)
-
-                        val batchId = UUID.randomUUID().toString()
+                        currentSensorLastTimestamp = chunkMaxTimestamp
 
                         // Build CSV for this chunk
                         val csvBuilder = StringBuilder()
@@ -117,70 +107,66 @@ class PhoneCommunicationManager(
                         data.forEach { entity ->
                             csvBuilder.append(entity.toCsvRow() + "\n")
                         }
-                        // Add newline at end of batch
                         csvBuilder.append("\n")
-
-                        val batch = SyncBatch(
-                            batchId = batchId,
-                            startTimestamp = lastSyncTime,
-                            endTimestamp = chunkMaxTimestamp,
-                            recordCount = data.size,
-                            createdAt = System.currentTimeMillis()
-                        )
-
-                        // We do NOT save pending batch persistently here to avoid IO overhead in loop,
-                        // and because we treat `bleChannel.send` + `delete` as an atomic unit for this chunk.
 
                         try {
                             bleChannel.send(Constants.BLE.KEY_SENSOR_DATA, csvBuilder.toString())
-
-                            // Send/Delete succeeded for this chunk
-                            dao.deleteDataBefore(chunkMaxTimestamp)
+                            Log.d(
+                                TAG,
+                                "[$sensorId] Sent chunk: ${data.size} records, maxTs=$chunkMaxTimestamp"
+                            )
                         } catch (e: Exception) {
-                            Log.e(TAG, "Error sending chunk for $sensorId: ${e.message}", e)
-                            errorOccurred = true
-                            break // Stop this sensor loop
+                            Log.e(TAG, "[$sensorId] Error sending chunk: ${e.message}", e)
+                            failedSensorId = sensorId
+                            throw e // Propagate to runClassified
                         }
                     }
+                    successSensorCount++
                 }
 
-                if (dataSent && !errorOccurred) {
-                    // Update global last sync timestamp
-                    // Use System.currentTimeMillis() to be conservative for next sync, 
-                    // or use maxTimestampSeen. System time is consistent with original logic.
-                    syncPreferencesHelper.saveLastSyncTimestamp(System.currentTimeMillis())
+                if (dataSent) {
+                    Log.i(TAG, "Sync payload sent: $successSensorCount sensors, batchId=$batchId")
 
-                    withContext(Dispatchers.Main) {
-                        NotificationHelper.showPhoneCommunicationSuccess(androidContext)
-                    }
-                } else if (!dataSent) {
-                    Log.w(TAG, "No new data to send")
-                    withContext(Dispatchers.Main) {
-                        NotificationHelper.showPhoneCommunicationFailure(
-                            androidContext,
-                            androidContext.getString(R.string.notification_no_data)
+                    // Save as pending batch - do NOT delete yet.
+                    // SyncAckListener will perform cleanup after phone confirms receipt.
+                    syncPreferencesHelper.savePendingBatch(
+                        SyncBatch(
+                            batchId = batchId,
+                            startTimestamp = lastSyncTime,
+                            endTimestamp = maxTimestampSeen,
+                            recordCount = totalRecordCount,
+                            createdAt = System.currentTimeMillis()
                         )
-                    }
-                } else {
-                    // Error case handled by previous logging/notification? 
-                    withContext(Dispatchers.Main) {
-                        NotificationHelper.showPhoneCommunicationFailure(
-                            androidContext,
-                            androidContext.getString(R.string.notification_send_failed)
-                        )
-                    }
-                }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in sendDataToPhone: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    NotificationHelper.showPhoneCommunicationFailure(
-                        androidContext,
-                        e,
-                        "Error in sendDataToPhone"
                     )
+                    true
+                } else {
+                    false
+                }
+            }
+
+            withContext(Dispatchers.Main) {
+                when (result) {
+                    is Result.Success -> {
+                        if (result.data) {
+                            NotificationHelper.showPhoneCommunicationSuccess(androidContext)
+                        } else {
+                            NotificationHelper.showPhoneCommunicationFailure(
+                                androidContext,
+                                androidContext.getString(R.string.notification_no_data)
+                            )
+                        }
+                    }
+
+                    is Result.Error -> {
+                        NotificationHelper.showPhoneCommunicationFailure(
+                            androidContext,
+                            result.exception,
+                            "Sync failed"
+                        )
+                    }
                 }
             }
         }
     }
 }
+

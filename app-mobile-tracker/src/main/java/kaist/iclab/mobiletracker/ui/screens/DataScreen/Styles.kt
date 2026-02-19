@@ -9,16 +9,16 @@ import kaist.iclab.mobiletracker.ui.theme.Dimens
 object Styles {
     // Layout
     val SCREEN_HORIZONTAL_PADDING = Dimens.ScreenHorizontalPadding
-    val TOP_SPACER_HEIGHT = Dimens.SpacingLarge
+    val TOP_SPACER_HEIGHT = Dimens.SpacingMedium
     val BOTTOM_SPACER_HEIGHT = Dimens.SpacingSmall
-    val SECTION_SPACING = Dimens.SpacingLarge
+    val SECTION_SPACING = Dimens.SpacingSmall
     val ITEM_SPACING = Dimens.SpacingSmall
 
     // Header
     val TITLE_FONT_SIZE = Dimens.FontSizeLargeHeader
     val DESCRIPTION_FONT_SIZE = Dimens.FontSizeBody
     val SUBTITLE_FONT_SIZE = Dimens.FontSizeBody
-    val SUBTITLE_TOP_PADDING = Dimens.SpacingTiny
+
 
     // Card
     val CARD_SHAPE = RoundedCornerShape(Dimens.CornerRadiusMedium)

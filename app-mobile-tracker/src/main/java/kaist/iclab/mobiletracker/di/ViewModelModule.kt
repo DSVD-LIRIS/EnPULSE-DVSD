@@ -1,5 +1,6 @@
 package kaist.iclab.mobiletracker.di
 
+import kaist.iclab.mobiletracker.helpers.DataExportHelper
 import kaist.iclab.mobiletracker.repository.CampaignRepository
 import kaist.iclab.mobiletracker.repository.DataRepository
 import kaist.iclab.mobiletracker.repository.PhoneSensorRepository
@@ -68,6 +69,7 @@ val viewModelModule = module {
     viewModel {
         DataViewModel(
             dataRepository = get<DataRepository>(),
+            dataExportHelper = get<DataExportHelper>(),
             context = androidContext()
         )
     }
