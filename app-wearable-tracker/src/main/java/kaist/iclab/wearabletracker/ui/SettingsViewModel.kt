@@ -83,7 +83,10 @@ class SettingsViewModel(
     val controllerState = sensorController.controllerStateFlow
 
     fun update(sensorName: String, status: Boolean) {
-        val sensor = sensorMap[sensorName]!!
+        val sensor = sensorMap[sensorName] ?: run {
+            Log.w(TAG, "Sensor not found: $sensorName")
+            return
+        }
         if (status) sensor.enable()
         else sensor.disable()
     }

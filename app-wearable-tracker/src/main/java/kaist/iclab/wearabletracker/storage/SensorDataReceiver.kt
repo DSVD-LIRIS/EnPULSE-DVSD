@@ -22,6 +22,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
@@ -175,8 +176,8 @@ class SensorDataReceiver(
             // Cancel incoming data processing job
             batchJob?.cancel()
 
-            // Drain remaining data and flush in the app-level scope
-            // This prevents ANRs while ensuring data is still written to DB
+            // Drain remaining data and flush synchronously with a timeout
+            // to ensure data is persisted before the process dies
             val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
             while (true) {
                 val result = eventChannel.tryReceive()
@@ -188,8 +189,10 @@ class SensorDataReceiver(
                 }
             }
             if (buffer.isNotEmpty()) {
-                coroutineScope.launch {
-                    flushBuffer(buffer)
+                runBlocking {
+                    withTimeoutOrNull(3000L) {
+                        flushBuffer(buffer)
+                    } ?: Log.w("SensorDataReceiver", "Flush timed out during onDestroy")
                 }
             }
         }

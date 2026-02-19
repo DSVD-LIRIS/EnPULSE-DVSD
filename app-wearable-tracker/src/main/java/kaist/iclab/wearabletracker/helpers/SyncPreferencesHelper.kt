@@ -2,6 +2,7 @@ package kaist.iclab.wearabletracker.helpers
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import kaist.iclab.wearabletracker.data.SyncBatch
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -104,6 +105,7 @@ class SyncPreferencesHelper(context: Context) {
     }
 
     companion object {
+        private const val TAG = "SyncPreferencesHelper"
         private const val PREFS_NAME = "sync_preferences"
         private const val KEY_LAST_SYNC_TIMESTAMP = "last_sync_timestamp"
         private const val KEY_PENDING_BATCH_ID = "pending_batch_id"
@@ -111,5 +113,29 @@ class SyncPreferencesHelper(context: Context) {
         private const val KEY_PENDING_END_TS = "pending_end_timestamp"
         private const val KEY_PENDING_RECORD_COUNT = "pending_record_count"
         private const val KEY_PENDING_CREATED_AT = "pending_created_at"
+
+        /** Stale batch timeout: 5 minutes */
+        private const val STALE_BATCH_TIMEOUT_MS = 5L * 60 * 1000
+    }
+
+    /**
+     * Check if there's a stale pending batch (exceeded timeout) and clear it.
+     * This prevents a stuck pending batch from blocking future syncs.
+     * @return true if a stale batch was found and cleared
+     */
+    fun clearStaleBatchIfNeeded(): Boolean {
+        val pendingBatch = getPendingBatch() ?: return false
+        val elapsed = System.currentTimeMillis() - pendingBatch.createdAt
+
+        if (elapsed > STALE_BATCH_TIMEOUT_MS) {
+            Log.w(
+                TAG,
+                "Clearing stale pending batch ${pendingBatch.batchId} " +
+                    "(age: ${elapsed / 1000}s, records: ${pendingBatch.recordCount})"
+            )
+            clearPendingBatch()
+            return true
+        }
+        return false
     }
 }

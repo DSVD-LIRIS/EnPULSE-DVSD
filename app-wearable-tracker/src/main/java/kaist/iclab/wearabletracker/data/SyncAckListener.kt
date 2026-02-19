@@ -24,8 +24,12 @@ class SyncAckListener(
 
     /**
      * Start listening for ACK messages from the phone.
+     * Also checks for and clears any stale pending batches from previous sessions.
      */
     fun startListening() {
+        // Recover from stale batches left by previous app sessions
+        syncPreferencesHelper.clearStaleBatchIfNeeded()
+
         bleChannel.addOnReceivedListener(setOf(Constants.BLE.KEY_SYNC_ACK)) { _, jsonElement ->
             val ackData = when (jsonElement) {
                 is JsonPrimitive -> jsonElement.content
