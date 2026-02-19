@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.SensorsOff
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Button
@@ -67,7 +68,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-import androidx.compose.material.icons.filled.SensorsOff
 
 /**
  * Data screen - displays a list of all sensors with their record counts.

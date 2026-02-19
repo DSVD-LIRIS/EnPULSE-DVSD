@@ -2,6 +2,8 @@ package kaist.iclab.mobiletracker.services
 
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.from
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.AppError
@@ -9,8 +11,6 @@ import kaist.iclab.mobiletracker.repository.ErrorClassifier
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.flatMap
 import kaist.iclab.mobiletracker.utils.SupabaseLoadingInterceptor
-import io.ktor.http.Headers
-import io.ktor.http.HttpHeaders
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 

@@ -22,7 +22,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
 import kaist.iclab.mobiletracker.ui.components.Popup.DialogButtonConfig
@@ -44,20 +43,20 @@ fun CampaignDialog(
 ) {
     val context = LocalContext.current
     var selected by remember { mutableStateOf(selectedCampaignId) }
-    
+
     // Password verification state
     var showPasswordInput by remember { mutableStateOf(false) }
-    
+
 
     if (showPasswordInput) {
         val selectedCampaign = campaigns.find { it.idString == selected }
-        
+
         if (selectedCampaign != null) {
             PasswordDialog(
                 campaignName = selectedCampaign.name,
                 onDismiss = { showPasswordInput = false },
-                onVerify = { password -> 
-                    onJoinCampaign(selectedCampaign.idString, password) 
+                onVerify = { password ->
+                    onJoinCampaign(selectedCampaign.idString, password)
                 },
                 onSuccess = {
                     onSelect(selectedCampaign.idString)

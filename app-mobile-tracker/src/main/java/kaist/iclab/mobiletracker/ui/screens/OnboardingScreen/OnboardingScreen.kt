@@ -197,7 +197,7 @@ fun OnboardingScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
-                    onClick = { 
+                    onClick = {
                         showPasswordDialog = true
                     },
                     modifier = Modifier
