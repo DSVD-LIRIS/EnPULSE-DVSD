@@ -53,4 +53,8 @@
     <!-- SDK Policy Error -->
     <string name="sdk_policy_error_title">개발자 모드 필요</string>
     <string name="sdk_policy_error_message">Health Platform 앱 설정에서 개발자 모드를 활성화해 주세요</string>
+
+    <!-- Status Dashboard -->
+    <string name="status_battery_format">🔋%1$d%%</string>
+    <string name="status_records_format">📊%1$s</string>
 </resources>

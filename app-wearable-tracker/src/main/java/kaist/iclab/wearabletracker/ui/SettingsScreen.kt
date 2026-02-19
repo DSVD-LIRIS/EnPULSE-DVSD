@@ -104,6 +104,11 @@ fun SettingsScreen(
     // Observe last sync timestamp
     val lastSyncTimestamp by settingsViewModel.lastSyncTimestamp.collectAsState()
 
+    // Observe dashboard data
+    val totalRecordCount by settingsViewModel.totalRecordCount.collectAsState()
+    val batteryLevel by settingsViewModel.batteryLevel.collectAsState()
+    val recordingStartTime by settingsViewModel.recordingStartTime.collectAsState()
+
     //UI
     when {
         hasSdkPolicyError -> {
@@ -160,6 +165,10 @@ fun SettingsScreen(
                     DeviceStatusInfo(
                         deviceInfo = deviceInfo,
                         lastSyncTimestamp = lastSyncTimestamp,
+                        totalRecordCount = totalRecordCount,
+                        batteryLevel = batteryLevel,
+                        isRecording = (isCollecting.flag == ControllerState.FLAG.RUNNING),
+                        recordingStartTime = recordingStartTime,
                     )
                     Column(
                         modifier = Modifier

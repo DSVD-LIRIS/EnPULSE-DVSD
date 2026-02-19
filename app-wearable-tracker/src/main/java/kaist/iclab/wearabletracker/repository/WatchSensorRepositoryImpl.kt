@@ -28,4 +28,8 @@ class WatchSensorRepositoryImpl(
     override fun saveLastSyncTimestamp(timestamp: Long) {
         syncPreferencesHelper.saveLastSyncTimestamp(timestamp)
     }
+
+    override suspend fun getTotalRecordCount(): Int {
+        return sensorDataStorages.values.sumOf { it.getCount() }
+    }
 }

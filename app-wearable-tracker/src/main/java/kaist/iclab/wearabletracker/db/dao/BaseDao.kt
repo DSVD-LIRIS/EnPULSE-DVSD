@@ -36,4 +36,9 @@ interface BaseDao<T : SensorEntity> {
      * @param timestamp Delete records with timestamp <= this value
      */
     suspend fun deleteDataBefore(timestamp: Long)
+
+    /**
+     * Get the total number of records stored for this sensor.
+     */
+    suspend fun getCount(): Int
 }

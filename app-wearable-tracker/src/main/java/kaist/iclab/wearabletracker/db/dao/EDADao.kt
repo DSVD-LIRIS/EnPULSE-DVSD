@@ -61,4 +61,7 @@ interface EDADao : BaseDao<EDASensor.Entity> {
     override suspend fun deleteAll() {
         deleteAllEDAData()
     }
+
+    @Query("SELECT COUNT(*) FROM EDAEntity")
+    override suspend fun getCount(): Int
 }

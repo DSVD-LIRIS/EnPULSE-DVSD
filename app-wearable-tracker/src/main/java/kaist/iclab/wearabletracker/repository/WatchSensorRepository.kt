@@ -28,4 +28,9 @@ interface WatchSensorRepository {
      * @param timestamp timestamp in milliseconds
      */
     fun saveLastSyncTimestamp(timestamp: Long)
+
+    /**
+     * Get the total number of records across all sensors.
+     */
+    suspend fun getTotalRecordCount(): Int
 }

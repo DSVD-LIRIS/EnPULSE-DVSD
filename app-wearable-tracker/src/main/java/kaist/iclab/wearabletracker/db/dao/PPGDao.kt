@@ -69,4 +69,7 @@ interface PPGDao : BaseDao<PPGSensor.Entity> {
     override suspend fun deleteAll() {
         deleteAllPPGData()
     }
+
+    @Query("SELECT COUNT(*) FROM PPGEntity")
+    override suspend fun getCount(): Int
 }

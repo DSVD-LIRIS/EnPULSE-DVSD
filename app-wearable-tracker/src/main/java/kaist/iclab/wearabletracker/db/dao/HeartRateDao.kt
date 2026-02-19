@@ -64,4 +64,7 @@ interface HeartRateDao : BaseDao<HeartRateSensor.Entity> {
     override suspend fun deleteAll() {
         deleteAllHeartRateData()
     }
+
+    @Query("SELECT COUNT(*) FROM HeartRateEntity")
+    override suspend fun getCount(): Int
 }

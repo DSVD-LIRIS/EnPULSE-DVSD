@@ -271,7 +271,8 @@ val koinModule = module {
             sensorDataReceiver = get(),
             phoneCommunicationManager = get(),
             repository = get(),
-            samsungHealthSensorInitializer = get()
+            samsungHealthSensorInitializer = get(),
+            applicationContext = androidContext()
         )
     }
 
