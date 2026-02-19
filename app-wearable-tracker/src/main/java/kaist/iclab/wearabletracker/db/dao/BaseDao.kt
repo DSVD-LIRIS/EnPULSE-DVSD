@@ -41,4 +41,9 @@ interface BaseDao<T : SensorEntity> {
      * Get the total number of records stored for this sensor.
      */
     suspend fun getCount(): Int
+
+    /**
+     * Get the number of records with timestamp > the given value.
+     */
+    suspend fun getCountSince(timestamp: Long): Int
 }

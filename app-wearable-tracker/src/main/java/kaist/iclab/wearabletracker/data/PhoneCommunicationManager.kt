@@ -14,6 +14,9 @@ import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
 import kaist.iclab.wearabletracker.repository.ErrorClassifier
 import kaist.iclab.wearabletracker.repository.Result
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -33,6 +36,10 @@ class PhoneCommunicationManager(
     private val bleChannel: BLEDataChannel = BLEDataChannel(androidContext)
     private val nodeClient: NodeClient by lazy { Wearable.getNodeClient(androidContext) }
     private val syncMutex = Mutex()
+
+    // Sync progress: 0.0 to 1.0, null if not syncing
+    private val _syncProgress = MutableStateFlow<Float?>(null)
+    val syncProgress: StateFlow<Float?> = _syncProgress.asStateFlow()
 
     fun getBleChannel(): BLEDataChannel = bleChannel
 
@@ -73,11 +80,19 @@ class PhoneCommunicationManager(
 
                     // Global start time for this sync session
                     val lastSyncTime = syncPreferencesHelper.getLastSyncTimestamp() ?: 0L
+                    
+                    // Calculate total records to be synced across all sensors
+                    val totalRecordsToSync = daos.values.sumOf { it.getCountSince(lastSyncTime) }
+                    if (totalRecordsToSync == 0) {
+                        return@runClassified false
+                    }
+
+                    _syncProgress.value = 0f
                     var dataSent = false
 
                     // Track max timestamp seen across all sensors to update global pref at end
                     var maxTimestampSeen = lastSyncTime
-                    var totalRecordCount = 0
+                    var totalRecordsSentSoFar = 0
                     val batchId = UUID.randomUUID().toString()
 
                     // Per-sensor tracking
@@ -100,7 +115,8 @@ class PhoneCommunicationManager(
                             }
 
                             dataSent = true
-                            totalRecordCount += data.size
+                            totalRecordsSentSoFar += data.size
+                            _syncProgress.value = totalRecordsSentSoFar.toFloat() / totalRecordsToSync
 
                             // Calculate max timestamp in this chunk
                             val chunkMaxTimestamp = data.maxOf { it.timestamp }
@@ -144,7 +160,7 @@ class PhoneCommunicationManager(
                                 batchId = batchId,
                                 startTimestamp = lastSyncTime,
                                 endTimestamp = maxTimestampSeen,
-                                recordCount = totalRecordCount,
+                                recordCount = totalRecordsSentSoFar,
                                 createdAt = System.currentTimeMillis()
                             )
                         )
@@ -177,6 +193,7 @@ class PhoneCommunicationManager(
                     }
                 }
             } finally {
+                _syncProgress.value = null
                 syncMutex.unlock()
             }
         }

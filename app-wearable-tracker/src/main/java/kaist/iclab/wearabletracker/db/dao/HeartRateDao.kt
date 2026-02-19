@@ -67,4 +67,7 @@ interface HeartRateDao : BaseDao<HeartRateSensor.Entity> {
 
     @Query("SELECT COUNT(*) FROM HeartRateEntity")
     override suspend fun getCount(): Int
+
+    @Query("SELECT COUNT(*) FROM HeartRateEntity WHERE timestamp > :timestamp")
+    override suspend fun getCountSince(timestamp: Long): Int
 }

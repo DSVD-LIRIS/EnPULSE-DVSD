@@ -66,4 +66,7 @@ interface AccelerometerDao : BaseDao<AccelerometerSensor.Entity> {
 
     @Query("SELECT COUNT(*) FROM AccelerometerEntity")
     override suspend fun getCount(): Int
+
+    @Query("SELECT COUNT(*) FROM AccelerometerEntity WHERE timestamp > :timestamp")
+    override suspend fun getCountSince(timestamp: Long): Int
 }

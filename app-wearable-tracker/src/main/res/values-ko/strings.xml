@@ -57,4 +57,5 @@
     <!-- Status Dashboard -->
     <string name="status_battery_format">🔋%1$d%%</string>
     <string name="status_records_format">📊%1$s</string>
+    <string name="syncing_progress_format">동기화 중... %1$d%%</string>
 </resources>

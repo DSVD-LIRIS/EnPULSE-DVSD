@@ -49,6 +49,9 @@ class SettingsViewModel(
     private val _totalRecordCount = MutableStateFlow(0)
     val totalRecordCount: StateFlow<Int> = _totalRecordCount.asStateFlow()
 
+    // Sync progress: 0.0 to 1.0, null if not syncing
+    val syncProgress: StateFlow<Float?> = phoneCommunicationManager.syncProgress
+
     // Battery level (0-100)
     private val _batteryLevel = MutableStateFlow(-1)
     val batteryLevel: StateFlow<Int> = _batteryLevel.asStateFlow()

@@ -108,6 +108,7 @@ fun SettingsScreen(
     val totalRecordCount by settingsViewModel.totalRecordCount.collectAsState()
     val batteryLevel by settingsViewModel.batteryLevel.collectAsState()
     val recordingStartTime by settingsViewModel.recordingStartTime.collectAsState()
+    val syncProgress by settingsViewModel.syncProgress.collectAsState()
 
     //UI
     when {
@@ -169,6 +170,7 @@ fun SettingsScreen(
                         batteryLevel = batteryLevel,
                         isRecording = (isCollecting.flag == ControllerState.FLAG.RUNNING),
                         recordingStartTime = recordingStartTime,
+                        syncProgress = syncProgress,
                     )
                     Column(
                         modifier = Modifier

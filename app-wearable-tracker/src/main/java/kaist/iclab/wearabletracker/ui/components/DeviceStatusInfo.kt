@@ -48,6 +48,7 @@ fun DeviceStatusInfo(
     batteryLevel: Int = -1,
     isRecording: Boolean = false,
     recordingStartTime: Long? = null,
+    syncProgress: Float? = null,
 ) {
     Column(
         modifier = Modifier
@@ -72,14 +73,20 @@ fun DeviceStatusInfo(
             DeviceNameText(text = deviceInfo.name)
         }
 
-        // Sync status
-        SyncStatusText(
-            text = if (lastSyncTimestamp != null) {
+        // Sync status: Show percentage if syncing, else show last sync time
+        val syncText = when {
+            syncProgress != null -> {
+                val percentage = (syncProgress * 100).toInt()
+                stringResource(R.string.syncing_progress_format, percentage)
+            }
+            lastSyncTimestamp != null -> {
                 stringResource(R.string.last_sync_format, formatSyncTimestamp(lastSyncTimestamp))
-            } else {
+            }
+            else -> {
                 stringResource(R.string.last_sync_placeholder)
             }
-        )
+        }
+        SyncStatusText(text = syncText)
 
         // Status row: battery | records | duration
         Row(

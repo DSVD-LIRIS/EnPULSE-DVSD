@@ -66,4 +66,7 @@ interface SkinTemperatureDao : BaseDao<SkinTemperatureSensor.Entity> {
 
     @Query("SELECT COUNT(*) FROM SkinTemperatureEntity")
     override suspend fun getCount(): Int
+
+    @Query("SELECT COUNT(*) FROM SkinTemperatureEntity WHERE timestamp > :timestamp")
+    override suspend fun getCountSince(timestamp: Long): Int
 }

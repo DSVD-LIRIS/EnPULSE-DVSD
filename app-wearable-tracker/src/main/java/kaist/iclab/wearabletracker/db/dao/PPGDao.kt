@@ -72,4 +72,7 @@ interface PPGDao : BaseDao<PPGSensor.Entity> {
 
     @Query("SELECT COUNT(*) FROM PPGEntity")
     override suspend fun getCount(): Int
+
+    @Query("SELECT COUNT(*) FROM PPGEntity WHERE timestamp > :timestamp")
+    override suspend fun getCountSince(timestamp: Long): Int
 }

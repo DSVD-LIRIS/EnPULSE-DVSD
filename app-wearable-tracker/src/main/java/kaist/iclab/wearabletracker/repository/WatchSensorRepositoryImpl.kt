@@ -32,4 +32,8 @@ class WatchSensorRepositoryImpl(
     override suspend fun getTotalRecordCount(): Int {
         return sensorDataStorages.values.sumOf { it.getCount() }
     }
+
+    override suspend fun getRecordCountSince(timestamp: Long): Int {
+        return sensorDataStorages.values.sumOf { it.getCountSince(timestamp) }
+    }
 }

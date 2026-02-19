@@ -64,4 +64,7 @@ interface EDADao : BaseDao<EDASensor.Entity> {
 
     @Query("SELECT COUNT(*) FROM EDAEntity")
     override suspend fun getCount(): Int
+
+    @Query("SELECT COUNT(*) FROM EDAEntity WHERE timestamp > :timestamp")
+    override suspend fun getCountSince(timestamp: Long): Int
 }
