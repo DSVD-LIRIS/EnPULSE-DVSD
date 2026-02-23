@@ -261,7 +261,7 @@ class SurveySensor(
 
         val scheduleId = intent.getStringExtra("scheduleId")!!
         val surveyId = intent.getStringExtra("id")!!
-        Log.d(TAG, "Survey triggered: $scheduleId")
+        Log.d(TAG, "Survey (id: $surveyId) triggered: $scheduleId")
 
         val notificationConfig = configStorage.get().survey[surveyId]!!.notificationConfig
 
