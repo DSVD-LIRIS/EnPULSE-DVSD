@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import kaist.iclab.tracker.listener.SamsungHealthSensorInitializer
 import kaist.iclab.tracker.sensor.controller.BackgroundController
@@ -28,7 +29,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class SettingsViewModel(
     private val sensorController: BackgroundController,
@@ -43,6 +47,7 @@ class SettingsViewModel(
         private val TAG = SettingsViewModel::class.simpleName
         private const val RECORD_COUNT_REFRESH_MS = 10_000L // 10 seconds
         private const val BATTERY_REFRESH_MS = 30_000L // 30 seconds
+        private const val PHONE_STATUS_REFRESH_MS = 15_000L // 15 seconds
     }
 
     // StateFlow for last sync timestamp
@@ -55,6 +60,12 @@ class SettingsViewModel(
 
     // Sync progress: 0.0 to 1.0, null if not syncing
     val syncProgress: StateFlow<Float?> = phoneCommunicationManager.syncProgress
+
+    // Phone connection status
+    private val _isPhoneConnected = MutableStateFlow(false)
+    val isPhoneConnected: StateFlow<Boolean> = _isPhoneConnected.asStateFlow()
+
+    private val nodeClient by lazy { Wearable.getNodeClient(applicationContext) }
 
     // Auto-sync settings
     val autoSyncEnabled: StateFlow<Boolean> = repository.autoSyncEnabledFlow
@@ -140,6 +151,14 @@ class SettingsViewModel(
             while (true) {
                 refreshBatteryLevel()
                 delay(BATTERY_REFRESH_MS)
+            }
+        }
+
+        // Periodic phone connection status refresh
+        viewModelScope.launch {
+            while (true) {
+                refreshPhoneConnectionStatus()
+                delay(PHONE_STATUS_REFRESH_MS)
             }
         }
     }
@@ -245,6 +264,20 @@ class SettingsViewModel(
             _batteryLevel.value = if (level >= 0) (level * 100) / scale else -1
         } catch (e: Exception) {
             Log.w(TAG, "Failed to read battery level: ${e.message}")
+        }
+    }
+
+    private suspend fun refreshPhoneConnectionStatus() {
+        try {
+            val nodes = suspendCancellableCoroutine<List<Node>> { continuation ->
+                nodeClient.connectedNodes
+                    .addOnSuccessListener { continuation.resume(it) }
+                    .addOnFailureListener { continuation.resumeWithException(it) }
+            }
+            _isPhoneConnected.value = nodes.isNotEmpty()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to check phone connection: ${e.message}")
+            _isPhoneConnected.value = false
         }
     }
 }

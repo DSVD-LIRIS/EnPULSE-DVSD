@@ -49,6 +49,7 @@ fun DeviceStatusInfo(
     isRecording: Boolean = false,
     recordingStartTime: Long? = null,
     syncProgress: Float? = null,
+    isPhoneConnected: Boolean = false,
 ) {
     Column(
         modifier = Modifier
@@ -125,6 +126,16 @@ fun DeviceStatusInfo(
                 StatusDivider()
                 RecordingDuration(startTime = recordingStartTime)
             }
+
+            // Phone connection
+            StatusDivider()
+            StatusChip(
+                text = if (isPhoneConnected) "📱" else "📱✕",
+                color = if (isPhoneConnected)
+                    Color(0xFF66BB6A) // Green
+                else
+                    MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
+            )
         }
     }
 }

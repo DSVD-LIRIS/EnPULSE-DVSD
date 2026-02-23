@@ -111,6 +111,9 @@ fun SettingsScreen(
     val recordingStartTime by settingsViewModel.recordingStartTime.collectAsState()
     val syncProgress by settingsViewModel.syncProgress.collectAsState()
 
+    // Observe phone connection status
+    val isPhoneConnected by settingsViewModel.isPhoneConnected.collectAsState()
+
     // Observe auto-sync data
     val autoSyncEnabled by settingsViewModel.autoSyncEnabled.collectAsState()
     val autoSyncInterval by settingsViewModel.autoSyncInterval.collectAsState()
@@ -176,6 +179,7 @@ fun SettingsScreen(
                         isRecording = (isCollecting.flag == ControllerState.FLAG.RUNNING),
                         recordingStartTime = recordingStartTime,
                         syncProgress = syncProgress,
+                        isPhoneConnected = isPhoneConnected,
                     )
                     Column(
                         modifier = Modifier
