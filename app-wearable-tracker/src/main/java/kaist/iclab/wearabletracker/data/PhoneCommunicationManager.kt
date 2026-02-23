@@ -128,6 +128,7 @@ class PhoneCommunicationManager(
                             val csvBuilder = StringBuilder()
                             csvBuilder.append("BATCH:$batchId\n")
                             csvBuilder.append("SINCE:$lastSyncTime\n")
+                            csvBuilder.append("CHUNK_END_TS:$chunkMaxTimestamp\n")
                             csvBuilder.append("---DATA---\n")
                             csvBuilder.append("$sensorId\n")
                             csvBuilder.append(data.first().toCsvHeader() + "\n")

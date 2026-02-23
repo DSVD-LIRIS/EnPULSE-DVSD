@@ -253,6 +253,7 @@ val koinModule = module {
             context = androidContext(),
             phoneCommunicationManager = get(),
             syncPreferencesHelper = get(),
+            controllerStateFlow = get<BackgroundController>().controllerStateFlow,
             coroutineScope = get()
         )
     }

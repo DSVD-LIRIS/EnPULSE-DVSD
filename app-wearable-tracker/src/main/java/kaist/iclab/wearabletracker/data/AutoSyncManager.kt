@@ -4,10 +4,12 @@ import android.content.Context
 import android.util.Log
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
+import kaist.iclab.tracker.sensor.controller.ControllerState
 import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.isActive
@@ -18,11 +20,13 @@ import kotlin.coroutines.resumeWithException
 
 /**
  * Manages automatic synchronization based on phone proximity and user-defined intervals.
+ * Only syncs when data collection is actively running.
  */
 class AutoSyncManager(
     private val context: Context,
     private val phoneCommunicationManager: PhoneCommunicationManager,
     private val syncPreferencesHelper: SyncPreferencesHelper,
+    private val controllerStateFlow: StateFlow<ControllerState>,
     private val coroutineScope: CoroutineScope
 ) {
     companion object {
@@ -48,6 +52,13 @@ class AutoSyncManager(
                 }
 
                 while (isActive) {
+                    // Only sync if data collection is actively running
+                    val controllerState = controllerStateFlow.value
+                    if (controllerState.flag != ControllerState.FLAG.RUNNING) {
+                        delay(CHECK_INTERVAL_MS)
+                        continue
+                    }
+
                     val now = System.currentTimeMillis()
                     val lastSyncTime = lastSync ?: 0L
                     val elapsedTime = now - lastSyncTime
@@ -93,3 +104,4 @@ class AutoSyncManager(
         }
     }
 }
+
