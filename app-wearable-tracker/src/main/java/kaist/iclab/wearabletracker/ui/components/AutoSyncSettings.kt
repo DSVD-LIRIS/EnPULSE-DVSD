@@ -71,17 +71,6 @@ fun AutoSyncSettings(
     )
 
     Column {
-        // ── Section header ──
-        Text(
-            text = stringResource(R.string.auto_sync_label),
-            style = AppTypography.syncStatus,
-            color = MaterialTheme.colors.primary.copy(alpha = 0.8f),
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp, bottom = 2.dp)
-        )
-
         // ── Auto-sync toggle chip ──
         ToggleChip(
             modifier = Modifier
@@ -96,10 +85,7 @@ fun AutoSyncSettings(
             onCheckedChange = onEnabledChange,
             label = {
                 SensorNameText(
-                    text = if (enabled)
-                        stringResource(R.string.switch_on)
-                    else
-                        stringResource(R.string.switch_off),
+                    text = stringResource(R.string.auto_sync_label),
                     maxLines = 1
                 )
             },
