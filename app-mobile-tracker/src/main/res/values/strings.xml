@@ -128,7 +128,7 @@
     <string name="data_screen_description">View and manage all sensor data collected from your mobile and wearable devices.</string>
     <string name="data_screen_subtitle">Total %1$d Records</string>
     <string name="data_screen_hide_empty_sensors">Hide Empty Data Sensors</string>
-    <string name="data_screen_no_result">No result</string>
+    <string name="data_screen_no_result">No collected data found</string>
 
 
     <!-- Sensor Detail Screen -->
