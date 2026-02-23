@@ -1,5 +1,6 @@
 package kaist.iclab.mobiletracker.services.upload.handlers.watch
 
+import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.db.dao.watch.WatchSkinTemperatureDao
 import kaist.iclab.mobiletracker.db.mapper.SkinTemperatureMapper
 import kaist.iclab.mobiletracker.repository.ErrorClassifier
@@ -29,8 +30,11 @@ class WatchSkinTemperatureUploadHandler(
             }
 
             val supabaseDataList = entities.map { SkinTemperatureMapper.map(it, userUuid) }
-            service.insertSkinTemperatureSensorDataBatch(supabaseDataList)
-                .getOrElse { throw it }
+            // Upload in chunks to avoid HTTP request timeouts on large datasets
+            supabaseDataList.chunked(Constants.Network.UPLOAD_BATCH_SIZE).forEach { chunk ->
+                service.insertSkinTemperatureSensorDataBatch(chunk)
+                    .getOrElse { throw it }
+            }
             entities.maxOf { it.timestamp }
         }
     }

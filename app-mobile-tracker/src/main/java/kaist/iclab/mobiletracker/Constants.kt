@@ -72,7 +72,10 @@ object Constants {
      */
     object Network {
         /** Timeout for Supabase operations (e.g., edge function calls, DB queries) */
-        const val SUPABASE_REQUEST_TIMEOUT_MS = 30_000L
+        const val SUPABASE_REQUEST_TIMEOUT_MS = 60_000L
+
+        /** Max records per batch to avoid HTTP timeouts on large uploads */
+        const val UPLOAD_BATCH_SIZE = 500
     }
 
     /**
