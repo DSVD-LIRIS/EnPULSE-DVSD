@@ -51,7 +51,6 @@ fun AutoSyncSettings(
 
     val intervals = listOf(
         0L to stringResource(R.string.interval_none),
-        30_000L to stringResource(R.string.interval_30s),
         60_000L to stringResource(R.string.interval_1m),
         900_000L to stringResource(R.string.interval_15m),
         1_800_000L to stringResource(R.string.interval_30m),

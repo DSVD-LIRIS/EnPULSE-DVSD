@@ -197,7 +197,6 @@
     <string name="sync_interval_title">Sync Interval</string>
     <string name="sync_interval_description">Automatically upload sensor data to the server based on desired interval.</string>
     <string name="sync_interval_option_none">No Auto Sync</string>
-    <string name="sync_interval_option_30_sec">Every 30 seconds</string>
     <string name="sync_interval_option_1_min">Every 1 minute</string>
     <string name="sync_interval_option_15_min">Every 15 minutes</string>
     <string name="sync_interval_option_30_min">Every 30 minutes</string>

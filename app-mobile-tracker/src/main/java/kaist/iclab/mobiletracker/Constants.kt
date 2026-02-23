@@ -55,7 +55,6 @@ object Constants {
 
         // Intervals
         const val INTERVAL_NONE = 0L
-        const val INTERVAL_30_SEC = 30L * 1000
         const val INTERVAL_1_MIN = 60L * 1000
         const val INTERVAL_15_MIN = 15L * 60 * 1000
         const val INTERVAL_30_MIN = 30L * 60 * 1000

@@ -62,7 +62,6 @@
     <string name="auto_sync_label">Auto Sync</string>
     <string name="auto_sync_interval_label">Interval</string>
     <string name="interval_none">None</string>
-    <string name="interval_30s">30s</string>
     <string name="interval_1m">1m</string>
     <string name="interval_15m">15m</string>
     <string name="interval_30m">30m</string>
