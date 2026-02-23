@@ -58,7 +58,7 @@ class AutoSyncService : LifecycleService(), KoinComponent {
     }
     private val phoneSensorUploadService: PhoneSensorUploadService by inject()
     private val watchSensorUploadService: WatchSensorUploadService by inject()
-    private val sensors by inject<List<Sensor<*, *>>>(qualifier = named("sensors"))
+    private val sensors by inject<List<Sensor<*, *>>>(qualifier = named("phoneSensors"))
 
     private var lastSyncTime: Long = 0
 
