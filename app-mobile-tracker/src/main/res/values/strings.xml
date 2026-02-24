@@ -75,7 +75,6 @@
     <string name="permission_screen_description">View and manage app permissions. Toggle permissions on or off to control what data the app can access.</string>
 
 
-
     <!-- Permission Names -->
     <string name="permission_name_notifications">Notifications</string>
     <string name="permission_name_location">Location</string>

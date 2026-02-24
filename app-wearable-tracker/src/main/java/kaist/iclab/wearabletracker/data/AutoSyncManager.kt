@@ -1,22 +1,13 @@
 package kaist.iclab.wearabletracker.data
 
 import android.content.Context
-import com.google.android.gms.wearable.Node
-import com.google.android.gms.wearable.Wearable
 import kaist.iclab.tracker.sensor.controller.ControllerState
 import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 /**
  * Manages automatic synchronization based on phone proximity and user-defined intervals.
@@ -32,7 +23,6 @@ class AutoSyncManager(
     companion object {
     }
 
-    private val nodeClient by lazy { Wearable.getNodeClient(context) }
     private var syncJob: Job? = null
 
     fun evalSync() {
@@ -59,7 +49,8 @@ class AutoSyncManager(
 
             if (elapsedTime >= interval) {
                 // Check if device is in deep sleep (Doze mode)
-                val powerManager = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                val powerManager =
+                    context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
                 if (powerManager.isDeviceIdleMode) {
                     return@launch
                 }

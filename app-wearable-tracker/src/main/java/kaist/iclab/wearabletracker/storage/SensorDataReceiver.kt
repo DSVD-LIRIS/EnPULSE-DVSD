@@ -51,7 +51,7 @@ class SensorDataReceiver(
 
         // Injected CoroutineScope for lifecycle management
         private val coroutineScope by inject<CoroutineScope>()
-        
+
         // Inject AutoSyncManager to piggyback on hardware wakeups during Doze mode
         private val autoSyncManager by inject<AutoSyncManager>()
 
