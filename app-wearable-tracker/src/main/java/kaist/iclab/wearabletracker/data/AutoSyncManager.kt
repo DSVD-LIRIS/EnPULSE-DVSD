@@ -8,6 +8,7 @@ import kaist.iclab.tracker.sensor.controller.ControllerState
 import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -35,54 +36,32 @@ class AutoSyncManager(
     }
 
     private val nodeClient by lazy { Wearable.getNodeClient(context) }
+    private var syncJob: Job? = null
 
-    fun start() {
-        coroutineScope.launch(Dispatchers.IO) {
-            // Monitor settings changes and last sync time
-            combine(
-                syncPreferencesHelper.autoSyncEnabledFlow,
-                syncPreferencesHelper.autoSyncIntervalFlow,
-                syncPreferencesHelper.lastSyncTimestampFlow
-            ) { enabled, interval, lastSync ->
-                Triple(enabled, interval, lastSync)
-            }.collectLatest { (enabled, interval, lastSync) ->
-                if (!enabled || interval <= 0L) {
-                    Log.d(TAG, "Auto-sync disabled or interval=None")
-                    return@collectLatest
-                }
+    fun evalSync() {
+        if (syncJob?.isActive == true) return // Still processing previous evaluation
 
-                while (isActive) {
-                    // Only sync if data collection is actively running
-                    val controllerState = controllerStateFlow.value
-                    if (controllerState.flag != ControllerState.FLAG.RUNNING) {
-                        delay(CHECK_INTERVAL_MS)
-                        continue
-                    }
+        syncJob = coroutineScope.launch(Dispatchers.IO) {
+            val enabled = syncPreferencesHelper.isAutoSyncEnabled()
+            val interval = syncPreferencesHelper.getAutoSyncInterval()
+            val lastSync = syncPreferencesHelper.getLastSyncTimestamp()
 
-                    val now = System.currentTimeMillis()
-                    val lastSyncTime = lastSync ?: 0L
-                    val elapsedTime = now - lastSyncTime
+            if (!enabled || interval <= 0L) {
+                return@launch
+            }
 
-                    if (elapsedTime >= interval) {
-                        Log.d(
-                            TAG,
-                            "Interval reached ($elapsedTime >= $interval), checking proximity..."
-                        )
-                        if (isPhoneNearby()) {
-                            Log.i(TAG, "Phone nearby, triggering auto-sync")
-                            phoneCommunicationManager.sendDataToPhone()
-                        } else {
-                            Log.d(TAG, "Phone not nearby, skipping auto-sync")
-                        }
-                    } else {
-                        Log.v(
-                            TAG,
-                            "Interval not yet reached. Remaining: ${interval - elapsedTime}ms"
-                        )
-                    }
+            // Only sync if data collection is actively running
+            val controllerState = controllerStateFlow.value
+            if (controllerState.flag != ControllerState.FLAG.RUNNING) {
+                return@launch
+            }
 
-                    delay(CHECK_INTERVAL_MS)
-                }
+            val now = System.currentTimeMillis()
+            val lastSyncTime = lastSync ?: 0L
+            val elapsedTime = now - lastSyncTime
+
+            if (elapsedTime >= interval && isPhoneNearby()) {
+                phoneCommunicationManager.sendDataToPhone(isSilent = true)
             }
         }
     }

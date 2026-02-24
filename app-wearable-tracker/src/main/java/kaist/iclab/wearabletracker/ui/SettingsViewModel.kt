@@ -106,8 +106,6 @@ class SettingsViewModel(
     }
 
     init {
-        autoSyncManager.start()
-
         viewModelScope.launch {
             repository.lastSyncTimestampFlow.collect {
                 _lastSyncTimestamp.value = it

@@ -62,8 +62,10 @@ class PhoneCommunicationManager(
      * Send new sensor data to the phone app via BLE (incremental sync).
      * Only sends data collected since the last successful sync.
      * Implements chunked sync to avoid OOM.
+     * 
+     * @param isSilent If true, suppresses the "Data Sent" success notification and minor UI toasts
      */
-    fun sendDataToPhone() {
+    fun sendDataToPhone(isSilent: Boolean = false) {
         coroutineScope.launch {
             if (!syncMutex.tryLock()) {
                 Log.w(TAG, "Sync already in progress, skipping")
@@ -178,25 +180,27 @@ class PhoneCommunicationManager(
                     }
                 }
 
-                withContext(Dispatchers.Main) {
-                    when (result) {
-                        is Result.Success -> {
-                            if (result.data) {
-                                NotificationHelper.showPhoneCommunicationSuccess(androidContext)
-                            } else {
+                if (!isSilent || result is Result.Error) {
+                    withContext(Dispatchers.Main) {
+                        when (result) {
+                            is Result.Success -> {
+                                if (result.data) {
+                                    NotificationHelper.showPhoneCommunicationSuccess(androidContext)
+                                } else {
+                                    NotificationHelper.showPhoneCommunicationFailure(
+                                        androidContext,
+                                        androidContext.getString(R.string.notification_no_data)
+                                    )
+                                }
+                            }
+    
+                            is Result.Error -> {
                                 NotificationHelper.showPhoneCommunicationFailure(
                                     androidContext,
-                                    androidContext.getString(R.string.notification_no_data)
+                                    result.exception,
+                                    "Sync failed"
                                 )
                             }
-                        }
-
-                        is Result.Error -> {
-                            NotificationHelper.showPhoneCommunicationFailure(
-                                androidContext,
-                                result.exception,
-                                "Sync failed"
-                            )
                         }
                     }
                 }
