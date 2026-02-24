@@ -62,8 +62,9 @@
     <string name="auto_sync_label">Auto Sync</string>
     <string name="auto_sync_interval_label">Threshold</string>
     <string name="interval_none">None</string>
-    <string name="interval_1m">1m</string>
-    <string name="interval_15m">15m</string>
     <string name="interval_30m">30m</string>
-    <string name="interval_60m">1h</string>
+    <string name="interval_1h">1h</string>
+    <string name="interval_2h">2h</string>
+    <string name="interval_6h">6h</string>
+    <string name="interval_12h">12h</string>
 </resources>

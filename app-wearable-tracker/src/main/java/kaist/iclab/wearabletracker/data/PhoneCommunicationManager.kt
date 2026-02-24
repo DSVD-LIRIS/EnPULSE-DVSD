@@ -145,24 +145,24 @@ class PhoneCommunicationManager(
                                     csvBuilder.toString(),
                                     isUrgent = true // Force radio wakeup during Doze deep sleep
                                 )
-                                Log.d(
-                                    TAG,
-                                    "[$sensorId] Sent chunk: ${data.size} records, maxTs=$chunkMaxTimestamp"
-                                )
+//                                Log.d(
+//                                    TAG,
+//                                    "[$sensorId] Sent chunk: ${data.size} records, maxTs=$chunkMaxTimestamp"
+//                                )
                             } catch (e: Exception) {
                                 Log.e(TAG, "[$sensorId] Error sending chunk: ${e.message}", e)
                                 failedSensorId = sensorId
-                                throw e // Propagate to runClassified
+                                throw e
                             }
                         }
                         successSensorCount++
                     }
 
                     if (dataSent) {
-                        Log.i(
-                            TAG,
-                            "Sync payload sent: $successSensorCount sensors, batchId=$batchId"
-                        )
+//                        Log.i(
+//                            TAG,
+//                            "Sync payload sent: $successSensorCount sensors, batchId=$batchId"
+//                        )
 
                         // Save as pending batch - do NOT delete yet.
                         // SyncAckListener will perform cleanup after phone confirms receipt.
