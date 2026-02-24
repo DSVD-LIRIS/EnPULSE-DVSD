@@ -28,4 +28,20 @@ interface WatchSensorRepository {
      * @param timestamp timestamp in milliseconds
      */
     fun saveLastSyncTimestamp(timestamp: Long)
+
+    /**
+     * Get the total number of records across all sensors since the given timestamp.
+     */
+    suspend fun getRecordCountSince(timestamp: Long): Int
+
+    /**
+     * Get the total number of records across all sensors.
+     */
+    suspend fun getTotalRecordCount(): Int
+
+    // Auto-sync settings
+    val autoSyncEnabledFlow: Flow<Boolean>
+    val autoSyncIntervalFlow: Flow<Long>
+    fun setAutoSyncEnabled(enabled: Boolean)
+    fun setAutoSyncInterval(intervalMs: Long)
 }

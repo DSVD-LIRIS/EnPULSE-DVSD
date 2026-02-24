@@ -1,6 +1,7 @@
 package kaist.iclab.wearabletracker
 
 import android.app.Application
+import kaist.iclab.wearabletracker.data.AutoSyncManager
 import kaist.iclab.wearabletracker.data.SyncAckListener
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext

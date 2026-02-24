@@ -1,5 +1,6 @@
 package kaist.iclab.mobiletracker.services.upload.handlers.watch
 
+import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.data.DeviceType
 import kaist.iclab.mobiletracker.db.dao.common.LocationDao
 import kaist.iclab.mobiletracker.db.mapper.LocationMapper
@@ -32,8 +33,11 @@ class WatchLocationUploadHandler(
             }
 
             val supabaseDataList = entities.map { entity -> LocationMapper.map(entity, userUuid) }
-            service.insertLocationSensorDataBatch(supabaseDataList)
-                .getOrElse { error -> throw error }
+            // Upload in chunks to avoid HTTP request timeouts on large datasets
+            supabaseDataList.chunked(Constants.Network.UPLOAD_BATCH_SIZE).forEach { chunk ->
+                service.insertLocationSensorDataBatch(chunk)
+                    .getOrElse { error -> throw error }
+            }
             entities.maxOf { entity -> entity.timestamp }
         }
     }

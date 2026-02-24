@@ -14,6 +14,7 @@ import kaist.iclab.tracker.sensor.core.SensorEntity
 import kaist.iclab.wearabletracker.Constants.DB.BATCH_SIZE
 import kaist.iclab.wearabletracker.Constants.DB.BUFFER_SIZE
 import kaist.iclab.wearabletracker.Constants.DB.FLUSH_INTERVAL_MS
+import kaist.iclab.wearabletracker.data.AutoSyncManager
 import kaist.iclab.wearabletracker.db.dao.BaseDao
 import kaist.iclab.wearabletracker.repository.ErrorClassifier.runClassified
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +23,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
@@ -49,6 +51,9 @@ class SensorDataReceiver(
 
         // Injected CoroutineScope for lifecycle management
         private val coroutineScope by inject<CoroutineScope>()
+        
+        // Inject AutoSyncManager to piggyback on hardware wakeups during Doze mode
+        private val autoSyncManager by inject<AutoSyncManager>()
 
         // Channel to receive sensor events
         private val eventChannel = Channel<Pair<String, SensorEntity>>(
@@ -133,6 +138,7 @@ class SensorDataReceiver(
                             if (sensorBuffer.size >= BATCH_SIZE) {
                                 flushBuffer(buffer)
                                 lastFlushTime = System.currentTimeMillis()
+                                autoSyncManager.evalSync()
                             }
                         } else {
                             // Timeout reached: periodic flush of all sensors
@@ -140,6 +146,7 @@ class SensorDataReceiver(
                                 flushBuffer(buffer)
                             }
                             lastFlushTime = System.currentTimeMillis()
+                            autoSyncManager.evalSync()
                         }
                     }
                 } catch (e: Exception) {
@@ -175,8 +182,8 @@ class SensorDataReceiver(
             // Cancel incoming data processing job
             batchJob?.cancel()
 
-            // Drain remaining data and flush in the app-level scope
-            // This prevents ANRs while ensuring data is still written to DB
+            // Drain remaining data and flush synchronously with a timeout
+            // to ensure data is persisted before the process dies
             val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
             while (true) {
                 val result = eventChannel.tryReceive()
@@ -188,8 +195,10 @@ class SensorDataReceiver(
                 }
             }
             if (buffer.isNotEmpty()) {
-                coroutineScope.launch {
-                    flushBuffer(buffer)
+                runBlocking {
+                    withTimeoutOrNull(3000L) {
+                        flushBuffer(buffer)
+                    } ?: Log.w("SensorDataReceiver", "Flush timed out during onDestroy")
                 }
             }
         }

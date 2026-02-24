@@ -1,5 +1,6 @@
 package kaist.iclab.mobiletracker.services.upload.handlers.watch
 
+import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.db.dao.watch.WatchEDADao
 import kaist.iclab.mobiletracker.db.mapper.EDAMapper
 import kaist.iclab.mobiletracker.repository.ErrorClassifier
@@ -29,8 +30,11 @@ class WatchEDAUploadHandler(
             }
 
             val supabaseDataList = entities.map { EDAMapper.map(it, userUuid) }
-            service.insertEDASensorDataBatch(supabaseDataList)
-                .getOrElse { throw it }
+            // Upload in chunks to avoid HTTP request timeouts on large datasets
+            supabaseDataList.chunked(Constants.Network.UPLOAD_BATCH_SIZE).forEach { chunk ->
+                service.insertEDASensorDataBatch(chunk)
+                    .getOrElse { throw it }
+            }
             entities.maxOf { it.timestamp }
         }
     }

@@ -128,7 +128,7 @@
     <string name="data_screen_description">View and manage all sensor data collected from your mobile and wearable devices.</string>
     <string name="data_screen_subtitle">Total %1$d Records</string>
     <string name="data_screen_hide_empty_sensors">Hide Empty Data Sensors</string>
-    <string name="data_screen_no_result">No result</string>
+    <string name="data_screen_no_result">No collected data found</string>
 
 
     <!-- Sensor Detail Screen -->
@@ -197,7 +197,6 @@
     <string name="sync_interval_title">Sync Interval</string>
     <string name="sync_interval_description">Automatically upload sensor data to the server based on desired interval.</string>
     <string name="sync_interval_option_none">No Auto Sync</string>
-    <string name="sync_interval_option_30_sec">Every 30 seconds</string>
     <string name="sync_interval_option_1_min">Every 1 minute</string>
     <string name="sync_interval_option_15_min">Every 15 minutes</string>
     <string name="sync_interval_option_30_min">Every 30 minutes</string>

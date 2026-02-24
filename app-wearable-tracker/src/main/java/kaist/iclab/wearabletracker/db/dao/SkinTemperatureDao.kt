@@ -63,4 +63,10 @@ interface SkinTemperatureDao : BaseDao<SkinTemperatureSensor.Entity> {
     override suspend fun deleteAll() {
         deleteAllSkinTemperatureData()
     }
+
+    @Query("SELECT COUNT(*) FROM SkinTemperatureEntity")
+    override suspend fun getCount(): Int
+
+    @Query("SELECT COUNT(*) FROM SkinTemperatureEntity WHERE timestamp > :timestamp")
+    override suspend fun getCountSince(timestamp: Long): Int
 }

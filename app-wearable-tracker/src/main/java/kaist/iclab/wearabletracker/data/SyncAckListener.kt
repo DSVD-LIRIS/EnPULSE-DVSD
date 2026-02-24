@@ -24,8 +24,12 @@ class SyncAckListener(
 
     /**
      * Start listening for ACK messages from the phone.
+     * Also checks for and clears any stale pending batches from previous sessions.
      */
     fun startListening() {
+        // Recover from stale batches left by previous app sessions
+        syncPreferencesHelper.clearStaleBatchIfNeeded()
+
         bleChannel.addOnReceivedListener(setOf(Constants.BLE.KEY_SYNC_ACK)) { _, jsonElement ->
             val ackData = when (jsonElement) {
                 is JsonPrimitive -> jsonElement.content
@@ -37,18 +41,19 @@ class SyncAckListener(
 
     /**
      * Handle incoming ACK message.
-     * Format: "batchId:OK" or "batchId:FAIL"
+     * Format: "batchId:OK" or "batchId:FAIL" or "batchId:OK:endTimestamp"
      */
     private fun handleAck(ackData: String) {
         coroutineScope.launch {
             ErrorClassifier.runClassified(TAG, "handle sync ACK") {
                 val parts = ackData.split(":")
-                if (parts.size != 2) {
+                if (parts.size < 2) {
                     throw IllegalArgumentException("Invalid ACK format: $ackData")
                 }
 
                 val receivedBatchId = parts[0]
                 val status = parts[1]
+                val endTimestamp = if (parts.size >= 3) parts[2].toLongOrNull() else null
 
                 val pendingBatch = syncPreferencesHelper.getPendingBatch()
                 if (pendingBatch == null) {
@@ -65,7 +70,7 @@ class SyncAckListener(
                 }
 
                 when (status) {
-                    "OK" -> onSyncConfirmed(pendingBatch)
+                    "OK" -> onSyncConfirmed(pendingBatch, endTimestamp)
                     "FAIL" -> Log.e(TAG, "Received failure ACK for batch: $receivedBatchId")
                     else -> Log.e(TAG, "Received unknown status in ACK: $status")
                 }
@@ -76,18 +81,25 @@ class SyncAckListener(
     /**
      * Called when sync is confirmed successful by the phone.
      * Deletes synced data and updates sync timestamp.
+     * @param batch The batch information
+     * @param endTimestamp The specific timestamp to prune up to. If null, uses batch.endTimestamp.
      */
-    private suspend fun onSyncConfirmed(batch: SyncBatch) {
+    private suspend fun onSyncConfirmed(batch: SyncBatch, endTimestamp: Long?) {
+        val pruneUntil = endTimestamp ?: batch.endTimestamp
+        Log.d(TAG, "Pruning data up to: $pruneUntil (batchId=${batch.batchId})")
+
         // Delete synced data from all DAOs
         daos.values.forEach { dao ->
-            dao.deleteDataBefore(batch.endTimestamp)
+            dao.deleteDataBefore(pruneUntil)
         }
 
         // Update last sync timestamp
-        syncPreferencesHelper.saveLastSyncTimestamp(batch.endTimestamp)
+        syncPreferencesHelper.saveLastSyncTimestamp(pruneUntil)
 
-        // Clear pending batch
-        syncPreferencesHelper.clearPendingBatch()
+        // Only clear pending batch if we synced the whole thing
+        if (endTimestamp == null || endTimestamp >= batch.endTimestamp) {
+            syncPreferencesHelper.clearPendingBatch()
+        }
     }
 
     /**

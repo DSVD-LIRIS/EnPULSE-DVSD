@@ -312,7 +312,6 @@ private fun IntervalSelectionDialog(
     val context = LocalContext.current
     val options = listOf(
         Constants.AutoSync.INTERVAL_NONE,
-        Constants.AutoSync.INTERVAL_30_SEC,
         Constants.AutoSync.INTERVAL_1_MIN,
         Constants.AutoSync.INTERVAL_15_MIN,
         Constants.AutoSync.INTERVAL_30_MIN,
@@ -440,7 +439,6 @@ private fun getIntervalLabel(context: android.content.Context, intervalMs: Long)
         Constants.AutoSync.INTERVAL_15_MIN -> context.getString(R.string.sync_interval_option_15_min)
         Constants.AutoSync.INTERVAL_30_MIN -> context.getString(R.string.sync_interval_option_30_min)
         Constants.AutoSync.INTERVAL_60_MIN -> context.getString(R.string.sync_interval_option_60_min)
-        Constants.AutoSync.INTERVAL_30_SEC -> context.getString(R.string.sync_interval_option_30_sec)
         Constants.AutoSync.INTERVAL_1_MIN -> context.getString(R.string.sync_interval_option_1_min)
         else -> context.getString(R.string.sync_interval_option_none)
     }

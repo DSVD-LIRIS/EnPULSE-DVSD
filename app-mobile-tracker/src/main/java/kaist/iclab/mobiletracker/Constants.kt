@@ -55,7 +55,6 @@ object Constants {
 
         // Intervals
         const val INTERVAL_NONE = 0L
-        const val INTERVAL_30_SEC = 30L * 1000
         const val INTERVAL_1_MIN = 60L * 1000
         const val INTERVAL_15_MIN = 15L * 60 * 1000
         const val INTERVAL_30_MIN = 30L * 60 * 1000
@@ -72,7 +71,10 @@ object Constants {
      */
     object Network {
         /** Timeout for Supabase operations (e.g., edge function calls, DB queries) */
-        const val SUPABASE_REQUEST_TIMEOUT_MS = 30_000L
+        const val SUPABASE_REQUEST_TIMEOUT_MS = 60_000L
+
+        /** Max records per batch to avoid HTTP timeouts on large uploads */
+        const val UPLOAD_BATCH_SIZE = 500
     }
 
     /**

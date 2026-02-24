@@ -128,7 +128,7 @@
     <string name="data_screen_description">모바일 및 웨어러블 기기에서 수집된 모든 센서 데이터를 확인하고 관리할 수 있습니다.</string>
     <string name="data_screen_subtitle">총 %1$d개 레코드</string>
     <string name="data_screen_hide_empty_sensors">빈 센서 숨기기</string>
-    <string name="data_screen_no_result">결과 없음</string>
+    <string name="data_screen_no_result">수집된 데이터가 없습니다.</string>
 
 
     <!-- Sensor Detail Screen -->

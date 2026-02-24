@@ -52,4 +52,18 @@
     <!-- SDK Policy Error -->
     <string name="sdk_policy_error_title">Developer Mode Required</string>
     <string name="sdk_policy_error_message">Please enable developer mode in Health Platform app settings</string>
+
+    <!-- Status Dashboard -->
+    <string name="status_battery_format">🔋%1$d%%</string>
+    <string name="status_records_format">📊%1$s</string>
+    <string name="syncing_progress_format">Syncing... %1$d%%</string>
+
+    <!-- Auto Sync Settings -->
+    <string name="auto_sync_label">Auto Sync</string>
+    <string name="auto_sync_interval_label">Threshold</string>
+    <string name="interval_none">None</string>
+    <string name="interval_1m">1m</string>
+    <string name="interval_15m">15m</string>
+    <string name="interval_30m">30m</string>
+    <string name="interval_60m">1h</string>
 </resources>

@@ -2,14 +2,19 @@ package kaist.iclab.wearabletracker.ui
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import kaist.iclab.tracker.listener.SamsungHealthSensorInitializer
 import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.controller.ControllerState
+import kaist.iclab.wearabletracker.data.AutoSyncManager
 import kaist.iclab.wearabletracker.data.DeviceInfo
 import kaist.iclab.wearabletracker.data.PhoneCommunicationManager
 import kaist.iclab.wearabletracker.helpers.NotificationHelper
@@ -17,26 +22,73 @@ import kaist.iclab.wearabletracker.repository.Result
 import kaist.iclab.wearabletracker.repository.WatchSensorRepository
 import kaist.iclab.wearabletracker.storage.SensorDataReceiver
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class SettingsViewModel(
     private val sensorController: BackgroundController,
     private val sensorDataReceiver: SensorDataReceiver,
     private val phoneCommunicationManager: PhoneCommunicationManager,
     private val repository: WatchSensorRepository,
-    private val samsungHealthSensorInitializer: SamsungHealthSensorInitializer
+    private val samsungHealthSensorInitializer: SamsungHealthSensorInitializer,
+    private val applicationContext: Context,
+    private val autoSyncManager: AutoSyncManager
 ) : ViewModel() {
     companion object {
         private val TAG = SettingsViewModel::class.simpleName
+        private const val RECORD_COUNT_REFRESH_MS = 10_000L // 10 seconds
+        private const val BATTERY_REFRESH_MS = 30_000L // 30 seconds
+        private const val PHONE_STATUS_REFRESH_MS = 15_000L // 15 seconds
     }
 
     // StateFlow for last sync timestamp
     private val _lastSyncTimestamp = MutableStateFlow<Long?>(null)
     val lastSyncTimestamp: StateFlow<Long?> = _lastSyncTimestamp.asStateFlow()
+
+    // Total record count across all sensors
+    private val _totalRecordCount = MutableStateFlow(0)
+    val totalRecordCount: StateFlow<Int> = _totalRecordCount.asStateFlow()
+
+    // Sync progress: 0.0 to 1.0, null if not syncing
+    val syncProgress: StateFlow<Float?> = phoneCommunicationManager.syncProgress
+
+    // Phone connection status
+    private val _isPhoneConnected = MutableStateFlow(false)
+    val isPhoneConnected: StateFlow<Boolean> = _isPhoneConnected.asStateFlow()
+
+    private val nodeClient by lazy { Wearable.getNodeClient(applicationContext) }
+
+    // Auto-sync settings
+    val autoSyncEnabled: StateFlow<Boolean> = repository.autoSyncEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val autoSyncInterval: StateFlow<Long> = repository.autoSyncIntervalFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+    fun setAutoSyncEnabled(enabled: Boolean) {
+        repository.setAutoSyncEnabled(enabled)
+    }
+
+    fun setAutoSyncInterval(intervalMs: Long) {
+        repository.setAutoSyncInterval(intervalMs)
+    }
+
+    // Battery level (0-100)
+    private val _batteryLevel = MutableStateFlow(-1)
+    val batteryLevel: StateFlow<Int> = _batteryLevel.asStateFlow()
+
+    // Recording start time (null when not recording)
+    private val _recordingStartTime = MutableStateFlow<Long?>(null)
+    val recordingStartTime: StateFlow<Long?> = _recordingStartTime.asStateFlow()
 
     // Samsung Health connection state - Start button should be disabled when false
     val isSamsungHealthConnected: StateFlow<Boolean> =
@@ -62,18 +114,49 @@ class SettingsViewModel(
 
         viewModelScope.launch {
             sensorController.controllerStateFlow.collect {
-                if (it.flag == ControllerState.FLAG.RUNNING) sensorDataReceiver.startBackgroundCollection()
-                else sensorDataReceiver.stopBackgroundCollection()
+                if (it.flag == ControllerState.FLAG.RUNNING) {
+                    sensorDataReceiver.startBackgroundCollection()
+                    // Track recording start time
+                    if (_recordingStartTime.value == null) {
+                        _recordingStartTime.value = System.currentTimeMillis()
+                    }
+                } else {
+                    sensorDataReceiver.stopBackgroundCollection()
+                    _recordingStartTime.value = null
+                }
             }
         }
 
         // Stop controller immediately when SDK Policy Error is detected
-        // This ensures the Start button doesn't show "recording" state while error popup is visible
         viewModelScope.launch {
             sdkPolicyError.collect { hasError ->
                 if (hasError) {
                     sensorController.stop()
                 }
+            }
+        }
+
+        // Periodic record count refresh
+        viewModelScope.launch {
+            while (true) {
+                refreshRecordCount()
+                delay(RECORD_COUNT_REFRESH_MS)
+            }
+        }
+
+        // Periodic battery level refresh
+        viewModelScope.launch {
+            while (true) {
+                refreshBatteryLevel()
+                delay(BATTERY_REFRESH_MS)
+            }
+        }
+
+        // Periodic phone connection status refresh
+        viewModelScope.launch {
+            while (true) {
+                refreshPhoneConnectionStatus()
+                delay(PHONE_STATUS_REFRESH_MS)
             }
         }
     }
@@ -83,7 +166,10 @@ class SettingsViewModel(
     val controllerState = sensorController.controllerStateFlow
 
     fun update(sensorName: String, status: Boolean) {
-        val sensor = sensorMap[sensorName]!!
+        val sensor = sensorMap[sensorName] ?: run {
+            Log.w(TAG, "Sensor not found: $sensorName")
+            return
+        }
         if (status) sensor.enable()
         else sensor.disable()
     }
@@ -103,7 +189,6 @@ class SettingsViewModel(
                     "Error getting device information from getDeviceInfo(): ${exception.message}",
                     exception
                 )
-                // Show notification for this error
                 NotificationHelper.showException(
                     context,
                     exception,
@@ -124,16 +209,11 @@ class SettingsViewModel(
     fun upload() {
         viewModelScope.launch {
             phoneCommunicationManager.sendDataToPhone()
-            // The timestamp will update automatically via repository.lastSyncTimestampFlow
-            // when SyncPreferencesHelper is updated by SyncAckListener
         }
     }
 
-    /**
-     * Load the last sync timestamp from repository.
-     */
     fun refreshLastSyncTimestamp() {
-        // Now reactive, no manual work needed unless we want to force a one-shot read
+        // Reactive via lastSyncTimestampFlow
     }
 
     fun flush(context: Context) {
@@ -145,10 +225,10 @@ class SettingsViewModel(
             when (result) {
                 is Result.Success -> {
                     NotificationHelper.showFlushSuccess(context)
+                    refreshRecordCount()
                 }
 
                 is Result.Error -> {
-                    // Logging is handled by runClassified inside the repository
                     NotificationHelper.showFlushFailure(
                         context,
                         result.exception,
@@ -156,6 +236,46 @@ class SettingsViewModel(
                     )
                 }
             }
+        }
+    }
+
+    private suspend fun refreshRecordCount() {
+        try {
+            val count = withContext(Dispatchers.IO) {
+                repository.getTotalRecordCount()
+            }
+            _totalRecordCount.value = count
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to refresh record count: ${e.message}")
+        }
+    }
+
+    private fun refreshBatteryLevel() {
+        try {
+            val batteryStatus =
+                applicationContext.registerReceiver(
+                    null,
+                    IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+                )
+            val level = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+            val scale = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+            _batteryLevel.value = if (level >= 0) (level * 100) / scale else -1
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read battery level: ${e.message}")
+        }
+    }
+
+    private suspend fun refreshPhoneConnectionStatus() {
+        try {
+            val nodes = suspendCancellableCoroutine<List<Node>> { continuation ->
+                nodeClient.connectedNodes
+                    .addOnSuccessListener { continuation.resume(it) }
+                    .addOnFailureListener { continuation.resumeWithException(it) }
+            }
+            _isPhoneConnected.value = nodes.isNotEmpty()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to check phone connection: ${e.message}")
+            _isPhoneConnected.value = false
         }
     }
 }
