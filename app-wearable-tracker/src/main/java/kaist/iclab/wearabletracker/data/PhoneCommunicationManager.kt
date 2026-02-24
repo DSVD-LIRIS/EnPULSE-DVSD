@@ -62,7 +62,7 @@ class PhoneCommunicationManager(
      * Send new sensor data to the phone app via BLE (incremental sync).
      * Only sends data collected since the last successful sync.
      * Implements chunked sync to avoid OOM.
-     * 
+     *
      * @param isSilent If true, suppresses the "Data Sent" success notification and minor UI toasts
      */
     fun sendDataToPhone(isSilent: Boolean = false) {
@@ -194,7 +194,7 @@ class PhoneCommunicationManager(
                                     )
                                 }
                             }
-    
+
                             is Result.Error -> {
                                 NotificationHelper.showPhoneCommunicationFailure(
                                     androidContext,

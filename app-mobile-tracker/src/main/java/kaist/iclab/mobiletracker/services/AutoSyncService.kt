@@ -24,8 +24,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.koin.android.ext.android.inject
 import org.koin.core.component.KoinComponent
 import org.koin.core.qualifier.named
@@ -258,8 +256,10 @@ class AutoSyncService : LifecycleService(), KoinComponent {
             (phoneJobs + watchJobs).awaitAll()
 
             val elapsed = System.currentTimeMillis() - startTime
-            Log.d(TAG, "Auto-sync completed in ${elapsed}ms: " +
-                    "${successCount.get()} success, ${failureCount.get()} failed, ${skippedCount.get()} skipped")
+            Log.d(
+                TAG, "Auto-sync completed in ${elapsed}ms: " +
+                        "${successCount.get()} success, ${failureCount.get()} failed, ${skippedCount.get()} skipped"
+            )
 
             // Show notification based on results
             if (successCount.get() > 0) {

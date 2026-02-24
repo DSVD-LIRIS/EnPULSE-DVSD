@@ -51,6 +51,7 @@ class UserProfileRepositoryImpl(
                 _profile.value = result.data
                 result
             }
+
             is Result.Error -> result
         }
     }
