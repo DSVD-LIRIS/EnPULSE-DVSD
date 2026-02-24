@@ -46,7 +46,7 @@ class PhoneCommunicationManager(
     /**
      * Check if phone node is available and reachable
      */
-    private suspend fun isPhoneAvailable(): Boolean = try {
+    suspend fun isPhoneAvailable(): Boolean = try {
         val connectedNodes = suspendCancellableCoroutine<List<Node>> { continuation ->
             nodeClient.connectedNodes
                 .addOnSuccessListener { continuation.resume(it) }

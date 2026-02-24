@@ -1,7 +1,6 @@
 package kaist.iclab.wearabletracker.data
 
 import android.content.Context
-import android.util.Log
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import kaist.iclab.tracker.sensor.controller.ControllerState
@@ -31,8 +30,6 @@ class AutoSyncManager(
     private val coroutineScope: CoroutineScope
 ) {
     companion object {
-        private const val TAG = "AutoSyncManager"
-        private const val CHECK_INTERVAL_MS = 60_000L // Check every 1 minute
     }
 
     private val nodeClient by lazy { Wearable.getNodeClient(context) }
@@ -61,10 +58,17 @@ class AutoSyncManager(
             val elapsedTime = now - lastSyncTime
 
             if (elapsedTime >= interval) {
-                // We purposefully do not check isPhoneNearby() here.
-                // Wear OS Doze mode disables BLE tracking, so we blindly hand the Urgent payload
-                // to Play Services, which queues it and flushes immediately upon phone proximity.
-                Log.d(TAG, "Interval reached, triggering silent urgent auto-sync to DataLayer")
+                // Check if device is in deep sleep (Doze mode)
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                if (powerManager.isDeviceIdleMode) {
+                    return@launch
+                }
+
+                // Check if phone is nearby before attempting sync
+                if (!phoneCommunicationManager.isPhoneAvailable()) {
+                    return@launch
+                }
+
                 phoneCommunicationManager.sendDataToPhone(isSilent = true)
             }
         }
