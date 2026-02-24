@@ -76,9 +76,9 @@ class PhoneCommunicationManager(
                 syncPreferencesHelper.clearStaleBatchIfNeeded()
 
                 val result = ErrorClassifier.runClassified(TAG, "send data to phone") {
-                    if (!isPhoneAvailable()) {
-                        throw IllegalStateException(androidContext.getString(R.string.notification_phone_not_available))
-                    }
+                    // We remove `isPhoneAvailable()` check here because wear OS disables proximity 
+                    // scans during Doze mode sleep. We rely entirely on Play Services to eagerly
+                    // queue and transmit the payload urgently when the radio wakes up.
 
                     // Global start time for this sync session
                     val lastSyncTime = syncPreferencesHelper.getLastSyncTimestamp() ?: 0L
@@ -142,7 +142,8 @@ class PhoneCommunicationManager(
                             try {
                                 bleChannel.send(
                                     Constants.BLE.KEY_SENSOR_DATA,
-                                    csvBuilder.toString()
+                                    csvBuilder.toString(),
+                                    isUrgent = true // Force radio wakeup during Doze deep sleep
                                 )
                                 Log.d(
                                     TAG,

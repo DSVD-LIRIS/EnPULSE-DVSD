@@ -60,26 +60,13 @@ class AutoSyncManager(
             val lastSyncTime = lastSync ?: 0L
             val elapsedTime = now - lastSyncTime
 
-            if (elapsedTime >= interval && isPhoneNearby()) {
+            if (elapsedTime >= interval) {
+                // We purposefully do not check isPhoneNearby() here.
+                // Wear OS Doze mode disables BLE tracking, so we blindly hand the Urgent payload
+                // to Play Services, which queues it and flushes immediately upon phone proximity.
+                Log.d(TAG, "Interval reached, triggering silent urgent auto-sync to DataLayer")
                 phoneCommunicationManager.sendDataToPhone(isSilent = true)
             }
-        }
-    }
-
-    /**
-     * Check if any phone node is currently reachable (nearby).
-     */
-    private suspend fun isPhoneNearby(): Boolean {
-        return try {
-            val connectedNodes = suspendCancellableCoroutine<List<Node>> { continuation ->
-                nodeClient.connectedNodes
-                    .addOnSuccessListener { continuation.resume(it) }
-                    .addOnFailureListener { continuation.resumeWithException(it) }
-            }
-            connectedNodes.any { it.isNearby }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error checking nearby nodes: ${e.message}")
-            false
         }
     }
 }
