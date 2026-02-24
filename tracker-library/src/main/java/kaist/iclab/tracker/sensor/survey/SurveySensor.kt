@@ -105,17 +105,21 @@ class SurveySensor(
 
     override fun init() {
         super.init()
-        // We are using separate channel for survey notification
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            NOTIFICATION_CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            "Notification to inform survey time"
+        // We are using separate channel for each survey notification
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        configStorage.get().survey.forEach {
+            val channelId = NOTIFICATION_CHANNEL_ID + "_" + it.key
+            val channel = NotificationChannel(
+                channelId,
+                NOTIFICATION_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                "Notification to inform survey time (surveyId: ${it.key}"
+            }
+
+            notificationManager.createNotificationChannel(channel)
         }
 
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
 
         SurveyActivity.initSurvey = { id: String, scheduleId: String? ->
             val requestedSurvey = configStorage.get().survey[id]!!
@@ -211,7 +215,7 @@ class SurveySensor(
 
         schedule.forEach {
             scheduleStorage.addSchedule(SurveySchedule(
-                surveyId = id,
+                surveyId = surveyId,
                 triggerTime = it
             ))
         }
