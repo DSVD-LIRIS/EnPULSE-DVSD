@@ -51,10 +51,12 @@ fun AutoSyncSettings(
 
     val intervals = listOf(
         0L to stringResource(R.string.interval_none),
-        60_000L to stringResource(R.string.interval_1m),
-        900_000L to stringResource(R.string.interval_15m),
+        300_000L to stringResource(R.string.interval_5m),
         1_800_000L to stringResource(R.string.interval_30m),
-        3_600_000L to stringResource(R.string.interval_60m)
+        3_600_000L to stringResource(R.string.interval_1h),
+        7_200_000L to stringResource(R.string.interval_2h),
+        21_600_000L to stringResource(R.string.interval_6h),
+        43_200_000L to stringResource(R.string.interval_12h)
     )
 
     val currentIntervalLabel = intervals.find { it.first == intervalMs }?.second

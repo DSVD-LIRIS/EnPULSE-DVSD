@@ -196,11 +196,12 @@
     <string name="sync_interval_title">동기화 간격</string>
     <string name="sync_interval_description">선택한 간격에 따라 모든 센서 데이터를 서버에 자동 업로드합니다.</string>
     <string name="sync_interval_option_none">자동 동기화 안 함</string>
-    <string name="sync_interval_option_30_sec">30초마다</string>
-    <string name="sync_interval_option_1_min">1분마다</string>
-    <string name="sync_interval_option_15_min">15분마다</string>
+    <string name="sync_interval_option_5_min">5분마다</string>
     <string name="sync_interval_option_30_min">30분마다</string>
     <string name="sync_interval_option_60_min">1시간마다</string>
+    <string name="sync_interval_option_2_hour">2시간마다</string>
+    <string name="sync_interval_option_6_hour">6시간마다</string>
+    <string name="sync_interval_option_12_hour">12시간마다</string>
 
     <string name="sync_network_title">동기화 네트워크</string>
     <string name="sync_network_description">선택한 네트워크 유형이 사용 가능할 때만 데이터를 자동으로 업로드합니다.</string>
