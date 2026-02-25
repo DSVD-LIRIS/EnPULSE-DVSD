@@ -55,10 +55,12 @@ object Constants {
 
         // Intervals
         const val INTERVAL_NONE = 0L
-        const val INTERVAL_1_MIN = 60L * 1000
-        const val INTERVAL_15_MIN = 15L * 60 * 1000
+        const val INTERVAL_5_MIN = 5L * 60 * 1000
         const val INTERVAL_30_MIN = 30L * 60 * 1000
         const val INTERVAL_60_MIN = 60L * 60 * 1000
+        const val INTERVAL_2_HOUR = 2L * 60 * 60 * 1000
+        const val INTERVAL_6_HOUR = 6L * 60 * 60 * 1000
+        const val INTERVAL_12_HOUR = 12L * 60 * 60 * 1000
 
         // Network Types
         const val NETWORK_WIFI_MOBILE = 0
