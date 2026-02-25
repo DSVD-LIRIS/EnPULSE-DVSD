@@ -5,6 +5,7 @@ import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandlerRegistry
+import io.github.jan.supabase.auth.auth
 import kaist.iclab.mobiletracker.utils.SupabaseSessionHelper
 
 /**
@@ -39,6 +40,9 @@ class PhoneSensorUploadService(
 
         val lastUploadTimestamp =
             syncTimestampService.getLastSuccessfulUploadTimestamp(sensorId) ?: 0L
+
+        // Wait for Supabase Auth to finish loading the session from storage
+        supabaseHelper.supabaseClient.auth.awaitInitialization()
 
         val userUuid = getUserUuid()
         if (userUuid == null) {
