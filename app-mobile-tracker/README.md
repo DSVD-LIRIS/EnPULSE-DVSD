@@ -20,3 +20,4 @@ SUPABASE_URL=your_self_hosted_supabase_server_address
 - [`app-wearable-tracker`](../app-wearable-tracker/README.md) - Watch companion app
 
 ## Technical Information
+Refer to [structure.md](https://github.com/Kaist-ICLab/EnPULSE/blob/main/app-mobile-tracker/structure.md) for overall architecture of the app.
