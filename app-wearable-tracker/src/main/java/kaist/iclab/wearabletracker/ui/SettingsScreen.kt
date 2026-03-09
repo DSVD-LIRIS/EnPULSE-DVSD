@@ -25,6 +25,7 @@ import kaist.iclab.tracker.sensor.core.SensorState
 import kaist.iclab.wearabletracker.data.DeviceInfo
 import kaist.iclab.wearabletracker.helpers.PermissionCheckResult
 import kaist.iclab.wearabletracker.helpers.PermissionHelper
+import kaist.iclab.wearabletracker.ui.components.AutoSyncSettings
 import kaist.iclab.wearabletracker.ui.components.DeviceStatusInfo
 import kaist.iclab.wearabletracker.ui.components.FlushConfirmationDialog
 import kaist.iclab.wearabletracker.ui.components.PermissionPermanentlyDeniedDialog
@@ -104,6 +105,19 @@ fun SettingsScreen(
     // Observe last sync timestamp
     val lastSyncTimestamp by settingsViewModel.lastSyncTimestamp.collectAsState()
 
+    // Observe dashboard data
+    val totalRecordCount by settingsViewModel.totalRecordCount.collectAsState()
+    val batteryLevel by settingsViewModel.batteryLevel.collectAsState()
+    val recordingStartTime by settingsViewModel.recordingStartTime.collectAsState()
+    val syncProgress by settingsViewModel.syncProgress.collectAsState()
+
+    // Observe phone connection status
+    val isPhoneConnected by settingsViewModel.isPhoneConnected.collectAsState()
+
+    // Observe auto-sync data
+    val autoSyncEnabled by settingsViewModel.autoSyncEnabled.collectAsState()
+    val autoSyncInterval by settingsViewModel.autoSyncInterval.collectAsState()
+
     //UI
     when {
         hasSdkPolicyError -> {
@@ -160,6 +174,12 @@ fun SettingsScreen(
                     DeviceStatusInfo(
                         deviceInfo = deviceInfo,
                         lastSyncTimestamp = lastSyncTimestamp,
+                        totalRecordCount = totalRecordCount,
+                        batteryLevel = batteryLevel,
+                        isRecording = (isCollecting.flag == ControllerState.FLAG.RUNNING),
+                        recordingStartTime = recordingStartTime,
+                        syncProgress = syncProgress,
+                        isPhoneConnected = isPhoneConnected,
                     )
                     Column(
                         modifier = Modifier
@@ -167,6 +187,14 @@ fun SettingsScreen(
                             .verticalScroll(rememberScrollState())
                             .padding(bottom = 24.dp)
                     ) {
+                        // Auto-Sync Settings
+                        AutoSyncSettings(
+                            enabled = autoSyncEnabled,
+                            onEnabledChange = { settingsViewModel.setAutoSyncEnabled(it) },
+                            intervalMs = autoSyncInterval,
+                            onIntervalChange = { settingsViewModel.setAutoSyncInterval(it) }
+                        )
+
                         availableSensors.forEach { (name, _) ->
                             SensorToggleChip(
                                 sensorId = name,

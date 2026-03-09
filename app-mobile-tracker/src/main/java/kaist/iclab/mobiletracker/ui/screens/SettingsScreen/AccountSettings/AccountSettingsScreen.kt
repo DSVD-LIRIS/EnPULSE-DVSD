@@ -96,7 +96,6 @@ fun AccountSettingsScreen(
             onConfirm = {
                 authViewModel.logout()
                 showLogoutDialog = false
-                AppToast.show(context, R.string.toast_logout_success)
             }
         )
     }
@@ -111,6 +110,9 @@ fun AccountSettingsScreen(
             onDismiss = { showCampaignDialog = false },
             onSelect = { campaignId ->
                 accountSettingsViewModel.selectCampaign(campaignId)
+            },
+            onJoinCampaign = { campaignId, password ->
+                accountSettingsViewModel.joinCampaign(campaignId, password)
             }
         )
     }

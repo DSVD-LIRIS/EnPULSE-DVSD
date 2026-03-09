@@ -7,11 +7,11 @@ sealed class SurveyScheduleMethod {
         val startOfDay: Long,
         val endOfDay: Long,
         val numSurvey: Int,
-    ): SurveyScheduleMethod()
+    ) : SurveyScheduleMethod()
 
     data class Fixed(
         val timeOfDay: List<Long>
-    ): SurveyScheduleMethod()
+    ) : SurveyScheduleMethod()
 
-    class Manual: SurveyScheduleMethod()
+    class Manual : SurveyScheduleMethod()
 }

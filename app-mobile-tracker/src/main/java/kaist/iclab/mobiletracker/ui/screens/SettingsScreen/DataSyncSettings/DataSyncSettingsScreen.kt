@@ -312,11 +312,12 @@ private fun IntervalSelectionDialog(
     val context = LocalContext.current
     val options = listOf(
         Constants.AutoSync.INTERVAL_NONE,
-        Constants.AutoSync.INTERVAL_30_SEC,
-        Constants.AutoSync.INTERVAL_1_MIN,
-        Constants.AutoSync.INTERVAL_15_MIN,
+        Constants.AutoSync.INTERVAL_5_MIN,
         Constants.AutoSync.INTERVAL_30_MIN,
-        Constants.AutoSync.INTERVAL_60_MIN
+        Constants.AutoSync.INTERVAL_60_MIN,
+        Constants.AutoSync.INTERVAL_2_HOUR,
+        Constants.AutoSync.INTERVAL_6_HOUR,
+        Constants.AutoSync.INTERVAL_12_HOUR
     )
     var selected by remember { mutableStateOf(selectedIntervalMs) }
 
@@ -437,11 +438,12 @@ private fun NetworkSelectionDialog(
 private fun getIntervalLabel(context: android.content.Context, intervalMs: Long): String {
     return when (intervalMs) {
         Constants.AutoSync.INTERVAL_NONE -> context.getString(R.string.sync_interval_option_none)
-        Constants.AutoSync.INTERVAL_15_MIN -> context.getString(R.string.sync_interval_option_15_min)
+        Constants.AutoSync.INTERVAL_5_MIN -> context.getString(R.string.sync_interval_option_5_min)
         Constants.AutoSync.INTERVAL_30_MIN -> context.getString(R.string.sync_interval_option_30_min)
         Constants.AutoSync.INTERVAL_60_MIN -> context.getString(R.string.sync_interval_option_60_min)
-        Constants.AutoSync.INTERVAL_30_SEC -> context.getString(R.string.sync_interval_option_30_sec)
-        Constants.AutoSync.INTERVAL_1_MIN -> context.getString(R.string.sync_interval_option_1_min)
+        Constants.AutoSync.INTERVAL_2_HOUR -> context.getString(R.string.sync_interval_option_2_hour)
+        Constants.AutoSync.INTERVAL_6_HOUR -> context.getString(R.string.sync_interval_option_6_hour)
+        Constants.AutoSync.INTERVAL_12_HOUR -> context.getString(R.string.sync_interval_option_12_hour)
         else -> context.getString(R.string.sync_interval_option_none)
     }
 }

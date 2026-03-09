@@ -14,12 +14,12 @@ sealed interface ComparablePredicate<T> : Expression<T> where T : Comparable<T> 
     data class LessThanOrEqual<T>(val value: T) : ComparablePredicate<T> where T : Comparable<T>
 }
 
-sealed interface SetPredicate<E, S>: Expression<S> where S: Set<E> {
-    data class Contains<E, S>(val value: E): SetPredicate<E, S> where S: Set<E>
+sealed interface SetPredicate<E, S> : Expression<S> where S : Set<E> {
+    data class Contains<E, S>(val value: E) : SetPredicate<E, S> where S : Set<E>
 }
 
-sealed interface StringPredicate: Expression<String> {
-    class Empty: StringPredicate
+sealed interface StringPredicate : Expression<String> {
+    class Empty : StringPredicate
 }
 
 sealed interface Operator<T> : Expression<T> {

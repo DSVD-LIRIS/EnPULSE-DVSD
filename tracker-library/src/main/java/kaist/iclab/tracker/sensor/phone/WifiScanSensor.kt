@@ -75,8 +75,12 @@ class WifiScanSensor(
                         Entity(
                             timestamp,
                             timestamp,
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) result.wifiSsid?.toString()
-                                ?: "UNKNOWN" else result.SSID,
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                result.wifiSsid?.toString() ?: "UNKNOWN"
+                            } else {
+                                @Suppress("DEPRECATION")
+                                result.SSID
+                            },
                             result.BSSID,
                             result.frequency,
                             result.level,

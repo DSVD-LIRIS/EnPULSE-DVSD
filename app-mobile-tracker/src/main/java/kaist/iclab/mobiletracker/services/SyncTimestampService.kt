@@ -107,11 +107,12 @@ class SyncTimestampService(private val context: Context) {
     fun setAutoSyncIntervalMs(intervalMs: Long) {
         val validIntervals = setOf(
             Constants.AutoSync.INTERVAL_NONE,
-            Constants.AutoSync.INTERVAL_30_SEC,
-            Constants.AutoSync.INTERVAL_1_MIN,
-            Constants.AutoSync.INTERVAL_15_MIN,
+            Constants.AutoSync.INTERVAL_5_MIN,
             Constants.AutoSync.INTERVAL_30_MIN,
-            Constants.AutoSync.INTERVAL_60_MIN
+            Constants.AutoSync.INTERVAL_60_MIN,
+            Constants.AutoSync.INTERVAL_2_HOUR,
+            Constants.AutoSync.INTERVAL_6_HOUR,
+            Constants.AutoSync.INTERVAL_12_HOUR
         )
 
         prefs.edit {

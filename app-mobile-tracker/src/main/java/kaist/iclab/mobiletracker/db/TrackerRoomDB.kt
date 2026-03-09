@@ -49,7 +49,7 @@ import kaist.iclab.mobiletracker.db.entity.watch.WatchPPGEntity
 import kaist.iclab.mobiletracker.db.entity.watch.WatchSkinTemperatureEntity
 
 @Database(
-    version = 2,
+    version = 1,
     entities = [
 
         // Phone sensor data
@@ -78,7 +78,7 @@ import kaist.iclab.mobiletracker.db.entity.watch.WatchSkinTemperatureEntity
         WatchPPGEntity::class,
         WatchSkinTemperatureEntity::class,
     ],
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(Converter::class)
 abstract class TrackerRoomDB : RoomDatabase() {

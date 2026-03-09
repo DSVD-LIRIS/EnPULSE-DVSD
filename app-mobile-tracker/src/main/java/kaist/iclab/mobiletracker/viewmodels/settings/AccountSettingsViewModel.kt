@@ -6,8 +6,11 @@ import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
 import kaist.iclab.mobiletracker.repository.CampaignRepository
+import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.SurveyRepository
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.repository.onFailure
+import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.mobiletracker.utils.AppToast
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -86,8 +89,8 @@ class AccountSettingsViewModel(
     private suspend fun saveCampaignToProfile(campaignId: String) {
         val campaignIdInt = campaignId.toIntOrNull() ?: return
 
-        userProfileRepository.updateCampaignId(campaignIdInt)
-            .onSuccess {
+        when (val result = userProfileRepository.updateCampaignId(campaignIdInt)) {
+            is Result.Success -> {
                 val surveyResult = surveyRepository.fetchAndPersistSurveys(campaignIdInt)
                 _isSyncingSurveys.value = false
 
@@ -99,5 +102,17 @@ class AccountSettingsViewModel(
                     AppToast.show(context, R.string.toast_experiment_group_selected_partial_error)
                 }
             }
+
+            is Result.Error -> {
+                // Error handling if needed, or just let error classifier log it
+            }
+        }
+    }
+
+    suspend fun joinCampaign(campaignId: String, password: String): Boolean {
+        return when (val result = campaignRepository.joinCampaign(campaignId, password)) {
+            is Result.Success<Boolean> -> result.data
+            is Result.Error -> false
+        }
     }
 }

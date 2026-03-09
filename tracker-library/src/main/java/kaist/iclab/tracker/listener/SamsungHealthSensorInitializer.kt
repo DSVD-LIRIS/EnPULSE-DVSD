@@ -99,8 +99,6 @@ class SamsungHealthSensorInitializer(context: Context) {
                     Log.e(javaClass.simpleName, "ERROR: SDK Policy Error")
                     initializer?.reportSdkPolicyError()
                 }
-
-                else -> Log.e(javaClass.simpleName, "ERROR: Unknown ${trackerError.name}")
             }
         }
 

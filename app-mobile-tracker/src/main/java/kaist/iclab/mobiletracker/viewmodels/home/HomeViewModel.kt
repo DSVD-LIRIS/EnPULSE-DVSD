@@ -20,6 +20,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.util.Calendar
 
+/**
+ * UI state for the Home screen.
+ *
+ * @property isTrackingActive Whether sensor data collection is currently active
+ * @property watchStatus Connection status of the paired smartwatch
+ * @property connectedDevices List of currently connected device names
+ * @property userName Display name of the logged-in user
+ */
 data class HomeUiState(
     val isTrackingActive: Boolean = false,
     // Phone sensors
@@ -52,6 +60,21 @@ data class HomeUiState(
     val userName: String? = null
 )
 
+/**
+ * ViewModel for the Home screen.
+ *
+ * Provides real-time sensor data counts for today and watch connection status.
+ * The UI state is updated automatically using Kotlin Flows that combine:
+ * - Background controller state (tracking on/off)
+ * - User profile information
+ * - Daily sensor counts from the repository
+ * - Watch connection information
+ *
+ * @param homeRepository Repository for home screen data operations
+ * @param backgroundController Controller managing sensor background collection
+ * @param syncTimestampService Service for tracking sync timestamps
+ * @param userProfileRepository Repository for user profile data
+ */
 class HomeViewModel(
     private val homeRepository: HomeRepository,
     private val backgroundController: BackgroundController,

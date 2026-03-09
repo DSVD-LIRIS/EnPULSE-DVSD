@@ -22,7 +22,7 @@ interface SurveyRepository {
      * @param campaignId The campaign ID to fetch surveys for
      * @return Result containing the count of surveys fetched, or error
      */
-    suspend fun fetchAndPersistSurveys(campaignId: Int): kotlin.Result<Int>
+    suspend fun fetchAndPersistSurveys(campaignId: Int): Result<Int>
 
     /**
      * Get the current SurveySensor configuration from persisted storage.

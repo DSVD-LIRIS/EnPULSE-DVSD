@@ -5,6 +5,7 @@ import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandlerRegistry
+import io.github.jan.supabase.auth.auth
 import kaist.iclab.mobiletracker.utils.SupabaseSessionHelper
 
 /**
@@ -20,6 +21,9 @@ class PhoneSensorUploadService(
 ) {
     companion object {
         private const val TAG = "PhoneSensorUploadService"
+
+        /** Buffer to keep synced data locally (7 days) */
+        private const val PRUNE_BUFFER_MS = 7 * 24 * 60 * 60 * 1000L
     }
 
     /**
@@ -37,6 +41,9 @@ class PhoneSensorUploadService(
         val lastUploadTimestamp =
             syncTimestampService.getLastSuccessfulUploadTimestamp(sensorId) ?: 0L
 
+        // Wait for Supabase Auth to finish loading the session from storage
+        supabaseHelper.supabaseClient.auth.awaitInitialization()
+
         val userUuid = getUserUuid()
         if (userUuid == null) {
             Log.e(TAG, "Cannot upload data: No user UUID available")
@@ -47,6 +54,18 @@ class PhoneSensorUploadService(
             when (val result = handler.uploadData(userUuid, lastUploadTimestamp)) {
                 is Result.Success -> {
                     syncTimestampService.updateLastSuccessfulUpload(sensorId, result.data)
+
+                    // Prune data that is BOTH synced AND older than PRUNE_BUFFER_MS
+                    // NOTE: This is currently disabled as per user preference for infinite local retention.
+                    // Infrastructure is kept for future manual activation.
+                    /*
+                    val pruneThreshold = minOf(
+                        result.data,
+                        System.currentTimeMillis() - PRUNE_BUFFER_MS
+                    )
+                    handler.pruneData(pruneThreshold)
+                    */
+
                     Result.Success(Unit)
                 }
 

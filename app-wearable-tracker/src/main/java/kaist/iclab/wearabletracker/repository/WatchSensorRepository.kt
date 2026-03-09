@@ -1,5 +1,7 @@
 package kaist.iclab.wearabletracker.repository
 
+import kotlinx.coroutines.flow.Flow
+
 /**
  * Repository interface for watch sensor data operations.
  * Abstracts data access from the ViewModel layer.
@@ -8,7 +10,7 @@ interface WatchSensorRepository {
     /**
      * Delete all sensor data from local storage.
      */
-    suspend fun deleteAllSensorData()
+    suspend fun deleteAllSensorData(): Result<Unit>
 
     /**
      * Get the last sync timestamp.
@@ -17,8 +19,29 @@ interface WatchSensorRepository {
     fun getLastSyncTimestamp(): Long?
 
     /**
+     * Flow of the last sync timestamp.
+     */
+    val lastSyncTimestampFlow: Flow<Long?>
+
+    /**
      * Save the last sync timestamp.
      * @param timestamp timestamp in milliseconds
      */
     fun saveLastSyncTimestamp(timestamp: Long)
+
+    /**
+     * Get the total number of records across all sensors since the given timestamp.
+     */
+    suspend fun getRecordCountSince(timestamp: Long): Int
+
+    /**
+     * Get the total number of records across all sensors.
+     */
+    suspend fun getTotalRecordCount(): Int
+
+    // Auto-sync settings
+    val autoSyncEnabledFlow: Flow<Boolean>
+    val autoSyncIntervalFlow: Flow<Long>
+    fun setAutoSyncEnabled(enabled: Boolean)
+    fun setAutoSyncInterval(intervalMs: Long)
 }

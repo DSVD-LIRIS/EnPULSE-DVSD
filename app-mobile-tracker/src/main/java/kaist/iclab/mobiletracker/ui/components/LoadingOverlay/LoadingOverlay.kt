@@ -12,11 +12,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import kaist.iclab.mobiletracker.ui.theme.AppColors
 
 /**
  * Loading overlay component
- * Displays a semi-transparent overlay with a white box containing a blue spinner
+ * Displays a semi-transparent overlay with a white box containing a blue spinner.
+ * Uses a Dialog window so it always appears on top of other dialogs (e.g., PasswordDialog).
  *
  * @param isLoading Whether the loading state is active
  * @param showOverlay Whether to show the overlay (default: true)
@@ -31,31 +34,40 @@ fun LoadingOverlay(
     modifier: Modifier = Modifier
 ) {
     if (isLoading && showOverlay) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f)),
-            contentAlignment = Alignment.Center
+        Dialog(
+            onDismissRequest = { /* Non-dismissible while loading */ },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
         ) {
-            // White box in center with elevation
-            Surface(
-                modifier = Modifier.size(Styles.WHITE_BOX_SIZE),
-                shape = RoundedCornerShape(Styles.WHITE_BOX_CORNER_RADIUS),
-                color = AppColors.White,
-                shadowElevation = Styles.WHITE_BOX_ELEVATION
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(Styles.WHITE_BOX_PADDING),
-                    contentAlignment = Alignment.Center
+                // White box in center with elevation
+                Surface(
+                    modifier = Modifier.size(Styles.WHITE_BOX_SIZE),
+                    shape = RoundedCornerShape(Styles.WHITE_BOX_CORNER_RADIUS),
+                    color = AppColors.White,
+                    shadowElevation = Styles.WHITE_BOX_ELEVATION
                 ) {
-                    // Blue spinner
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(Styles.SPINNER_SIZE),
-                        color = AppColors.PrimaryColor,
-                        strokeWidth = Styles.SPINNER_STROKE_WIDTH
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(Styles.WHITE_BOX_PADDING),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Blue spinner
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(Styles.SPINNER_SIZE),
+                            color = AppColors.PrimaryColor,
+                            strokeWidth = Styles.SPINNER_STROKE_WIDTH
+                        )
+                    }
                 }
             }
         }

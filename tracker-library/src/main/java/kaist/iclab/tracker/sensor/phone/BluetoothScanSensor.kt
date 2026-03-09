@@ -114,8 +114,8 @@ class BluetoothScanSensor(
         val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             extras.getParcelable(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
         } else {
-            // Only option until TIRAMISU
-            extras.getParcelable<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE) as BluetoothDevice
+            @Suppress("DEPRECATION")
+            extras.getParcelable<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
         } ?: return@BroadcastListener
         handleDeviceFound(device, System.currentTimeMillis(), rssi, false)
     }

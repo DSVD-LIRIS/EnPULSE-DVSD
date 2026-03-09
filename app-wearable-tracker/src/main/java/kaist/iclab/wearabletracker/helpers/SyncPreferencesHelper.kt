@@ -2,7 +2,12 @@ package kaist.iclab.wearabletracker.helpers
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import kaist.iclab.wearabletracker.data.SyncBatch
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.onStart
 
 /**
  * Helper utility for managing sync metadata using SharedPreferences.
@@ -30,6 +35,24 @@ class SyncPreferencesHelper(context: Context) {
     fun getLastSyncTimestamp(): Long? {
         val timestamp = sharedPreferences.getLong(KEY_LAST_SYNC_TIMESTAMP, -1L)
         return if (timestamp == -1L) null else timestamp
+    }
+
+    /**
+     * Flow of the last successful sync timestamp.
+     */
+    val lastSyncTimestampFlow: Flow<Long?> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+            if (key == KEY_LAST_SYNC_TIMESTAMP) {
+                val timestamp = prefs.getLong(KEY_LAST_SYNC_TIMESTAMP, -1L)
+                trySend(if (timestamp == -1L) null else timestamp)
+            }
+        }
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }.onStart {
+        emit(getLastSyncTimestamp())
     }
 
     /**
@@ -81,7 +104,74 @@ class SyncPreferencesHelper(context: Context) {
         return sharedPreferences.getString(KEY_PENDING_BATCH_ID, null) != null
     }
 
+    /**
+     * Set whether auto-sync is enabled.
+     */
+    fun setAutoSyncEnabled(enabled: Boolean) {
+        sharedPreferences.edit()
+            .putBoolean(KEY_AUTO_SYNC_ENABLED, enabled)
+            .apply()
+    }
+
+    /**
+     * Check if auto-sync is enabled.
+     */
+    fun isAutoSyncEnabled(): Boolean {
+        return sharedPreferences.getBoolean(KEY_AUTO_SYNC_ENABLED, false)
+    }
+
+    /**
+     * Flow of the auto-sync enabled state.
+     */
+    val autoSyncEnabledFlow: Flow<Boolean> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+            if (key == KEY_AUTO_SYNC_ENABLED) {
+                trySend(prefs.getBoolean(KEY_AUTO_SYNC_ENABLED, false))
+            }
+        }
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }.onStart {
+        emit(isAutoSyncEnabled())
+    }
+
+    /**
+     * Set the auto-sync interval in milliseconds.
+     */
+    fun setAutoSyncInterval(intervalMs: Long) {
+        sharedPreferences.edit()
+            .putLong(KEY_AUTO_SYNC_INTERVAL, intervalMs)
+            .apply()
+    }
+
+    /**
+     * Get the auto-sync interval in milliseconds.
+     */
+    fun getAutoSyncInterval(): Long {
+        return sharedPreferences.getLong(KEY_AUTO_SYNC_INTERVAL, DEFAULT_AUTO_SYNC_INTERVAL_MS)
+    }
+
+    /**
+     * Flow of the auto-sync interval.
+     */
+    val autoSyncIntervalFlow: Flow<Long> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+            if (key == KEY_AUTO_SYNC_INTERVAL) {
+                trySend(prefs.getLong(KEY_AUTO_SYNC_INTERVAL, DEFAULT_AUTO_SYNC_INTERVAL_MS))
+            }
+        }
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }.onStart {
+        emit(getAutoSyncInterval())
+    }
+
     companion object {
+        private const val TAG = "SyncPreferencesHelper"
         private const val PREFS_NAME = "sync_preferences"
         private const val KEY_LAST_SYNC_TIMESTAMP = "last_sync_timestamp"
         private const val KEY_PENDING_BATCH_ID = "pending_batch_id"
@@ -89,5 +179,35 @@ class SyncPreferencesHelper(context: Context) {
         private const val KEY_PENDING_END_TS = "pending_end_timestamp"
         private const val KEY_PENDING_RECORD_COUNT = "pending_record_count"
         private const val KEY_PENDING_CREATED_AT = "pending_created_at"
+
+        private const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
+        private const val KEY_AUTO_SYNC_INTERVAL = "auto_sync_interval"
+
+        /** Default auto-sync interval: None (disabled) */
+        private const val DEFAULT_AUTO_SYNC_INTERVAL_MS = 0L
+
+        /** Stale batch timeout: 5 minutes */
+        private const val STALE_BATCH_TIMEOUT_MS = 5L * 60 * 1000
+    }
+
+    /**
+     * Check if there's a stale pending batch (exceeded timeout) and clear it.
+     * This prevents a stuck pending batch from blocking future syncs.
+     * @return true if a stale batch was found and cleared
+     */
+    fun clearStaleBatchIfNeeded(): Boolean {
+        val pendingBatch = getPendingBatch() ?: return false
+        val elapsed = System.currentTimeMillis() - pendingBatch.createdAt
+
+        if (elapsed > STALE_BATCH_TIMEOUT_MS) {
+            Log.w(
+                TAG,
+                "Clearing stale pending batch ${pendingBatch.batchId} " +
+                        "(age: ${elapsed / 1000}s, records: ${pendingBatch.recordCount})"
+            )
+            clearPendingBatch()
+            return true
+        }
+        return false
     }
 }

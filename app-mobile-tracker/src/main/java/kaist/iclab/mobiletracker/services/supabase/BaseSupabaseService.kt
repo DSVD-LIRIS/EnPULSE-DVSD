@@ -1,11 +1,9 @@
 package kaist.iclab.mobiletracker.services.supabase
 
-import android.util.Log
 import io.github.jan.supabase.postgrest.from
-import kaist.iclab.mobiletracker.config.AppConfig
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
+import kaist.iclab.mobiletracker.repository.ErrorClassifier
 import kaist.iclab.mobiletracker.repository.Result
-import kaist.iclab.mobiletracker.repository.runCatchingSuspend
 import kaist.iclab.mobiletracker.utils.SupabaseLoadingInterceptor
 import kotlinx.serialization.Serializable
 
@@ -44,18 +42,9 @@ abstract class BaseSupabaseService<T : @Serializable Any>(
         data: TSerializable
     ): Result<Unit> {
         return SupabaseLoadingInterceptor.withLoading {
-            runCatchingSuspend {
-                try {
-                    supabaseClient.from(tableName).upsert(data)
-                    Unit // Explicitly return Unit
-                } catch (e: Exception) {
-                    Log.e(
-                        AppConfig.LogTags.PHONE_SUPABASE,
-                        "Error upserting $sensorName sensor data: ${e.message}",
-                        e
-                    )
-                    throw e
-                }
+            ErrorClassifier.runClassified(sensorName, "upsert $sensorName") {
+                supabaseClient.from(tableName).upsert(data)
+                Unit
             }
         }
     }
@@ -69,23 +58,14 @@ abstract class BaseSupabaseService<T : @Serializable Any>(
     protected suspend inline fun <reified TSerializable : @Serializable Any> upsertBatchToSupabase(
         dataList: List<TSerializable>
     ): Result<Unit> {
+        if (dataList.isEmpty()) return Result.Success(Unit)
         return SupabaseLoadingInterceptor.withLoading {
-            runCatchingSuspend {
-                if (dataList.isEmpty()) {
-                    return@runCatchingSuspend
-                }
-
-                try {
-                    supabaseClient.from(tableName).upsert(dataList)
-                    Unit // Explicitly return Unit
-                } catch (e: Exception) {
-                    Log.e(
-                        AppConfig.LogTags.PHONE_SUPABASE,
-                        "Error upserting ${dataList.size} $sensorName sensor data entries: ${e.message}",
-                        e
-                    )
-                    throw e
-                }
+            ErrorClassifier.runClassified(
+                sensorName,
+                "upsert ${dataList.size} $sensorName entries"
+            ) {
+                supabaseClient.from(tableName).upsert(dataList)
+                Unit
             }
         }
     }
