@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import androidx.lifecycle.SavedStateHandle
 
 /**
  * ViewModel for authentication and user profile management.
@@ -34,7 +35,8 @@ import kotlinx.coroutines.launch
 class AuthViewModel(
     private val authentication: Authentication,
     private val authRepository: AuthRepository,
-    private val userProfileRepository: UserProfileRepository
+    private val userProfileRepository: UserProfileRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val TAG = "AuthViewModel"
 
@@ -48,8 +50,14 @@ class AuthViewModel(
     val userProfile: StateFlow<kaist.iclab.mobiletracker.data.sensors.phone.ProfileData?> =
         userProfileRepository.profileFlow
 
-    private var previousLoginState = false
+    private var previousLoginState: Boolean
+        get() = savedStateHandle[KEY_PREVIOUS_LOGIN_STATE] ?: false
+        set(value) { savedStateHandle[KEY_PREVIOUS_LOGIN_STATE] = value }
     private var lastSavedToken: String? = null
+
+    companion object {
+        private const val KEY_PREVIOUS_LOGIN_STATE = "previous_login_state"
+    }
 
     init {
         // Load profile if user is already logged in (e.g., app restart)

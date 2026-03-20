@@ -23,6 +23,7 @@ import kaist.iclab.tracker.sensor.survey.SurveySensor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -59,7 +60,7 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
     private val sensors by inject<List<Sensor<*, *>>>(qualifier = named("phoneSensors"))
     private val phoneSensorRepository by inject<PhoneSensorRepository>()
     private val serviceNotification by inject<BackgroundController.ServiceNotification>()
-    private val timestampService: SyncTimestampService by lazy { SyncTimestampService(this) }
+    private val timestampService by inject<SyncTimestampService>()
     private val surveySensor by inject<SurveySensor>()
     private val surveyService by inject<SurveyService>()
     private val userProfileRepository by inject<UserProfileRepository>()
@@ -69,6 +70,10 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
         capacity = Constants.DB.BUFFER_SIZE,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
+
+    // Guards against duplicate registration / batch processing on repeated onStartCommand
+    private var listenersRegistered = false
+    private var batchProcessingJob: Job? = null
 
     // Listener just sends to channel
     private val listener: Map<String, (SensorEntity) -> Unit> = sensors.associate { sensor ->
@@ -121,11 +126,9 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
     }
 
     private fun registerListeners() {
-        // Remove first to avoid duplicates
-        sensors.forEach { it.removeListener(listener[it.id]!!) }
-        surveySensor.removeListener(surveyResponseListener)
+        if (listenersRegistered) return
+        listenersRegistered = true
 
-        // Add listeners
         sensors.forEach { it.addListener(listener[it.id]!!) }
         surveySensor.addListener(surveyResponseListener)
     }
@@ -134,7 +137,8 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
      * Starts batch processing using lifecycleScope for automatic cancellation.
      */
     private fun startBatchProcessing() {
-        lifecycleScope.launch(Dispatchers.IO) {
+        if (batchProcessingJob?.isActive == true) return
+        batchProcessingJob = lifecycleScope.launch(Dispatchers.IO) {
             val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
             var lastFlushTime = System.currentTimeMillis()
 
@@ -225,8 +229,12 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
     }
 
     override fun onDestroy() {
-        sensors.forEach { it.removeListener(listener[it.id]!!) }
-        surveySensor.removeListener(surveyResponseListener)
+        // Only remove if we registered
+        if (listenersRegistered) {
+            sensors.forEach { it.removeListener(listener[it.id]!!) }
+            surveySensor.removeListener(surveyResponseListener)
+            listenersRegistered = false
+        }
 
         // Flush remaining data before destruction
         runBlocking {

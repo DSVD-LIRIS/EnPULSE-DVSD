@@ -60,9 +60,7 @@ class AutoSyncService : LifecycleService(), KoinComponent {
         }
     }
 
-    private val syncTimestampService: SyncTimestampService by lazy {
-        SyncTimestampService(this)
-    }
+    private val syncTimestampService by inject<SyncTimestampService>()
     private val phoneSensorUploadService: PhoneSensorUploadService by inject()
     private val watchSensorUploadService: WatchSensorUploadService by inject()
     private val sensors by inject<List<Sensor<*, *>>>(qualifier = named("phoneSensors"))
@@ -156,11 +154,11 @@ class AutoSyncService : LifecycleService(), KoinComponent {
             return
         }
 
-        // All conditions met, trigger sync
-        lastSyncTime = currentTime
+        // All conditions met, trigger sync - update lastSyncTime AFTER completion to ensure retry on failure
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 uploadAllSensorData()
+                lastSyncTime = System.currentTimeMillis()
             } finally {
                 isSyncing.set(false)
             }
