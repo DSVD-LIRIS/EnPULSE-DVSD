@@ -28,6 +28,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonObject
 import org.koin.android.ext.android.inject
 import org.koin.core.component.KoinComponent
@@ -236,17 +237,22 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
             listenersRegistered = false
         }
 
-        // Flush remaining data before destruction
+        // Flush remaining data before destruction with a timeout to avoid ANR
         runBlocking {
-            val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
-            while (true) {
-                val result = eventChannel.tryReceive()
-                if (result.isSuccess) {
-                    val (id, entity) = result.getOrThrow()
-                    buffer.getOrPut(id) { mutableListOf() }.add(entity)
-                } else break
+            val flushed = withTimeoutOrNull(3000L) {
+                val buffer = mutableMapOf<String, MutableList<SensorEntity>>()
+                while (true) {
+                    val result = eventChannel.tryReceive()
+                    if (result.isSuccess) {
+                        val (id, entity) = result.getOrThrow()
+                        buffer.getOrPut(id) { mutableListOf() }.add(entity)
+                    } else break
+                }
+                flushBuffer(buffer)
             }
-            flushBuffer(buffer)
+            if (flushed == null) {
+                Log.w(TAG, "onDestroy flush timed out after 3s — some buffered data may be lost")
+            }
         }
 
         super.onDestroy()
