@@ -21,9 +21,9 @@ import kaist.iclab.mobiletracker.utils.SupabaseSessionHelper
 import kaist.iclab.tracker.auth.Authentication
 import kaist.iclab.tracker.auth.User
 import kaist.iclab.tracker.auth.UserState
-import kotlinx.coroutines.CoroutineScope
+import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,7 +47,7 @@ class SupabaseAuth(
 
     private val supabaseClient = supabaseHelper.supabaseClient
     private val credentialManager = CredentialManager.create(context)
-    private val authScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val authScope = ProcessLifecycleOwner.get().lifecycleScope
 
     private val _userStateFlow = MutableStateFlow<UserState>(
         UserState(isLoggedIn = false, user = null, token = null)

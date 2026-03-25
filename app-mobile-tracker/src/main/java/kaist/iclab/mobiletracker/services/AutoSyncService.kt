@@ -19,6 +19,7 @@ import kaist.iclab.mobiletracker.utils.NotificationHelper
 import kaist.iclab.mobiletracker.utils.SensorTypeHelper
 import kaist.iclab.tracker.sensor.core.Sensor
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
@@ -67,6 +68,9 @@ class AutoSyncService : LifecycleService(), KoinComponent {
 
     private var lastSyncTime: Long = 0
 
+    /** Guards against duplicate sync loops from repeated onStartCommand calls */
+    private var syncLoopJob: Job? = null
+
     /** Prevents overlapping sync cycles when uploads take longer than the interval */
     private val isSyncing = AtomicBoolean(false)
 
@@ -86,6 +90,7 @@ class AutoSyncService : LifecycleService(), KoinComponent {
      * Uses lifecycleScope for automatic cancellation on service destruction.
      */
     private fun startAutoSync() {
+        if (syncLoopJob?.isActive == true) return
         Log.d(TAG, "Starting auto sync service")
         // Create notification channel
         NotificationHelper.ensureNotificationChannel(
@@ -95,7 +100,7 @@ class AutoSyncService : LifecycleService(), KoinComponent {
         )
 
         // lifecycleScope automatically cancels when service is destroyed
-        lifecycleScope.launch(Dispatchers.IO) {
+        syncLoopJob = lifecycleScope.launch(Dispatchers.IO) {
             lastSyncTime = System.currentTimeMillis()
 
             while (isActive) {

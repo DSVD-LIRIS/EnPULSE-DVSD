@@ -31,7 +31,9 @@ val viewModelModule = module {
             homeRepository = get(),
             backgroundController = get(),
             syncTimestampService = get(),
-            userProfileRepository = get()
+            userProfileRepository = get(),
+            campaignSensorRepository = get(),
+            surveyRepository = get()
         )
     }
 
@@ -64,6 +66,9 @@ val viewModelModule = module {
             phoneSensorRepository = get<PhoneSensorRepository>(),
             watchSensorRepository = get<WatchSensorRepository>(),
             timestampService = get(),
+            sensors = get(qualifier = org.koin.core.qualifier.named("phoneSensors")),
+            phoneSensorUploadService = get(),
+            watchSensorUploadService = get(),
             context = androidContext()
         )
     }
