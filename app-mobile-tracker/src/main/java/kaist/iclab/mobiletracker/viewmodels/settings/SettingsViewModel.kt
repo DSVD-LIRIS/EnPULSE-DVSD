@@ -11,7 +11,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
 import kaist.iclab.mobiletracker.services.AutoSyncService
-import kaist.iclab.mobiletracker.services.PhoneSensorDataService
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.utils.toCampaignSensorName
 import kaist.iclab.tracker.permission.AndroidPermissionManager
@@ -80,38 +79,10 @@ class SettingsViewModel(
     val controllerState = backgroundController.controllerStateFlow
 
     init {
-        observeControllerState()
+        // Note: PhoneSensorDataService lifecycle is managed at the Application level
+        // (MobileTrackerApplication) to survive ViewModel recreation.
     }
 
-    /**
-     * Observes controller state changes and manages PhoneSensorDataService lifecycle
-     */
-    private fun observeControllerState() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                backgroundController.controllerStateFlow
-                    .collect { state ->
-                        handleControllerStateChange(state)
-                    }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error observing controller state: ${e.message}", e)
-            }
-        }
-    }
-
-    /**
-     * Handles controller state changes by starting/stopping the phone sensor service
-     */
-    private fun handleControllerStateChange(state: ControllerState) {
-        try {
-            when (state.flag) {
-                ControllerState.FLAG.RUNNING -> PhoneSensorDataService.start(context)
-                else -> PhoneSensorDataService.stop(context)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error managing phone sensor service: ${e.message}", e)
-        }
-    }
 
     /**
      * Toggles a sensor on or off based on its current state

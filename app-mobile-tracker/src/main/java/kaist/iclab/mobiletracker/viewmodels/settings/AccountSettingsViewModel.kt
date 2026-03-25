@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 class AccountSettingsViewModel(
@@ -154,10 +155,12 @@ class AccountSettingsViewModel(
         viewModelScope.launch {
             _isReloadingConfig.value = true
             try {
-                // Fetch surveys and sensors concurrently or sequentially
-                val surveyResult = surveyRepository.fetchAndPersistSurveys(currentCampaignId)
-                val sensorResult =
-                    campaignSensorRepository.fetchActiveSensors(currentCampaignId.toLong())
+                // Fetch surveys and sensors concurrently
+                val surveyDeferred = async { surveyRepository.fetchAndPersistSurveys(currentCampaignId) }
+                val sensorDeferred = async { campaignSensorRepository.fetchActiveSensors(currentCampaignId.toLong()) }
+
+                val surveyResult = surveyDeferred.await()
+                val sensorResult = sensorDeferred.await()
 
                 if (surveyResult.isSuccess && sensorResult.isSuccess) {
                     AppToast.show(context, R.string.toast_success_saved)
