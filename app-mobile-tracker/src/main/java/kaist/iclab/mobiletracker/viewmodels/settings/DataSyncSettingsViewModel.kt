@@ -128,8 +128,8 @@ class DataSyncSettingsViewModel(
                         skippedCount++
                     } else {
                         phoneSensorUploadService.uploadSensorData(sensor.id)
-                            .onSuccess { uploadedCount++ }
-                            .onFailure { e ->
+                            .onSuccess { _: Unit -> uploadedCount++ }
+                            .onFailure { e: Throwable ->
                                 failedCount++
                                 Log.e(TAG, "Upload failed for ${sensor.name}: ${e.message}", e)
                             }
@@ -142,8 +142,8 @@ class DataSyncSettingsViewModel(
                         skippedCount++
                     } else {
                         watchSensorUploadService.uploadSensorData(sensorId)
-                            .onSuccess { uploadedCount++ }
-                            .onFailure { e ->
+                            .onSuccess { _: Unit -> uploadedCount++ }
+                            .onFailure { e: Throwable ->
                                 failedCount++
                                 Log.e(TAG, "Upload failed for $sensorId: ${e.message}", e)
                             }

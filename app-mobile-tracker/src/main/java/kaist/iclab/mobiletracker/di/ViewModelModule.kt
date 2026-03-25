@@ -41,6 +41,7 @@ val viewModelModule = module {
             backgroundController = get(),
             permissionManager = get<AndroidPermissionManager>(),
             syncTimestampService = get(),
+            campaignSensorRepository = get(),
             context = androidContext()
         )
     }
@@ -51,6 +52,8 @@ val viewModelModule = module {
             campaignRepository = get<CampaignRepository>(),
             userProfileRepository = get<UserProfileRepository>(),
             surveyRepository = get<SurveyRepository>(),
+            campaignSensorRepository = get(),
+            backgroundController = get(),
             context = androidContext()
         )
     }
@@ -95,7 +98,8 @@ val viewModelModule = module {
         kaist.iclab.mobiletracker.viewmodels.onboarding.OnboardingViewModel(
             campaignRepository = get<CampaignRepository>(),
             userProfileRepository = get<UserProfileRepository>(),
-            surveyRepository = get<SurveyRepository>()
+            surveyRepository = get<SurveyRepository>(),
+            campaignSensorRepository = get()
         )
     }
 }
