@@ -4,6 +4,8 @@ import kaist.iclab.mobiletracker.db.TrackerRoomDB
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.CampaignRepository
 import kaist.iclab.mobiletracker.repository.CampaignRepositoryImpl
+import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
+import kaist.iclab.mobiletracker.repository.CampaignSensorRepositoryImpl
 import kaist.iclab.mobiletracker.repository.DataRepository
 import kaist.iclab.mobiletracker.repository.DataRepositoryImpl
 import kaist.iclab.mobiletracker.repository.HomeRepository
@@ -139,6 +141,13 @@ val repositoryModule = module {
     single<CampaignRepository> {
         CampaignRepositoryImpl(
             campaignService = get()
+        )
+    }
+
+    // CampaignSensorRepository for active sensor management
+    single<CampaignSensorRepository> {
+        CampaignSensorRepositoryImpl(
+            supabaseHelper = get()
         )
     }
 

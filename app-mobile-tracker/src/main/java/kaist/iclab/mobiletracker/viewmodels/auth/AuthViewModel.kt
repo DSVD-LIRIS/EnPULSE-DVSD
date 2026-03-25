@@ -6,8 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.repository.AuthRepository
+import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.repository.Result
+import kaist.iclab.mobiletracker.data.sensors.phone.ProfileData
 import kaist.iclab.mobiletracker.repository.onFailure
+import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.tracker.auth.Authentication
 import kaist.iclab.tracker.auth.UserState
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -36,8 +40,10 @@ class AuthViewModel(
     private val authentication: Authentication,
     private val authRepository: AuthRepository,
     private val userProfileRepository: UserProfileRepository,
+    private val campaignSensorRepository: CampaignSensorRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
     private val TAG = "AuthViewModel"
 
     val userState: StateFlow<UserState> = authentication.userStateFlow
@@ -47,7 +53,7 @@ class AuthViewModel(
     val uiEvent: SharedFlow<AuthUiEvent> = _uiEvent.asSharedFlow()
 
     // Expose cached profile from repository
-    val userProfile: StateFlow<kaist.iclab.mobiletracker.data.sensors.phone.ProfileData?> =
+    val userProfile: StateFlow<ProfileData?> =
         userProfileRepository.profileFlow
 
     private var previousLoginState: Boolean
@@ -92,6 +98,7 @@ class AuthViewModel(
                 // Clear profile when user logs out
                 if (!state.isLoggedIn) {
                     userProfileRepository.clearProfile()
+                    campaignSensorRepository.clearCache()
                     previousLoginState = false
                     lastSavedToken = null
                 }
@@ -128,11 +135,20 @@ class AuthViewModel(
      * Suspending function to load user profile.
      */
     private suspend fun loadUserProfileSuspend() {
-        userProfileRepository.refreshProfile()
-            .onFailure { e ->
-                Log.e(TAG, "Error loading user profile: ${e.message}", e)
+        when (val result = userProfileRepository.refreshProfile()) {
+            is Result.Success -> {
+                val profile = result.data
+                if (profile?.campaignId != null) {
+                    campaignSensorRepository.fetchActiveSensors(profile.campaignId.toLong())
+                } else {
+                    campaignSensorRepository.clearCache()
+                }
+            }
+            is Result.Error -> {
+                Log.e(TAG, "Error loading user profile: ${result.message}", result.exception)
                 _uiEvent.emit(AuthUiEvent.ShowError(R.string.toast_profile_setup_failed))
             }
+        }
     }
 
     fun login(activity: Activity) {

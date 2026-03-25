@@ -1,0 +1,72 @@
+package kaist.iclab.mobiletracker.repository
+
+import android.util.Log
+import kaist.iclab.mobiletracker.data.sensors.phone.CampaignTableData
+import kaist.iclab.mobiletracker.helpers.SupabaseHelper
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
+
+/**
+ * Repository for fetching and caching sensors allowed for a specific campaign.
+ */
+interface CampaignSensorRepository {
+    /**
+     * Flow of active sensors (campaign tables) for the currently joined campaign.
+     */
+    val activeSensorsFlow: StateFlow<List<CampaignTableData>>
+
+    /**
+     * Fetch active sensors for a specific campaign ID from Supabase.
+     */
+    suspend fun fetchActiveSensors(campaignId: Long): Result<List<CampaignTableData>>
+
+    /**
+     * Get the cached active sensors synchronously.
+     */
+    fun getActiveSensors(): List<CampaignTableData>
+
+    /**
+     * Clear the cache (e.g., on logout).
+     */
+    fun clearCache()
+}
+
+class CampaignSensorRepositoryImpl(
+    private val supabaseHelper: SupabaseHelper
+) : CampaignSensorRepository {
+
+    companion object {
+        private const val TAG = "CampaignSensorRepo"
+        private const val TABLE_NAME = "campaign_table"
+    }
+
+    private val _activeSensorsFlow = MutableStateFlow<List<CampaignTableData>>(emptyList())
+    override val activeSensorsFlow = _activeSensorsFlow.asStateFlow()
+
+    override suspend fun fetchActiveSensors(campaignId: Long): Result<List<CampaignTableData>> {
+        return ErrorClassifier.runClassified(TAG, "fetchActiveSensors") {
+            val supabaseClient = supabaseHelper.supabaseClient
+            val tables = supabaseClient.from(TABLE_NAME)
+                .select(columns = Columns.ALL) {
+                    filter {
+                        eq("campaign_id", campaignId)
+                    }
+                }
+                .decodeList<CampaignTableData>()
+            
+            _activeSensorsFlow.value = tables
+            tables
+        }
+    }
+
+    override fun getActiveSensors(): List<CampaignTableData> {
+        return _activeSensorsFlow.value
+    }
+
+    override fun clearCache() {
+        _activeSensorsFlow.value = emptyList()
+    }
+}

@@ -43,6 +43,7 @@ val authModule = module {
             authentication = authentication,
             authRepository = get<AuthRepository>(),
             userProfileRepository = get<UserProfileRepository>(),
+            campaignSensorRepository = get(),
             savedStateHandle = get()
         )
     }

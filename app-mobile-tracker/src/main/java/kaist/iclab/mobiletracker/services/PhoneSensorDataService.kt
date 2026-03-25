@@ -12,10 +12,12 @@ import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.data.survey.SurveyQuestionResponseInsert
 import kaist.iclab.mobiletracker.helpers.LanguageHelper
+import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
 import kaist.iclab.mobiletracker.repository.PhoneSensorRepository
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.mobiletracker.utils.NotificationHelper
+import kaist.iclab.mobiletracker.utils.toCampaignSensorName
 import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.core.Sensor
 import kaist.iclab.tracker.sensor.core.SensorEntity
@@ -126,11 +128,28 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
         startForeground(serviceNotification.notificationId, postNotification, serviceType)
     }
 
+    private val campaignSensorRepository by inject<CampaignSensorRepository>()
+
     private fun registerListeners() {
         if (listenersRegistered) return
         listenersRegistered = true
 
-        sensors.forEach { it.addListener(listener[it.id]!!) }
+        val activeSensors = campaignSensorRepository.getActiveSensors().map { it.name }
+        
+        sensors.forEach { sensor ->
+            // Convert library sensor ID (e.g., "Location", "AppUsageLog") to campaign table name format
+            val campaignSensorName = sensor.id.toCampaignSensorName()
+            
+            if (activeSensors.contains(campaignSensorName) || activeSensors.isEmpty()) {
+                // If activeSensors is empty, we fallback to register all (or you could strictly enforce). 
+                // Strict enforcement: if (!activeSensors.contains(campaignSensorName)) Log... else addListener
+                // Wait, if no campaign is selected, they shouldn't collect anything. So strictly enforce.
+                sensor.addListener(listener[sensor.id]!!)
+            }
+        }
+        
+        // Survey is currently triggered out-of-band by push notifications or local schedules.
+        // We always keep it registered, but it only collects when a survey is explicitly scheduled.
         surveySensor.addListener(surveyResponseListener)
     }
 

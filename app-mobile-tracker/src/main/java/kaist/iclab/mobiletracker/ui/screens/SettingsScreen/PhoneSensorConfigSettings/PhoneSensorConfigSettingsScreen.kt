@@ -18,6 +18,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,7 +45,8 @@ fun PhoneSensorConfigSettingsScreen(
     val context = LocalContext.current
     val controllerState = viewModel.controllerState.collectAsState().value
     val isCollecting = controllerState.flag == ControllerState.FLAG.RUNNING
-    val sensorList = viewModel.sensorState.toList()
+    val filteredSensorMap by viewModel.sensorState.collectAsState()
+    val sensorList = filteredSensorMap.toList()
 
     Box(
         modifier = modifier
@@ -101,7 +103,8 @@ fun PhoneSensorConfigSettingsScreen(
                     itemsIndexed(
                         items = sensorList,
                         key = { _, pair -> pair.first }
-                    ) { index, (sensorName, sensorStateFlow) ->
+                    ) { index, pair ->
+                        val (sensorName, sensorStateFlow) = pair
                         val isLast = index == sensorList.size - 1
 
                         SensorCard(

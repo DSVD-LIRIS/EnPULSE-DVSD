@@ -9,6 +9,8 @@ import kaist.iclab.mobiletracker.repository.CampaignRepository
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.SurveyRepository
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
+import kaist.iclab.mobiletracker.data.sensors.phone.CampaignTableData
 import kaist.iclab.mobiletracker.repository.onFailure
 import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.mobiletracker.utils.AppToast
@@ -24,11 +26,15 @@ class AccountSettingsViewModel(
     private val campaignRepository: CampaignRepository,
     private val userProfileRepository: UserProfileRepository,
     private val surveyRepository: SurveyRepository,
+    private val campaignSensorRepository: CampaignSensorRepository,
     private val context: Context
 ) : ViewModel() {
 
     // Campaign state from repository
     val campaigns: StateFlow<List<CampaignData>> = campaignRepository.campaignsFlow
+
+    // Active sensors for the currently selected campaign
+    val activeSensors: StateFlow<List<CampaignTableData>> = campaignSensorRepository.activeSensorsFlow
 
     private val _isLoadingCampaigns = MutableStateFlow(false)
     val isLoadingCampaigns: StateFlow<Boolean> = _isLoadingCampaigns.asStateFlow()
@@ -60,7 +66,7 @@ class AccountSettingsViewModel(
 
         viewModelScope.launch {
             userProfileRepository.profileFlow.collect { profile ->
-                _selectedCampaignId.value = profile?.campaign_id?.toString()
+                _selectedCampaignId.value = profile?.campaignId?.toString()
             }
         }
     }
@@ -92,6 +98,10 @@ class AccountSettingsViewModel(
         when (val result = userProfileRepository.updateCampaignId(campaignIdInt)) {
             is Result.Success -> {
                 val surveyResult = surveyRepository.fetchAndPersistSurveys(campaignIdInt)
+                
+                // Fetch active sensors for the campaign
+                campaignSensorRepository.fetchActiveSensors(campaignIdInt.toLong())
+                
                 _isSyncingSurveys.value = false
 
                 userProfileRepository.refreshProfile()

@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
         val startDestination = when {
             !userState.isLoggedIn -> Screen.Login.route
             userProfile == null -> Screen.Home.route  // Default to Home while profile is loading to avoid flicker
-            userProfile?.campaign_id == null -> Screen.Onboarding.route  // No campaign -> onboarding
+            userProfile?.campaignId == null -> Screen.Onboarding.route  // No campaign -> onboarding
             else -> Screen.Home.route  // Has campaign -> home
         }
 
