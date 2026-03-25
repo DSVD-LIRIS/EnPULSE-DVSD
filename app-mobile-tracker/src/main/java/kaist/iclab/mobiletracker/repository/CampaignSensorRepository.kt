@@ -2,8 +2,10 @@ package kaist.iclab.mobiletracker.repository
 
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
+import kaist.iclab.mobiletracker.data.sensors.phone.CampaignSensorList
 import kaist.iclab.mobiletracker.data.sensors.phone.CampaignTableData
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
+import kaist.iclab.mobiletracker.storage.CampaignSensorConfigStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +36,8 @@ interface CampaignSensorRepository {
 }
 
 class CampaignSensorRepositoryImpl(
-    private val supabaseHelper: SupabaseHelper
+    private val supabaseHelper: SupabaseHelper,
+    private val persistentStorage: CampaignSensorConfigStorage
 ) : CampaignSensorRepository {
 
     companion object {
@@ -42,7 +45,8 @@ class CampaignSensorRepositoryImpl(
         private const val TABLE_NAME = "campaign_table"
     }
 
-    private val _activeSensorsFlow = MutableStateFlow<List<CampaignTableData>>(emptyList())
+    private val _activeSensorsFlow =
+        MutableStateFlow<List<CampaignTableData>>(persistentStorage.get().sensors)
     override val activeSensorsFlow = _activeSensorsFlow.asStateFlow()
 
     override suspend fun fetchActiveSensors(campaignId: Long): Result<List<CampaignTableData>> {
@@ -56,7 +60,10 @@ class CampaignSensorRepositoryImpl(
                 }
                 .decodeList<CampaignTableData>()
 
+            // Update in-memory cache
             _activeSensorsFlow.value = tables
+            // Persist to local storage
+            persistentStorage.set(CampaignSensorList(tables))
             tables
         }
     }
@@ -67,5 +74,6 @@ class CampaignSensorRepositoryImpl(
 
     override fun clearCache() {
         _activeSensorsFlow.value = emptyList()
+        persistentStorage.set(CampaignSensorList())
     }
 }

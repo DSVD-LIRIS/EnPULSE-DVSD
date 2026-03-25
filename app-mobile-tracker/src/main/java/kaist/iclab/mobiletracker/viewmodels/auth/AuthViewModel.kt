@@ -139,9 +139,7 @@ class AuthViewModel(
         when (val result = userProfileRepository.refreshProfile()) {
             is Result.Success -> {
                 val profile = result.data
-                if (profile?.campaignId != null) {
-                    campaignSensorRepository.fetchActiveSensors(profile.campaignId.toLong())
-                } else {
+                if (profile?.campaignId == null) {
                     campaignSensorRepository.clearCache()
                 }
             }

@@ -140,10 +140,7 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
             // Convert library sensor ID (e.g., "Location", "AppUsageLog") to campaign table name format
             val campaignSensorName = sensor.id.toCampaignSensorName()
 
-            if (activeSensors.contains(campaignSensorName) || activeSensors.isEmpty()) {
-                // If activeSensors is empty, we fallback to register all (or you could strictly enforce). 
-                // Strict enforcement: if (!activeSensors.contains(campaignSensorName)) Log... else addListener
-                // Wait, if no campaign is selected, they shouldn't collect anything. So strictly enforce.
+            if (activeSensors.contains(campaignSensorName)) {
                 sensor.addListener(listener[sensor.id]!!)
             }
         }

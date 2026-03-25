@@ -31,8 +31,6 @@ class PhoneSensorUploadService(
 
     private fun isSensorActive(sensorId: String): Boolean {
         val activeSensors = campaignSensorRepository.getActiveSensors().map { it.name }
-        if (activeSensors.isEmpty()) return true
-
         val campaignSensorName = sensorId.toCampaignSensorName()
         return activeSensors.contains(campaignSensorName)
     }
