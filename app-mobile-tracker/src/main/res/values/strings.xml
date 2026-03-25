@@ -160,6 +160,13 @@
     <string name="record_deleted_success">Record deleted from device and server</string>
     <string name="record_deleted_error">Failed to delete record</string>
 
+    <string name="menu_reload_config">Reload Config</string>
+    <string name="menu_reload_config_desc">Refresh the config from server</string>
+    <string name="reload_config_dialog_title">Reload Configuration</string>
+    <string name="reload_config_dialog_message">Are you sure you want to reload? This will fetch the latest settings for your current campaign.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="toast_success_saved">Successfully loaded active config.</string>
+
     <!-- Sensor Descriptions -->
     <string name="sensor_desc_ambient_light">Light sensor data</string>
     <string name="sensor_desc_app_list_change">App installation changes</string>

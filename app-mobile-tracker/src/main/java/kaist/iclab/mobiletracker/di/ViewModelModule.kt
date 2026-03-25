@@ -53,6 +53,7 @@ val viewModelModule = module {
             userProfileRepository = get<UserProfileRepository>(),
             surveyRepository = get<SurveyRepository>(),
             campaignSensorRepository = get(),
+            backgroundController = get(),
             context = androidContext()
         )
     }

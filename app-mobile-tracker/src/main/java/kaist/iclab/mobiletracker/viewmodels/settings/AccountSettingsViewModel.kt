@@ -14,11 +14,14 @@ import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.mobiletracker.repository.onFailure
 import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.mobiletracker.utils.AppToast
+import kaist.iclab.tracker.sensor.controller.BackgroundController
+import kaist.iclab.tracker.sensor.controller.ControllerState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -27,6 +30,7 @@ class AccountSettingsViewModel(
     private val userProfileRepository: UserProfileRepository,
     private val surveyRepository: SurveyRepository,
     private val campaignSensorRepository: CampaignSensorRepository,
+    private val backgroundController: BackgroundController,
     private val context: Context
 ) : ViewModel() {
 
@@ -43,11 +47,22 @@ class AccountSettingsViewModel(
     private val _isSyncingSurveys = MutableStateFlow(false)
     val isSyncingSurveys: StateFlow<Boolean> = _isSyncingSurveys.asStateFlow()
 
+    private val _isReloadingConfig = MutableStateFlow(false)
+    val isReloadingConfig: StateFlow<Boolean> = _isReloadingConfig.asStateFlow()
+
     private val _campaignError = MutableStateFlow<String?>(null)
     val campaignError: StateFlow<String?> = _campaignError.asStateFlow()
 
     private val _selectedCampaignId = MutableStateFlow<String?>(null)
     val selectedCampaignId: StateFlow<String?> = _selectedCampaignId.asStateFlow()
+
+    val isDataCollectionRunning: StateFlow<Boolean> = backgroundController.controllerStateFlow
+        .map { it.flag == ControllerState.FLAG.RUNNING }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = backgroundController.controllerStateFlow.value.flag == ControllerState.FLAG.RUNNING
+        )
 
     val selectedCampaignName: StateFlow<String?> = combine(
         _selectedCampaignId,
@@ -124,6 +139,34 @@ class AccountSettingsViewModel(
         return when (val result = campaignRepository.joinCampaign(campaignId, password)) {
             is Result.Success<Boolean> -> result.data
             is Result.Error -> false
+        }
+    }
+
+    fun reloadConfig() {
+        val currentCampaignId = _selectedCampaignId.value?.toIntOrNull()
+        if (currentCampaignId == null) {
+            AppToast.show(context, R.string.campaign_no_campaign_joined)
+            return
+        }
+
+        if (_isReloadingConfig.value) return
+
+        viewModelScope.launch {
+            _isReloadingConfig.value = true
+            try {
+                // Fetch surveys and sensors concurrently or sequentially
+                val surveyResult = surveyRepository.fetchAndPersistSurveys(currentCampaignId)
+                val sensorResult =
+                    campaignSensorRepository.fetchActiveSensors(currentCampaignId.toLong())
+
+                if (surveyResult.isSuccess && sensorResult.isSuccess) {
+                    AppToast.show(context, R.string.toast_success_saved)
+                } else {
+                    AppToast.show(context, R.string.error_generic)
+                }
+            } finally {
+                _isReloadingConfig.value = false
+            }
         }
     }
 }
