@@ -2,16 +2,16 @@ package kaist.iclab.mobiletracker.viewmodels.auth
 
 import android.app.Activity
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.R
+import kaist.iclab.mobiletracker.data.sensors.phone.ProfileData
 import kaist.iclab.mobiletracker.repository.AuthRepository
 import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
-import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.mobiletracker.repository.Result
-import kaist.iclab.mobiletracker.data.sensors.phone.ProfileData
+import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.mobiletracker.repository.onFailure
-import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.tracker.auth.Authentication
 import kaist.iclab.tracker.auth.UserState
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import androidx.lifecycle.SavedStateHandle
 
 /**
  * ViewModel for authentication and user profile management.
@@ -58,7 +57,9 @@ class AuthViewModel(
 
     private var previousLoginState: Boolean
         get() = savedStateHandle[KEY_PREVIOUS_LOGIN_STATE] ?: false
-        set(value) { savedStateHandle[KEY_PREVIOUS_LOGIN_STATE] = value }
+        set(value) {
+            savedStateHandle[KEY_PREVIOUS_LOGIN_STATE] = value
+        }
     private var lastSavedToken: String? = null
 
     companion object {
@@ -144,6 +145,7 @@ class AuthViewModel(
                     campaignSensorRepository.clearCache()
                 }
             }
+
             is Result.Error -> {
                 Log.e(TAG, "Error loading user profile: ${result.message}", result.exception)
                 _uiEvent.emit(AuthUiEvent.ShowError(R.string.toast_profile_setup_failed))

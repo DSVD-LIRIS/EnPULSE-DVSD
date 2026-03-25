@@ -72,7 +72,8 @@ class OnboardingViewModel(
                     val surveyResult = surveyRepository.fetchAndPersistSurveys(selectedCampaign.id)
 
                     // Fetch active sensors for the campaign
-                    val sensorResult = campaignSensorRepository.fetchActiveSensors(selectedCampaign.id.toLong())
+                    val sensorResult =
+                        campaignSensorRepository.fetchActiveSensors(selectedCampaign.id.toLong())
 
                     // Refresh profile to trigger navigation
                     userProfileRepository.refreshProfile()

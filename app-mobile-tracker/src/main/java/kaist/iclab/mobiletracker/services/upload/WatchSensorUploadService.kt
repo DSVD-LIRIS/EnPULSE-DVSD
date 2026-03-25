@@ -1,11 +1,11 @@
 package kaist.iclab.mobiletracker.services.upload
 
 import android.util.Log
+import io.github.jan.supabase.auth.auth
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandlerRegistry
-import io.github.jan.supabase.auth.auth
 import kaist.iclab.mobiletracker.utils.SupabaseSessionHelper
 
 /**

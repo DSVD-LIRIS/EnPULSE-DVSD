@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kaist.iclab.mobiletracker.R
@@ -91,48 +93,65 @@ fun PhoneSensorConfigSettingsScreen(
 
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
                     .padding(horizontal = Styles.CARD_CONTAINER_HORIZONTAL_PADDING)
                     .padding(bottom = Styles.SETTING_CONTAINER_BOTTOM_PADDING)
+                    .weight(1f, fill = false)
                     .clip(Styles.CONTAINER_SHAPE)
                     .background(AppColors.White)
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    itemsIndexed(
-                        items = sensorList,
-                        key = { _, pair -> pair.first }
-                    ) { index, pair ->
-                        val (sensorName, sensorStateFlow) = pair
-                        val isLast = index == sensorList.size - 1
-
-                        SensorCard(
-                            sensorName = sensorName,
-                            sensorStateFlow = sensorStateFlow,
-                            isControllerRunning = isCollecting,
-                            onToggle = {
-                                if (isCollecting) {
-                                    AppToast.show(context, R.string.turn_off_data_collection_first)
-                                } else {
-                                    viewModel.toggleSensor(sensorName)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                if (sensorList.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = context.getString(R.string.phone_sensor_empty_config),
+                            textAlign = TextAlign.Center,
+                            color = AppColors.TextSecondary,
+                            modifier = Modifier.padding(16.dp)
                         )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.wrapContentHeight()
+                    ) {
+                        itemsIndexed(
+                            items = sensorList,
+                            key = { _, pair -> pair.first }
+                        ) { index, pair ->
+                            val (sensorName, sensorStateFlow) = pair
+                            val isLast = index == sensorList.size - 1
 
-                        // Add horizontal divider between cards (not after the last one)
-                        if (!isLast) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                HorizontalDivider(
-                                    color = AppColors.BorderDark,
-                                    thickness = 0.dp,
-                                    modifier = Modifier.fillMaxWidth(Styles.DIVIDER_WIDTH_RATIO)
-                                )
+                            SensorCard(
+                                sensorName = sensorName,
+                                sensorStateFlow = sensorStateFlow,
+                                isControllerRunning = isCollecting,
+                                onToggle = {
+                                    if (isCollecting) {
+                                        AppToast.show(
+                                            context,
+                                            R.string.turn_off_data_collection_first
+                                        )
+                                    } else {
+                                        viewModel.toggleSensor(sensorName)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            // Add horizontal divider between cards (not after the last one)
+                            if (!isLast) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    HorizontalDivider(
+                                        color = AppColors.BorderDark,
+                                        thickness = 0.dp,
+                                        modifier = Modifier.fillMaxWidth(Styles.DIVIDER_WIDTH_RATIO)
+                                    )
+                                }
                             }
                         }
                     }

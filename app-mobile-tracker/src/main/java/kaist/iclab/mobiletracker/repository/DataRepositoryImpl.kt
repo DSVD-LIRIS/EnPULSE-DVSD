@@ -245,7 +245,7 @@ class DataRepositoryImpl(
         val afterTimestamp = getTimestampForFilter(dateFilter)
 
         val allRecords = mutableListOf<SensorRecord>()
-        val batchSize = 5000 
+        val batchSize = 5000
         var offset = 0
 
         while (true) {

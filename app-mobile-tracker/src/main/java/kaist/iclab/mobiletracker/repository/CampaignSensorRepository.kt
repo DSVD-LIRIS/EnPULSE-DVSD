@@ -1,13 +1,12 @@
 package kaist.iclab.mobiletracker.repository
 
-import android.util.Log
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
 import kaist.iclab.mobiletracker.data.sensors.phone.CampaignTableData
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.postgrest.query.Columns
 
 /**
  * Repository for fetching and caching sensors allowed for a specific campaign.
@@ -56,7 +55,7 @@ class CampaignSensorRepositoryImpl(
                     }
                 }
                 .decodeList<CampaignTableData>()
-            
+
             _activeSensorsFlow.value = tables
             tables
         }

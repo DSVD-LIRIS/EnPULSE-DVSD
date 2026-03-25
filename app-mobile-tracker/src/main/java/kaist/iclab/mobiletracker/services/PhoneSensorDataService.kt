@@ -23,9 +23,9 @@ import kaist.iclab.tracker.sensor.core.Sensor
 import kaist.iclab.tracker.sensor.core.SensorEntity
 import kaist.iclab.tracker.sensor.survey.SurveySensor
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -135,11 +135,11 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
         listenersRegistered = true
 
         val activeSensors = campaignSensorRepository.getActiveSensors().map { it.name }
-        
+
         sensors.forEach { sensor ->
             // Convert library sensor ID (e.g., "Location", "AppUsageLog") to campaign table name format
             val campaignSensorName = sensor.id.toCampaignSensorName()
-            
+
             if (activeSensors.contains(campaignSensorName) || activeSensors.isEmpty()) {
                 // If activeSensors is empty, we fallback to register all (or you could strictly enforce). 
                 // Strict enforcement: if (!activeSensors.contains(campaignSensorName)) Log... else addListener
@@ -147,7 +147,7 @@ class PhoneSensorDataService : LifecycleService(), KoinComponent {
                 sensor.addListener(listener[sensor.id]!!)
             }
         }
-        
+
         // Survey is currently triggered out-of-band by push notifications or local schedules.
         // We always keep it registered, but it only collects when a survey is explicitly scheduled.
         surveySensor.addListener(surveyResponseListener)

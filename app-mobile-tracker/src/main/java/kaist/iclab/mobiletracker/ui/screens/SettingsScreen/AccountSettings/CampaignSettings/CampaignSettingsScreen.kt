@@ -71,7 +71,7 @@ fun CampaignSettingsScreen(
                     fontSize = Styles.TITLE_FONT_SIZE
                 )
             }
-            
+
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = "Current Campaign",
@@ -79,25 +79,25 @@ fun CampaignSettingsScreen(
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Text(
                     text = selectedCampaignName ?: "No Campaign Selected",
                     style = MaterialTheme.typography.bodyLarge
                 )
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 Text(
                     text = "Active Sensors",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 if (activeSensors.isEmpty()) {
                     Text(
                         text = "No active sensors fetched.",
@@ -121,7 +121,10 @@ fun CampaignSettingsScreen(
                                     )
                                 }
                             }
-                            Divider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 0.5.dp)
+                            Divider(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                thickness = 0.5.dp
+                            )
                         }
                     }
                 }

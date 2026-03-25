@@ -5,12 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.data.campaign.CampaignData
+import kaist.iclab.mobiletracker.data.sensors.phone.CampaignTableData
 import kaist.iclab.mobiletracker.repository.CampaignRepository
+import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
 import kaist.iclab.mobiletracker.repository.Result
 import kaist.iclab.mobiletracker.repository.SurveyRepository
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
-import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
-import kaist.iclab.mobiletracker.data.sensors.phone.CampaignTableData
 import kaist.iclab.mobiletracker.repository.onFailure
 import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.mobiletracker.utils.AppToast
@@ -34,7 +34,8 @@ class AccountSettingsViewModel(
     val campaigns: StateFlow<List<CampaignData>> = campaignRepository.campaignsFlow
 
     // Active sensors for the currently selected campaign
-    val activeSensors: StateFlow<List<CampaignTableData>> = campaignSensorRepository.activeSensorsFlow
+    val activeSensors: StateFlow<List<CampaignTableData>> =
+        campaignSensorRepository.activeSensorsFlow
 
     private val _isLoadingCampaigns = MutableStateFlow(false)
     val isLoadingCampaigns: StateFlow<Boolean> = _isLoadingCampaigns.asStateFlow()
@@ -98,10 +99,10 @@ class AccountSettingsViewModel(
         when (val result = userProfileRepository.updateCampaignId(campaignIdInt)) {
             is Result.Success -> {
                 val surveyResult = surveyRepository.fetchAndPersistSurveys(campaignIdInt)
-                
+
                 // Fetch active sensors for the campaign
                 campaignSensorRepository.fetchActiveSensors(campaignIdInt.toLong())
-                
+
                 _isSyncingSurveys.value = false
 
                 userProfileRepository.refreshProfile()

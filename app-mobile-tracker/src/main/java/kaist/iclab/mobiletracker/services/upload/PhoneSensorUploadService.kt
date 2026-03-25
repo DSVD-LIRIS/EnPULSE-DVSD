@@ -1,16 +1,14 @@
 package kaist.iclab.mobiletracker.services.upload
 
 import android.util.Log
+import io.github.jan.supabase.auth.auth
 import kaist.iclab.mobiletracker.helpers.SupabaseHelper
 import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
 import kaist.iclab.mobiletracker.repository.Result
-import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.services.upload.handlers.SensorUploadHandlerRegistry
 import kaist.iclab.mobiletracker.utils.SupabaseSessionHelper
 import kaist.iclab.mobiletracker.utils.toCampaignSensorName
-import io.github.jan.supabase.auth.auth
-import kotlinx.coroutines.flow.first
 
 /**
  * Service for uploading phone sensor data from Room database to Supabase.
@@ -99,7 +97,7 @@ class PhoneSensorUploadService(
      */
     suspend fun hasDataToUpload(sensorId: String): Boolean {
         if (!isSensorActive(sensorId)) return false
-        
+
         return try {
             val handler = handlerRegistry.getHandler(sensorId) ?: return false
             val lastUploadTimestamp =

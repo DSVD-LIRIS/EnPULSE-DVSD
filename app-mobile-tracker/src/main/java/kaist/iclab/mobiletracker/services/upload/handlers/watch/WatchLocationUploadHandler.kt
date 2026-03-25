@@ -39,7 +39,8 @@ class WatchLocationUploadHandler(
 
                 if (entities.isEmpty()) break
 
-                val supabaseDataList = entities.map { entity -> LocationMapper.map(entity, userUuid) }
+                val supabaseDataList =
+                    entities.map { entity -> LocationMapper.map(entity, userUuid) }
                 service.insertLocationSensorDataBatch(supabaseDataList)
                     .getOrElse { error -> throw error }
 

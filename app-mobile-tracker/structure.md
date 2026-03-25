@@ -1,4 +1,5 @@
 # Mobile Tracker: Architecture Overview
+
 The application follows a clean architecture pattern with clear separation of concerns:
 
 ```mermaid
@@ -120,6 +121,7 @@ Each sensor type has its own handler implementation registered in `SensorDataHan
 ## Database Schema
 
 The app uses Room database with schema export enabled. Schema files are located in:
+
 ```
 app-mobile-tracker/schemas/
 ```

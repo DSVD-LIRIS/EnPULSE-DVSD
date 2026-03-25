@@ -9,21 +9,19 @@ import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
 import kaist.iclab.mobiletracker.services.AutoSyncService
 import kaist.iclab.mobiletracker.services.PhoneSensorDataService
 import kaist.iclab.mobiletracker.services.SyncTimestampService
-import kaist.iclab.mobiletracker.repository.CampaignSensorRepository
+import kaist.iclab.mobiletracker.utils.toCampaignSensorName
 import kaist.iclab.tracker.permission.AndroidPermissionManager
 import kaist.iclab.tracker.permission.PermissionState
 import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.controller.ControllerState
 import kaist.iclab.tracker.sensor.core.Sensor
 import kaist.iclab.tracker.sensor.core.SensorState
-import kaist.iclab.mobiletracker.repository.Result
-import kaist.iclab.mobiletracker.utils.toCampaignSensorName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -63,20 +61,22 @@ class SettingsViewModel(
     private val sensors = backgroundController.sensors
 
     val sensorMap = sensors.associateBy { it.name }
+
     // Reactive filtered sensor state based on active campaign sensors
-    val sensorState: StateFlow<Map<String, StateFlow<SensorState>>> = campaignSensorRepository.activeSensorsFlow
-        .combine(MutableStateFlow(sensors)) { activeSensors, allSensors ->
-            val activeNames = activeSensors.map { it.name }
-            allSensors.filter { sensor: Sensor<*, *> ->
-                val campaignSensorName = sensor.id.toCampaignSensorName()
-                activeNames.isEmpty() || activeNames.contains(campaignSensorName)
-            }.associate { sensor: Sensor<*, *> -> sensor.name to sensor.sensorStateFlow }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = sensors.associate { it.name to it.sensorStateFlow }
-        )
+    val sensorState: StateFlow<Map<String, StateFlow<SensorState>>> =
+        campaignSensorRepository.activeSensorsFlow
+            .combine(MutableStateFlow(sensors)) { activeSensors, allSensors ->
+                val activeNames = activeSensors.map { it.name }
+                allSensors.filter { sensor: Sensor<*, *> ->
+                    val campaignSensorName = sensor.id.toCampaignSensorName()
+                    activeNames.contains(campaignSensorName)
+                }.associate { sensor: Sensor<*, *> -> sensor.name to sensor.sensorStateFlow }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = sensors.associate { it.name to it.sensorStateFlow }
+            )
     val controllerState = backgroundController.controllerStateFlow
 
     init {
