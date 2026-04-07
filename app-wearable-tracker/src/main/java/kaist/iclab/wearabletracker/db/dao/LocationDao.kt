@@ -65,4 +65,10 @@ interface LocationDao : BaseDao<LocationSensor.Entity> {
     override suspend fun deleteAll() {
         deleteAllLocationData()
     }
+
+    @Query("SELECT COUNT(*) FROM LocationEntity")
+    override suspend fun getCount(): Int
+
+    @Query("SELECT COUNT(*) FROM LocationEntity WHERE timestamp > :timestamp")
+    override suspend fun getCountSince(timestamp: Long): Int
 }

@@ -17,6 +17,10 @@ class UserProfileRepositoryImpl(
     private val supabaseHelper: SupabaseHelper
 ) : UserProfileRepository {
 
+    companion object {
+        private const val TAG = "UserProfileRepo"
+    }
+
     private val _profile = MutableStateFlow<ProfileData?>(null)
     override val profileFlow: StateFlow<ProfileData?> = _profile.asStateFlow()
 
@@ -32,42 +36,33 @@ class UserProfileRepositoryImpl(
         _profile.value = null
     }
 
-    override suspend fun updateCampaignId(campaignId: Int): kotlin.Result<Unit> {
+    override suspend fun updateCampaignId(campaignId: Int): Result<Unit> {
         val uuid = getCurrentUuid()
-            ?: return kotlin.Result.failure(Exception("User not logged in"))
-
-        return when (val result = profileService.updateCampaignId(uuid, campaignId)) {
-            is Result.Success -> kotlin.Result.success(Unit)
-            is Result.Error -> kotlin.Result.failure(result.exception ?: Exception(result.message))
-        }
+            ?: return Result.Error(AppError.Unknown("User not logged in"))
+        return profileService.updateCampaignId(uuid, campaignId)
     }
 
-    override suspend fun refreshProfile(): kotlin.Result<ProfileData> {
+    override suspend fun refreshProfile(): Result<ProfileData?> {
         val uuid = getCurrentUuid()
-            ?: return kotlin.Result.failure(Exception("User not logged in"))
+            ?: return Result.Error(AppError.Unknown("User not logged in"))
 
         return when (val result = profileService.getProfileByUuid(uuid)) {
             is Result.Success -> {
                 _profile.value = result.data
-                kotlin.Result.success(result.data)
+                result
             }
 
-            is Result.Error -> kotlin.Result.failure(result.exception ?: Exception(result.message))
+            is Result.Error -> result
         }
     }
 
     override suspend fun createProfileIfNotExists(
         email: String,
         campaignId: Int?
-    ): kotlin.Result<Unit> {
+    ): Result<Unit> {
         val uuid = getCurrentUuid()
-            ?: return kotlin.Result.failure(Exception("User not logged in"))
-
-        return when (val result =
-            profileService.createProfileIfNotExists(uuid, email, campaignId)) {
-            is Result.Success -> kotlin.Result.success(Unit)
-            is Result.Error -> kotlin.Result.failure(result.exception ?: Exception(result.message))
-        }
+            ?: return Result.Error(AppError.Unknown("User not logged in"))
+        return profileService.createProfileIfNotExists(uuid, email, campaignId)
     }
 }
 

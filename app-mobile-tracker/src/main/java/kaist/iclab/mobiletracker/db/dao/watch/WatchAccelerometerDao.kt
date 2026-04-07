@@ -36,10 +36,10 @@ interface WatchAccelerometerDao : BaseDao<WatchAccelerometerEntity, WatchAcceler
     fun getDailyAccelerometerCount(afterTimestamp: Long): Flow<Int>
 
     @Query("SELECT COUNT(*) FROM watch_accelerometer WHERE timestamp >= :afterTimestamp")
-    suspend fun getRecordCountAfterTimestamp(afterTimestamp: Long): Int
+    override suspend fun getRecordCountAfterTimestamp(afterTimestamp: Long): Int
 
     @Query("SELECT * FROM watch_accelerometer WHERE timestamp >= :afterTimestamp ORDER BY CASE WHEN :isAscending = 1 THEN timestamp END ASC, CASE WHEN :isAscending = 0 THEN timestamp END DESC LIMIT :limit OFFSET :offset")
-    suspend fun getRecordsPaginated(
+    override suspend fun getRecordsPaginated(
         afterTimestamp: Long,
         isAscending: Boolean,
         limit: Int,
@@ -47,10 +47,13 @@ interface WatchAccelerometerDao : BaseDao<WatchAccelerometerEntity, WatchAcceler
     ): List<WatchAccelerometerEntity>
 
     @Query("DELETE FROM watch_accelerometer WHERE id = :recordId")
-    suspend fun deleteById(recordId: Long)
+    override suspend fun deleteById(recordId: Long)
 
     @Query("SELECT eventId FROM watch_accelerometer WHERE id = :recordId")
-    suspend fun getEventIdById(recordId: Long): String?
+    override suspend fun getEventIdById(recordId: Long): String?
+
+    @Query("DELETE FROM watch_accelerometer WHERE timestamp < :timestamp")
+    override suspend fun deleteDataBefore(timestamp: Long)
 
     @Query("DELETE FROM watch_accelerometer")
     override suspend fun deleteAll()

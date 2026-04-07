@@ -3,6 +3,7 @@
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
 
     <uses-feature android:name="android.hardware.type.watch" />
 
@@ -11,6 +12,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
         <uses-library
@@ -27,7 +29,7 @@
 
         <service
             android:name=".storage.SensorDataReceiver$SensorDataReceiverService"
-            android:foregroundServiceType="specialUse" />
+            android:foregroundServiceType="health" />
 
         <activity
             android:name=".MainActivity"

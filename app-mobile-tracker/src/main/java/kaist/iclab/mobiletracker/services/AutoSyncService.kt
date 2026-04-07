@@ -1,35 +1,45 @@
 package kaist.iclab.mobiletracker.services
 
-import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.IBinder
 import android.util.Log
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.lifecycleScope
 import kaist.iclab.mobiletracker.Constants
 import kaist.iclab.mobiletracker.R
-import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kaist.iclab.mobiletracker.helpers.LanguageHelper
-import kaist.iclab.mobiletracker.repository.Result
+import kaist.iclab.mobiletracker.repository.onFailure
+import kaist.iclab.mobiletracker.repository.onSuccess
 import kaist.iclab.mobiletracker.services.upload.PhoneSensorUploadService
 import kaist.iclab.mobiletracker.services.upload.WatchSensorUploadService
 import kaist.iclab.mobiletracker.utils.NotificationHelper
 import kaist.iclab.mobiletracker.utils.SensorTypeHelper
 import kaist.iclab.tracker.sensor.core.Sensor
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.core.component.KoinComponent
 import org.koin.core.qualifier.named
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Service that handles automatic synchronization of sensor data to Supabase
  * based on configured interval and network preferences.
+ *
+ * Uses LifecycleService for automatic coroutine lifecycle management.
+ * Sensor uploads are parallelized and protected by a sync lock to prevent
+ * overlapping sync cycles.
  */
-class AutoSyncService : Service(), KoinComponent {
+class AutoSyncService : LifecycleService(), KoinComponent {
     companion object {
         private const val TAG = "AutoSyncService"
 
@@ -55,33 +65,27 @@ class AutoSyncService : Service(), KoinComponent {
     }
     private val phoneSensorUploadService: PhoneSensorUploadService by inject()
     private val watchSensorUploadService: WatchSensorUploadService by inject()
-    private val sensors by inject<List<Sensor<*, *>>>(qualifier = named("sensors"))
+    private val sensors by inject<List<Sensor<*, *>>>(qualifier = named("phoneSensors"))
 
-    // Injected coroutine scope
-    private val appScope by inject<AppCoroutineScope>()
-    private var syncJob: Job? = null
     private var lastSyncTime: Long = 0
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    /** Prevents overlapping sync cycles when uploads take longer than the interval */
+    private val isSyncing = AtomicBoolean(false)
 
-    override fun onCreate() {
-        super.onCreate()
-
+    override fun onBind(intent: Intent): IBinder? {
+        super.onBind(intent)
+        return null
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         startAutoSync()
         return START_STICKY
     }
 
-
-    override fun onDestroy() {
-        super.onDestroy()
-        stopAutoSync()
-    }
-
     /**
-     * Starts the auto-sync coroutine that periodically checks and syncs data
+     * Starts the auto-sync coroutine that periodically checks and syncs data.
+     * Uses lifecycleScope for automatic cancellation on service destruction.
      */
     private fun startAutoSync() {
         Log.d(TAG, "Starting auto sync service")
@@ -92,11 +96,8 @@ class AutoSyncService : Service(), KoinComponent {
             Constants.Notification.CHANNEL_NAME_AUTO_SYNC
         )
 
-        if (syncJob?.isActive == true) {
-            return
-        }
-
-        syncJob = appScope.io.launch {
+        // lifecycleScope automatically cancels when service is destroyed
+        lifecycleScope.launch(Dispatchers.IO) {
             lastSyncTime = System.currentTimeMillis()
 
             while (isActive) {
@@ -112,15 +113,8 @@ class AutoSyncService : Service(), KoinComponent {
     }
 
     /**
-     * Stops the auto-sync coroutine
-     */
-    private fun stopAutoSync() {
-        syncJob?.cancel()
-        syncJob = null
-    }
-
-    /**
-     * Checks if sync conditions are met and triggers sync if needed
+     * Checks if sync conditions are met and triggers sync if needed.
+     * Skips if a previous sync cycle is still running.
      */
     private suspend fun checkAndSyncIfNeeded() {
         val currentTime = System.currentTimeMillis()
@@ -143,8 +137,14 @@ class AutoSyncService : Service(), KoinComponent {
             return
         }
 
+        // Skip if a previous sync is still running
+        if (!isSyncing.compareAndSet(false, true)) {
+            return
+        }
+
         // Check network conditions
         if (!isNetworkConditionMet()) {
+            isSyncing.set(false)
             val networkMode = syncTimestampService.getAutoSyncNetworkMode()
             val networkModeName = when (networkMode) {
                 Constants.AutoSync.NETWORK_WIFI_MOBILE -> "WiFi/Mobile"
@@ -157,10 +157,14 @@ class AutoSyncService : Service(), KoinComponent {
         }
 
         // All conditions met, trigger sync
-        appScope.io.launch {
-            uploadAllSensorData()
-        }
         lastSyncTime = currentTime
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                uploadAllSensorData()
+            } finally {
+                isSyncing.set(false)
+            }
+        }
     }
 
     /**
@@ -202,65 +206,66 @@ class AutoSyncService : Service(), KoinComponent {
     }
 
     /**
-     * Uploads all sensor data for all phone sensors
+     * Uploads all sensor data in parallel for faster sync cycles.
+     * Phone sensors and watch sensors are uploaded concurrently.
      */
     private suspend fun uploadAllSensorData() {
-        var successCount = 0
-        var failureCount = 0
-        var skippedCount = 0
-        val failedSensors = mutableListOf<String>()
+        val successCount = AtomicInteger(0)
+        val failureCount = AtomicInteger(0)
+        val skippedCount = AtomicInteger(0)
+        val failedSensors = Collections.synchronizedList(mutableListOf<String>())
 
         try {
-            sensors.forEach { sensor ->
-                if (phoneSensorUploadService.hasDataToUpload(sensor.id)) {
-                    when (val result = phoneSensorUploadService.uploadSensorData(sensor.id)) {
-                        is Result.Success -> {
-                            successCount++
-                        }
+            val startTime = System.currentTimeMillis()
 
-                        is Result.Error -> {
-                            failureCount++
-                            failedSensors.add(sensor.name)
-                            Log.e(
-                                TAG,
-                                "Error uploading data for ${sensor.name}: ${result.message}",
-                                result.exception
-                            )
-                        }
+            // Launch all phone sensor uploads in parallel
+            val phoneJobs = sensors.map { sensor ->
+                lifecycleScope.async(Dispatchers.IO) {
+                    if (phoneSensorUploadService.hasDataToUpload(sensor.id)) {
+                        phoneSensorUploadService.uploadSensorData(sensor.id)
+                            .onSuccess { successCount.incrementAndGet() }
+                            .onFailure { e ->
+                                failureCount.incrementAndGet()
+                                failedSensors.add(sensor.name)
+                                Log.e(TAG, "Upload failed for ${sensor.name}: ${e.message}", e)
+                            }
+                    } else {
+                        skippedCount.incrementAndGet()
                     }
-                } else {
-                    skippedCount++
                 }
             }
 
-            // Upload all watch sensors
-            SensorTypeHelper.watchSensorIds.forEach { sensorId ->
-                if (watchSensorUploadService.hasDataToUpload(sensorId)) {
-                    when (val result = watchSensorUploadService.uploadSensorData(sensorId)) {
-                        is Result.Success -> {
-                            successCount++
-                        }
-
-                        is Result.Error -> {
-                            failureCount++
-                            failedSensors.add(sensorId)
-                            Log.e(
-                                TAG,
-                                "Error uploading watch data for $sensorId: ${result.message}",
-                                result.exception
-                            )
-                        }
+            // Launch all watch sensor uploads in parallel
+            val watchJobs = SensorTypeHelper.watchSensorIds.map { sensorId ->
+                lifecycleScope.async(Dispatchers.IO) {
+                    if (watchSensorUploadService.hasDataToUpload(sensorId)) {
+                        watchSensorUploadService.uploadSensorData(sensorId)
+                            .onSuccess { successCount.incrementAndGet() }
+                            .onFailure { e ->
+                                failureCount.incrementAndGet()
+                                failedSensors.add(sensorId)
+                                Log.e(TAG, "Upload failed for $sensorId: ${e.message}", e)
+                            }
+                    } else {
+                        skippedCount.incrementAndGet()
                     }
-                } else {
-                    skippedCount++
                 }
             }
 
-            // Show notification based on results (show success OR failure, not both)
-            if (successCount > 0) {
-                showSuccessNotification(successCount)
-            } else if (failureCount > 0) {
-                showFailureNotification(failureCount, failedSensors)
+            // Wait for all uploads to complete
+            (phoneJobs + watchJobs).awaitAll()
+
+            val elapsed = System.currentTimeMillis() - startTime
+            Log.d(
+                TAG, "Auto-sync completed in ${elapsed}ms: " +
+                        "${successCount.get()} success, ${failureCount.get()} failed, ${skippedCount.get()} skipped"
+            )
+
+            // Show notification based on results
+            if (successCount.get() > 0) {
+                showSuccessNotification(successCount.get())
+            } else if (failureCount.get() > 0) {
+                showFailureNotification(failureCount.get(), failedSensors)
             }
 
         } catch (e: Exception) {

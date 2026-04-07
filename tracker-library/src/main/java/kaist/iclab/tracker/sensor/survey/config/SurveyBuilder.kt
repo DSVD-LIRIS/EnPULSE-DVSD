@@ -37,9 +37,9 @@ object SurveyBuilder {
             description = config.notification.description,
             icon = android.R.drawable.ic_menu_edit // Default icon, can be customized later if needed
         )
-        
+
         val questions = config.questions.mapNotNull { buildQuestion(it) }
-        
+
         return Survey(
             scheduleMethod = scheduleMethod,
             notificationConfig = notificationConfig,
@@ -50,9 +50,11 @@ object SurveyBuilder {
     private fun buildSchedule(config: ScheduleConfig): SurveyScheduleMethod {
         return when (config.type.uppercase()) {
             "TIME_OF_DAY" -> {
-                val times = config.timeOfDay?.mapNotNull { parseTime(it) } ?: listOf(TimeUnit.HOURS.toMillis(12))
+                val times = config.timeOfDay?.mapNotNull { parseTime(it) }
+                    ?: listOf(TimeUnit.HOURS.toMillis(12))
                 SurveyScheduleMethod.Fixed(timeOfDay = times)
             }
+
             "ESM" -> {
                 val esm = config.esm
                 if (esm != null) {
@@ -67,6 +69,7 @@ object SurveyBuilder {
                     SurveyScheduleMethod.Manual()
                 }
             }
+
             else -> SurveyScheduleMethod.Manual()
         }
     }
@@ -88,10 +91,11 @@ object SurveyBuilder {
 
     private fun buildQuestion(config: QuestionConfig): Question<*>? {
         val childrenQuestions = config.children?.mapNotNull { childConfig ->
-             buildTrigger(config.type, childConfig) 
+            buildTrigger(config.type, childConfig)
         } ?: emptyList()
 
         return try {
+            @Suppress("UNCHECKED_CAST")
             when (config.type.uppercase()) {
                 "TEXT" -> TextQuestion(
                     id = config.id,
@@ -99,14 +103,17 @@ object SurveyBuilder {
                     isMandatory = config.isMandatory,
                     questionTrigger = childrenQuestions as? List<QuestionTrigger<String>>
                 )
+
                 "NUMBER" -> NumberQuestion(
                     id = config.id,
                     question = config.text,
                     isMandatory = config.isMandatory,
                     questionTrigger = childrenQuestions as? List<QuestionTrigger<Double?>>
                 )
+
                 "RADIO" -> {
-                    val options = config.options?.map { Option(it.display, it.allowFreeResponse) } ?: emptyList()
+                    val options = config.options?.map { Option(it.display, it.allowFreeResponse) }
+                        ?: emptyList()
                     if (options.isEmpty()) return null
                     RadioQuestion(
                         id = config.id,
@@ -116,8 +123,10 @@ object SurveyBuilder {
                         questionTrigger = childrenQuestions as? List<QuestionTrigger<Int?>>
                     )
                 }
+
                 "CHECKBOX" -> {
-                    val options = config.options?.map { Option(it.display, it.allowFreeResponse) } ?: emptyList()
+                    val options = config.options?.map { Option(it.display, it.allowFreeResponse) }
+                        ?: emptyList()
                     if (options.isEmpty()) return null
                     CheckboxQuestion(
                         id = config.id,
@@ -127,6 +136,7 @@ object SurveyBuilder {
                         questionTrigger = childrenQuestions as? List<QuestionTrigger<Set<Int>>>
                     )
                 }
+
                 else -> null
             }
         } catch (e: Exception) {
@@ -136,9 +146,10 @@ object SurveyBuilder {
 
     @Suppress("UNCHECKED_CAST")
     private fun buildTrigger(parentType: String, config: ChildQuestionConfig): QuestionTrigger<*>? {
-        val expression = parseExpression(config.trigger.op, config.trigger.value, parentType) ?: return null
+        val expression =
+            parseExpression(config.trigger.op, config.trigger.value, parentType) ?: return null
         val questions = config.questions.mapNotNull { buildQuestion(it) }
-        
+
         if (questions.isEmpty()) return null
 
         return when (parentType.uppercase()) {
@@ -150,7 +161,11 @@ object SurveyBuilder {
         }
     }
 
-    private fun parseExpression(op: String, value: JsonElement?, parentType: String): Expression<*>? {
+    private fun parseExpression(
+        op: String,
+        value: JsonElement?,
+        parentType: String
+    ): Expression<*>? {
         return when (parentType.uppercase()) {
             "TEXT" -> parseTextExpression(op, value)
             "NUMBER" -> parseNumberExpression(op, value)
@@ -204,7 +219,7 @@ object SurveyBuilder {
     private fun parseCheckboxExpression(op: String, value: JsonElement?): Expression<Set<Int>>? {
         return when (op) {
             "Equal" -> {
-                 val array = try {
+                val array = try {
                     if (value is JsonArray) {
                         Json.decodeFromJsonElement<List<Int>>(value)
                     } else if (value != null) {
@@ -215,10 +230,12 @@ object SurveyBuilder {
                 }
                 Predicate.Equal(array.toSet())
             }
+
             "Contains" -> {
                 val target = value?.jsonPrimitive?.content?.toDoubleOrNull()?.toInt() ?: return null
                 SetPredicate.Contains<Int, Set<Int>>(target)
             }
+
             else -> null
         }
     }

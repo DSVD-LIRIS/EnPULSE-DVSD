@@ -77,14 +77,20 @@ class BLEHelper(
 
     /**
      * Send ACK (acknowledgment) back to watch after successful data processing.
+     * Format: "batchId:status:endTimestamp"
      */
-    private suspend fun sendAck(batchId: String, success: Boolean) {
+    private suspend fun sendAck(batchId: String, success: Boolean, endTimestamp: Long?) {
         try {
-            val ackData = "$batchId:${if (success) "OK" else "FAIL"}"
+            val status = if (success) "OK" else "FAIL"
+            val ackData = if (endTimestamp != null) {
+                "$batchId:$status:$endTimestamp"
+            } else {
+                "$batchId:$status"
+            }
             bleChannel.send(AppConfig.BLEKeys.SYNC_ACK, ackData)
             Log.d(
                 AppConfig.LogTags.PHONE_BLE,
-                "Sent ACK for batch $batchId: ${if (success) "OK" else "FAIL"}"
+                "Sent ACK for batch $batchId: $status (ts=$endTimestamp)"
             )
         } catch (e: Exception) {
             Log.e(
@@ -93,6 +99,20 @@ class BLEHelper(
                 e
             )
         }
+    }
+
+    /**
+     * Parse CHUNK_END_TS from the CSV header.
+     * Expected format: "BATCH:...\nSINCE:...\nCHUNK_END_TS:123456789\n---DATA---"
+     */
+    private fun parseChunkEndTimestamp(csvData: String): Long? {
+        val lines = csvData.lines()
+        for (line in lines) {
+            if (line.startsWith("CHUNK_END_TS:")) {
+                return line.removePrefix("CHUNK_END_TS:").trim().toLongOrNull()
+            }
+        }
+        return null
     }
 
     /**
@@ -322,13 +342,15 @@ class BLEHelper(
 
                     // Send success ACK back to watch if batch ID is present
                     if (batchId != null) {
-                        sendAck(batchId, success = true)
+                        val chunkEndTs = parseChunkEndTimestamp(csvData)
+                        sendAck(batchId, success = true, endTimestamp = chunkEndTs)
                     }
                 } else {
                     Log.w(AppConfig.LogTags.PHONE_BLE, "No sensor data found in CSV")
                     // Still send ACK for empty but valid batch
                     if (batchId != null) {
-                        sendAck(batchId, success = true)
+                        val chunkEndTs = parseChunkEndTimestamp(csvData)
+                        sendAck(batchId, success = true, endTimestamp = chunkEndTs)
                     }
                 }
             } catch (e: Exception) {
@@ -339,7 +361,8 @@ class BLEHelper(
                 )
                 // Send failure ACK if we have a batch ID
                 if (batchId != null) {
-                    sendAck(batchId, success = false)
+                    val chunkEndTs = parseChunkEndTimestamp(csvData)
+                    sendAck(batchId, success = false, endTimestamp = chunkEndTs)
                 }
             }
         }

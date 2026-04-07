@@ -67,9 +67,9 @@ class SkinTemperatureSensor(
                 DataPoint(
                     timestamp,
                     it.timestamp,
-                    it.getValue(ValueKey.SkinTemperatureSet.OBJECT_TEMPERATURE),
-                    it.getValue(ValueKey.SkinTemperatureSet.AMBIENT_TEMPERATURE),
-                    it.getValue(ValueKey.SkinTemperatureSet.STATUS)
+                    it.getValue(ValueKey.SkinTemperatureSet.OBJECT_TEMPERATURE) ?: 0.0f,
+                    it.getValue(ValueKey.SkinTemperatureSet.AMBIENT_TEMPERATURE) ?: 0.0f,
+                    it.getValue(ValueKey.SkinTemperatureSet.STATUS) ?: 0
                 )
             }
         )

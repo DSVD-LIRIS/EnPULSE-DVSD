@@ -51,7 +51,7 @@ sealed class Question<T>(
     }
 
     fun setResponse(response: T) {
-        if(!isAllowedResponse(response)) throw IllegalArgumentException("Invalid response value: $response")
+        if (!isAllowedResponse(response)) throw IllegalArgumentException("Invalid response value: $response")
         _response.value = response
     }
 
@@ -62,7 +62,7 @@ sealed class Question<T>(
     abstract fun eval(expr: Expression<T>, value: T): Boolean
 
     private fun setIsValid() {
-        if(isHidden.value || !isMandatory) _isValid.value = true
+        if (isHidden.value || !isMandatory) _isValid.value = true
         else _isValid.value = !isEmpty(response.value)
     }
 }

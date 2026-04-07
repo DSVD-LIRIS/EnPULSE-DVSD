@@ -1,6 +1,5 @@
 package kaist.iclab.mobiletracker.repository
 
-import android.util.Log
 import kaist.iclab.mobiletracker.data.DeviceType
 import kaist.iclab.mobiletracker.db.dao.common.BaseDao
 import kaist.iclab.mobiletracker.db.dao.common.LocationDao
@@ -16,7 +15,7 @@ import kaist.iclab.tracker.sensor.core.SensorEntity
 class PhoneSensorRepositoryImpl(
     private val sensorDataStorages: Map<String, BaseDao<*, *>>,
     private val supabaseHelper: SupabaseHelper,
-    @Suppress("unused") private val appScope: AppCoroutineScope // Keep injection to avoid breaking module but mark unused or remove if desired
+    @Suppress("unused") private val appScope: AppCoroutineScope
 ) : PhoneSensorRepository {
 
     companion object {
@@ -24,17 +23,12 @@ class PhoneSensorRepositoryImpl(
     }
 
     override suspend fun insertSensorData(sensorId: String, entity: SensorEntity): Result<Unit> {
-        return runCatchingSuspend {
+        return ErrorClassifier.runClassified(TAG, "insert $sensorId") {
             @Suppress("UNCHECKED_CAST")
             val dao = sensorDataStorages[sensorId] as? BaseDao<SensorEntity, *>
-            if (dao != null) {
-                val userUuid = SupabaseSessionHelper.getUuidOrNull(supabaseHelper.supabaseClient)
-                dao.insert(entity, userUuid)
-            } else {
-                val error = IllegalStateException("No DAO found for sensor ID: $sensorId")
-                Log.w(TAG, error.message ?: "Unknown error")
-                throw error
-            }
+                ?: throw IllegalStateException("No DAO found for sensor ID: $sensorId")
+            val userUuid = SupabaseSessionHelper.getUuidOrNull(supabaseHelper.supabaseClient)
+            dao.insert(entity, userUuid)
         }
     }
 
@@ -42,32 +36,21 @@ class PhoneSensorRepositoryImpl(
         sensorId: String,
         entities: List<SensorEntity>
     ): Result<Unit> {
-        return runCatchingSuspend {
+        return ErrorClassifier.runClassified(TAG, "insertBatch $sensorId") {
             @Suppress("UNCHECKED_CAST")
             val dao = sensorDataStorages[sensorId] as? BaseDao<SensorEntity, *>
-            if (dao != null) {
-                val userUuid = SupabaseSessionHelper.getUuidOrNull(supabaseHelper.supabaseClient)
-                // Assuming BaseDao has insertBatch based on previous context, user approved changes imply BaseDao handles this
-                dao.insertBatch(entities, userUuid)
-            } else {
-                val error = IllegalStateException("No DAO found for sensor ID: $sensorId")
-                Log.w(TAG, error.message ?: "Unknown error")
-                throw error
-            }
+                ?: throw IllegalStateException("No DAO found for sensor ID: $sensorId")
+            val userUuid = SupabaseSessionHelper.getUuidOrNull(supabaseHelper.supabaseClient)
+            dao.insertBatch(entities, userUuid)
         }
     }
 
     override suspend fun deleteAllSensorData(sensorId: String): Result<Unit> {
-        return runCatchingSuspend {
+        return ErrorClassifier.runClassified(TAG, "deleteAll $sensorId") {
             @Suppress("UNCHECKED_CAST")
             val dao = sensorDataStorages[sensorId] as? BaseDao<*, *>
-            if (dao != null) {
-                dao.deleteAll()
-            } else {
-                val error = IllegalStateException("No DAO found for sensor ID: $sensorId")
-                Log.w(TAG, error.message ?: "Unknown error")
-                throw error
-            }
+                ?: throw IllegalStateException("No DAO found for sensor ID: $sensorId")
+            dao.deleteAll()
         }
     }
 
@@ -76,7 +59,7 @@ class PhoneSensorRepositoryImpl(
     }
 
     override suspend fun flushAllData(): Result<Unit> {
-        return runCatchingSuspend {
+        return ErrorClassifier.runClassified(TAG, "flush all phone data") {
             sensorDataStorages.values.forEach { dao ->
                 @Suppress("UNCHECKED_CAST")
                 (dao as? BaseDao<*, *>)?.deleteAll()
@@ -85,8 +68,7 @@ class PhoneSensorRepositoryImpl(
     }
 
     override suspend fun getLatestRecordedTimestamp(sensorId: String): Long? {
-        return runCatchingSuspend {
-            // Special handling for Location sensor to only count phone data
+        return ErrorClassifier.runClassified(TAG, "getLatestTimestamp $sensorId") {
             if (sensorId == "Location") {
                 val locationDao = sensorDataStorages[sensorId] as? LocationDao
                 locationDao?.getLatestTimestampByDeviceType(DeviceType.PHONE.value)
@@ -99,8 +81,7 @@ class PhoneSensorRepositoryImpl(
     }
 
     override suspend fun getRecordCount(sensorId: String): Int {
-        return runCatchingSuspend {
-            // Special handling for Location sensor to only count phone data
+        return ErrorClassifier.runClassified(TAG, "getRecordCount $sensorId") {
             if (sensorId == "Location") {
                 val locationDao = sensorDataStorages[sensorId] as? LocationDao
                 locationDao?.getRecordCountByDeviceType(DeviceType.PHONE.value) ?: 0

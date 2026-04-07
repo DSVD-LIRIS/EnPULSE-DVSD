@@ -2,7 +2,16 @@ package kaist.iclab.mobiletracker
 
 /**
  * Centralized constants for the mobile tracker app.
- * All constants used across the app should be defined here.
+ *
+ * This file contains internal app logic constants such as:
+ * - Database table names and batch sizes
+ * - Shared Preferences keys
+ * - Synchronization intervals and network types
+ * - Notification channel IDs and names
+ * - Internal sensor identifiers used for logic
+ *
+ * For environment-specific values like Supabase URLs and API keys,
+ * see [kaist.iclab.mobiletracker.config.AppConfig].
  */
 object Constants {
     /**
@@ -46,16 +55,28 @@ object Constants {
 
         // Intervals
         const val INTERVAL_NONE = 0L
-        const val INTERVAL_30_SEC = 30L * 1000
-        const val INTERVAL_1_MIN = 60L * 1000
-        const val INTERVAL_15_MIN = 15L * 60 * 1000
+        const val INTERVAL_5_MIN = 5L * 60 * 1000
         const val INTERVAL_30_MIN = 30L * 60 * 1000
         const val INTERVAL_60_MIN = 60L * 60 * 1000
+        const val INTERVAL_2_HOUR = 2L * 60 * 60 * 1000
+        const val INTERVAL_6_HOUR = 6L * 60 * 60 * 1000
+        const val INTERVAL_12_HOUR = 12L * 60 * 60 * 1000
 
         // Network Types
         const val NETWORK_WIFI_MOBILE = 0
         const val NETWORK_WIFI_ONLY = 1
         const val NETWORK_MOBILE_ONLY = 2
+    }
+
+    /**
+     * Network Constants
+     */
+    object Network {
+        /** Timeout for Supabase operations (e.g., edge function calls, DB queries) */
+        const val SUPABASE_REQUEST_TIMEOUT_MS = 60_000L
+
+        /** Max records per batch to avoid HTTP timeouts on large uploads */
+        const val UPLOAD_BATCH_SIZE = 500
     }
 
     /**

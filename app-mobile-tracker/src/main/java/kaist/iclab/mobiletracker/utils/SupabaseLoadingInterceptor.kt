@@ -1,7 +1,9 @@
 package kaist.iclab.mobiletracker.utils
 
+import kaist.iclab.mobiletracker.Constants
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 
 /**
  * Interceptor for tracking active Supabase operations to show/hide loading overlay.
@@ -47,14 +49,19 @@ object SupabaseLoadingInterceptor {
     }
 
     /**
-     * Execute a Supabase operation with automatic loading state management
+     * Execute a Supabase operation with automatic loading state management and timeout.
+     * If the operation exceeds [Constants.Network.SUPABASE_REQUEST_TIMEOUT_MS],
+     * a TimeoutCancellationException is thrown (classified as AppError.Timeout by ErrorClassifier).
+     *
      * @param operation The suspend function to execute
      * @return The result of the operation
      */
     suspend fun <T> withLoading(operation: suspend () -> T): T {
         startOperation()
         return try {
-            operation()
+            withTimeout(Constants.Network.SUPABASE_REQUEST_TIMEOUT_MS) {
+                operation()
+            }
         } finally {
             endOperation()
         }

@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.helpers.ImageAsset
 import kaist.iclab.mobiletracker.helpers.LanguageHelper
@@ -154,7 +155,7 @@ fun LoginScreen(
                 ) {
                     // Google "G" logo
                     Icon(
-                        painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_google_logo),
+                        painter = painterResource(id = R.drawable.ic_google_logo),
                         contentDescription = "Google Logo",
                         modifier = Modifier.size(Styles.BUTTON_ICON_SIZE),
                         tint = Color.Unspecified

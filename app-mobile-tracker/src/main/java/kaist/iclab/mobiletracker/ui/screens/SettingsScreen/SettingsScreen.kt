@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
@@ -120,12 +119,7 @@ fun SettingsScreen(
                             onClick = { navController.navigate(Screen.PhoneSensor.route) },
                             iconTint = AppColors.IconPhone
                         )
-                        AppMenuItem(
-                            title = context.getString(R.string.menu_survey),
-                            icon = Icons.Filled.Assignment,
-                            onClick = { navController.navigate(Screen.Survey.route) },
-                            iconTint = AppColors.IconPhone
-                        )
+
                         AppMenuItem(
                             title = context.getString(R.string.menu_about),
                             icon = Icons.Filled.Info,

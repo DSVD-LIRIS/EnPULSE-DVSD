@@ -6,7 +6,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import kotlin.collections.mapOf
 
 class CheckboxQuestion(
     override val id: Int,
@@ -14,14 +13,15 @@ class CheckboxQuestion(
     override val isMandatory: Boolean,
     val option: List<Option>,
     questionTrigger: List<QuestionTrigger<Set<Int>>>? = null
-): Question<Set<Int>>(
+) : Question<Set<Int>>(
     id, question, isMandatory, setOf(), questionTrigger
 ) {
     private val _otherResponse = MutableStateFlow<Map<Int, String>>(mapOf())
     val otherResponse = _otherResponse.asStateFlow()
 
     init {
-        _otherResponse.value = option.indices.associateWith { "" }.filter { option[it.key].allowFreeResponse }
+        _otherResponse.value =
+            option.indices.associateWith { "" }.filter { option[it.key].allowFreeResponse }
     }
 
     override fun isAllowedResponse(response: Set<Int>): Boolean {
@@ -33,7 +33,7 @@ class CheckboxQuestion(
     fun toggleResponse(responseItemIdx: Int, isChecked: Boolean) {
         val newResponse = this.response.value.toMutableSet()
         newResponse.apply {
-            if(isChecked) add(responseItemIdx)
+            if (isChecked) add(responseItemIdx)
             else remove(responseItemIdx)
         }
 
@@ -54,7 +54,10 @@ class CheckboxQuestion(
                 response.value.forEach {
                     add(buildJsonObject {
                         put("value", it)
-                        if(it in otherResponse.value.keys) put("otherResponse", otherResponse.value[it])
+                        if (it in otherResponse.value.keys) put(
+                            "otherResponse",
+                            otherResponse.value[it]
+                        )
                     })
                 }
             }
@@ -65,7 +68,8 @@ class CheckboxQuestion(
 
     override fun initResponse() {
         setResponse(setOf())
-        _otherResponse.value = option.indices.associateWith { "" }.filter { option[it.key].allowFreeResponse }
+        _otherResponse.value =
+            option.indices.associateWith { "" }.filter { option[it.key].allowFreeResponse }
     }
 
     override fun eval(expr: Expression<Set<Int>>, value: Set<Int>): Boolean =
@@ -76,7 +80,7 @@ class CheckboxQuestion(
             is SetPredicate.Contains<*, *> -> value.contains(expr.value)
 
             is Operator.And -> eval(expr.a, value) && eval(expr.b, value)
-            is Operator.Or  -> eval(expr.a, value) || eval(expr.b, value)
+            is Operator.Or -> eval(expr.a, value) || eval(expr.b, value)
             is Operator.Not -> !eval(expr.a, value)
 
             else -> error("Unreachable")

@@ -1,28 +1,52 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.kotlinCompose)
 
-    kotlin("plugin.serialization") version "2.2.10"
+    alias(libs.plugins.kotlinSerialization)
 }
 
 android {
     namespace = "com.example.test_sync"
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "kaist.iclab.trackerSystem"
-        minSdk = 30
-        targetSdk = 36
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load local.properties for local development
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { localProperties.load(it) }
+        }
+
+        // Supabase credentials for test-sync: read from local.properties or environment (for CI)
+        val supabaseUrl: String = findProperty("SUPABASE_URL")?.toString()
+            ?: localProperties.getProperty("SUPABASE_URL")
+            ?: System.getenv("SUPABASE_URL")
+            ?: "MISSING_SUPABASE_URL"
+
+        val supabaseAnonKey: String = findProperty("SUPABASE_ANON_KEY")?.toString()
+            ?: localProperties.getProperty("TSUPABASE_ANON_KEY")
+            ?: System.getenv("SUPABASE_ANON_KEY")
+            ?: "MISSING_SUPABASE_ANON_KEY"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -36,6 +60,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

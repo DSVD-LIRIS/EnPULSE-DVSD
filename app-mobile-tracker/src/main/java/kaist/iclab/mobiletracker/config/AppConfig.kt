@@ -1,27 +1,39 @@
 package kaist.iclab.mobiletracker.config
 
+import kaist.iclab.mobiletracker.BuildConfig
+
 /**
- * TODO: Change approach using environment variables
- * Configuration file for test-sync app.
- * Contains all implemented configuration variables.
+ * Environment-specific configuration for the mobile tracker app.
  *
- * ⚠️ IMPORTANT: Replace placeholder values with your actual configuration!
+ * This file contains values that vary by environment or external integration:
+ * - Supabase credentials (URL, keys) injected via BuildConfig
+ * - Supabase remote table names
+ * - BLE communication keys
+ * - Logging tags for debugging
+ *
+ * For internal app constants (DB settings, Prefs keys, Intervals),
+ * see [kaist.iclab.mobiletracker.Constants].
  */
 object AppConfig {
     /**
      * Supabase project URL
-     * Get this from your Supabase project dashboard > Settings > API
-     * Example: https://your-project-id.supabase.co
+     * Injected from local.properties (SUPABASE_URL) or environment variable
      */
-    const val SUPABASE_URL = "https://mobile-agent-data.iclab.dev/"
+    val SUPABASE_URL: String = BuildConfig.SUPABASE_URL
 
     /**
      * Supabase anonymous/public key
-     * Get this from your Supabase project settings > API > Project API keys
+     * Injected from local.properties (SUPABASE_ANON_KEY) or environment variable
      * This is safe to use in client applications
      */
-    const val SUPABASE_ANON_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYyODczMjAwLCJleHAiOjE5MjA2Mzk2MDB9.D-Hqc9yhQJo6NHkBSllMzu-P435ay6-L_JYhEfO58TQ"
+    val SUPABASE_ANON_KEY: String = BuildConfig.SUPABASE_ANON_KEY
+
+    /**
+     * Supabase service role key
+     * Injected from local.properties (SUPABASE_SERVICE_ROLE_KEY) or environment variable
+     * ⚠️ WARNING: Handle with care, this has administrative privileges!
+     */
+    val SUPABASE_SERVICE_ROLE_KEY: String = BuildConfig.SUPABASE_SERVICE_ROLE_KEY
 
     /**
      * Supabase table names for sensor data

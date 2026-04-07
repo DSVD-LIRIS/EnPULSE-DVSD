@@ -4,13 +4,33 @@ import android.app.Activity
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kaist.iclab.mobiletracker.R
 import kaist.iclab.mobiletracker.repository.AuthRepository
 import kaist.iclab.mobiletracker.repository.UserProfileRepository
+import kaist.iclab.mobiletracker.repository.onFailure
 import kaist.iclab.tracker.auth.Authentication
 import kaist.iclab.tracker.auth.UserState
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for authentication and user profile management.
+ *
+ * Handles Google Sign-In authentication flow, token management, and user profile
+ * synchronization with Supabase. Automatically:
+ * - Requests token after successful login
+ * - Saves token to repository for persistence
+ * - Creates user profile in Supabase if not exists
+ * - Loads and caches user profile data
+ * - Clears profile data on logout
+ *
+ * @param authentication Authentication wrapper for login/logout operations
+ * @param authRepository Repository for token persistence
+ * @param userProfileRepository Repository for user profile data
+ */
 class AuthViewModel(
     private val authentication: Authentication,
     private val authRepository: AuthRepository,
@@ -19,6 +39,10 @@ class AuthViewModel(
     private val TAG = "AuthViewModel"
 
     val userState: StateFlow<UserState> = authentication.userStateFlow
+
+    // SharedFlow for UI events (like error toasts)
+    private val _uiEvent = MutableSharedFlow<AuthUiEvent>()
+    val uiEvent: SharedFlow<AuthUiEvent> = _uiEvent.asSharedFlow()
 
     // Expose cached profile from repository
     val userProfile: StateFlow<kaist.iclab.mobiletracker.data.sensors.phone.ProfileData?> =
@@ -51,9 +75,10 @@ class AuthViewModel(
                     authRepository.saveToken(currentToken)
                     lastSavedToken = currentToken
 
-                    // Save profile to profiles table if not exists, then load and cache it
+                    // Save profile to profiles table if not exists
                     saveProfileIfNotExists(state)
-                    loadUserProfile()
+                    // Then load and cache it (sequentially)
+                    loadUserProfileSuspend()
                 }
 
                 // Clear profile when user logs out
@@ -78,22 +103,28 @@ class AuthViewModel(
         userProfileRepository.createProfileIfNotExists(user.email, null)
             .onFailure { e ->
                 Log.e(TAG, "Error saving profile: ${e.message}", e)
+                _uiEvent.emit(AuthUiEvent.ShowError(R.string.toast_profile_setup_failed))
             }
     }
 
     /**
-     * Load user profile from Supabase and cache it
+     * Load user profile from Supabase and cache it (non-suspending wrapper)
      */
-    private fun loadUserProfile() {
+    fun loadUserProfile() {
         viewModelScope.launch {
-            userProfileRepository.refreshProfile()
-                .onFailure { e ->
-                    // Profile might not exist yet, which is okay
-                    if (e !is NoSuchElementException) {
-                        Log.e(TAG, "Error loading user profile: ${e.message}", e)
-                    }
-                }
+            loadUserProfileSuspend()
         }
+    }
+
+    /**
+     * Suspending function to load user profile.
+     */
+    private suspend fun loadUserProfileSuspend() {
+        userProfileRepository.refreshProfile()
+            .onFailure { e ->
+                Log.e(TAG, "Error loading user profile: ${e.message}", e)
+                _uiEvent.emit(AuthUiEvent.ShowError(R.string.toast_profile_setup_failed))
+            }
     }
 
     fun login(activity: Activity) {
@@ -102,6 +133,7 @@ class AuthViewModel(
                 authentication.login(activity)
             } catch (e: Exception) {
                 Log.e(TAG, "Login error: ${e.message}", e)
+                _uiEvent.emit(AuthUiEvent.ShowError(R.string.toast_login_failed))
             }
         }
     }
@@ -126,4 +158,11 @@ class AuthViewModel(
             authentication.getToken()
         }
     }
+}
+
+/**
+ * UI events for authentication and profile operations
+ */
+sealed class AuthUiEvent {
+    data class ShowError(val messageResId: Int) : AuthUiEvent()
 }

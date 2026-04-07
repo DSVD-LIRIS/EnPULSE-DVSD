@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.SensorsOff
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Button
@@ -28,6 +30,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -41,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -78,6 +83,13 @@ fun DataScreen(
 
     var showUploadConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var hideZeroData by remember { mutableStateOf(true) }
+
+    val filteredSensors = if (hideZeroData) {
+        uiState.sensors.filter { it.recordCount > 0 }
+    } else {
+        uiState.sensors
+    }
 
     val pullRefreshState = rememberPullToRefreshState()
 
@@ -105,12 +117,12 @@ fun DataScreen(
                     text = stringResource(R.string.data_screen_description),
                     fontSize = Styles.DESCRIPTION_FONT_SIZE,
                     color = AppColors.TextSecondary,
-                    modifier = Modifier.padding(top = Styles.SUBTITLE_TOP_PADDING)
+                    modifier = Modifier.padding(top = Dimens.SpacingMicro)
                 )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
+                        .padding(top = Dimens.SpacingTiny),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -163,7 +175,7 @@ fun DataScreen(
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(Styles.ITEM_SPACING),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = Dimens.ScreenVerticalPadding)
+                            contentPadding = PaddingValues(bottom = Dimens.ScreenVerticalPadding)
                         ) {
                             item {
                                 SummaryCard(
@@ -180,17 +192,70 @@ fun DataScreen(
                                 )
                             }
 
-                            items(uiState.sensors) { sensor ->
-                                SensorListItem(
-                                    sensor = sensor,
-                                    onClick = {
-                                        navController.navigate(
-                                            Screen.SensorDetail.createRoute(
-                                                sensor.sensorId
-                                            )
+                            // Toggle to hide/show empty sensors
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 0.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.data_screen_hide_empty_sensors),
+                                        fontSize = Dimens.FontSizeSmall,
+                                        color = AppColors.TextSecondary
+                                    )
+                                    Switch(
+                                        checked = hideZeroData,
+                                        onCheckedChange = { hideZeroData = it },
+                                        modifier = Modifier.scale(0.75f),
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.White,
+                                            checkedTrackColor = AppColors.PrimaryColor,
+                                            uncheckedThumbColor = AppColors.White,
+                                            uncheckedTrackColor = AppColors.TextSecondary.copy(alpha = 0.3f)
+                                        )
+                                    )
+                                }
+                            }
+
+                            if (filteredSensors.isEmpty()) {
+                                item {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 48.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.SensorsOff,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(48.dp),
+                                            tint = AppColors.PrimaryColor
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Text(
+                                            text = stringResource(R.string.data_screen_no_result),
+                                            fontSize = Dimens.FontSizeBody,
+                                            color = AppColors.TextSecondary
                                         )
                                     }
-                                )
+                                }
+                            } else {
+                                items(filteredSensors) { sensor ->
+                                    SensorListItem(
+                                        sensor = sensor,
+                                        onClick = {
+                                            navController.navigate(
+                                                Screen.SensorDetail.createRoute(
+                                                    sensor.sensorId
+                                                )
+                                            )
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -326,70 +391,99 @@ private fun SummaryCard(
             }
 
             if (totalRecords > 0) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.SpacingMedium))
 
                 // Export Button (Full width)
                 Button(
                     onClick = onExportClick,
+                    enabled = !isExporting && !isDeleting,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.SecondaryColor),
-                    enabled = !isExporting && !isDeleting,
-                    shape = RoundedCornerShape(8.dp)
+                        .height(Dimens.ButtonHeightSmall),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppColors.SecondaryColor,
+                        contentColor = AppColors.White,
+                        disabledContainerColor = AppColors.TextSecondary.copy(alpha = 0.3f),
+                        disabledContentColor = AppColors.TextSecondary
+                    ),
+                    shape = RoundedCornerShape(Dimens.ButtonCornerRadiusSmall),
+                    contentPadding = PaddingValues(
+                        horizontal = Dimens.SpacingMedium,
+                        vertical = 0.dp
+                    )
                 ) {
-                    Text(text = stringResource(R.string.sensor_export_csv), fontSize = 12.sp)
+                    if (isExporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(Dimens.IconSizeSmall),
+                            color = AppColors.TextSecondary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.sensor_export_csv),
+                            fontSize = Dimens.FontSizeSmall
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.SpacingSmall))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
                 ) {
                     // Upload button
                     Button(
                         onClick = onUploadClick,
+                        enabled = !isUploading && !isDeleting,
                         modifier = Modifier
                             .weight(1f)
-                            .height(36.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.PrimaryColor),
-                        enabled = !isUploading && !isDeleting,
-                        shape = RoundedCornerShape(8.dp)
+                            .height(Dimens.ButtonHeightSmall),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppColors.PrimaryColor,
+                            contentColor = AppColors.White,
+                            disabledContainerColor = AppColors.TextSecondary.copy(alpha = 0.3f),
+                            disabledContentColor = AppColors.TextSecondary
+                        ),
+                        shape = RoundedCornerShape(Dimens.ButtonCornerRadiusSmall),
+                        contentPadding = PaddingValues(
+                            horizontal = Dimens.SpacingMedium,
+                            vertical = 0.dp
+                        )
                     ) {
-                        if (isUploading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = AppColors.White,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(
-                                text = stringResource(R.string.sync_start_data_upload),
-                                fontSize = 12.sp
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.sensor_upload_data),
+                            fontSize = Dimens.FontSizeSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
 
                     // Delete button
                     Button(
                         onClick = onDeleteClick,
+                        enabled = !isUploading && !isDeleting,
                         modifier = Modifier
                             .weight(1f)
-                            .height(36.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.ErrorColor),
-                        enabled = !isUploading && !isDeleting,
-                        shape = RoundedCornerShape(8.dp)
+                            .height(Dimens.ButtonHeightSmall),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppColors.ErrorColor,
+                            contentColor = AppColors.White,
+                            disabledContainerColor = AppColors.TextSecondary.copy(alpha = 0.3f),
+                            disabledContentColor = AppColors.TextSecondary
+                        ),
+                        shape = RoundedCornerShape(Dimens.ButtonCornerRadiusSmall),
+                        contentPadding = PaddingValues(
+                            horizontal = Dimens.SpacingMedium,
+                            vertical = 0.dp
+                        )
                     ) {
-                        if (isDeleting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = AppColors.White,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(text = stringResource(R.string.sync_delete_data), fontSize = 12.sp)
-                        }
+                        Text(
+                            text = stringResource(R.string.sensor_delete_data),
+                            fontSize = Dimens.FontSizeSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
