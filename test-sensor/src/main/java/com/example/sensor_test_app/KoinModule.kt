@@ -10,6 +10,7 @@ import kaist.iclab.tracker.permission.AndroidPermissionManager
 import kaist.iclab.tracker.sensor.common.LocationSensor
 import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.controller.ControllerState
+import kaist.iclab.tracker.sensor.phone.ActivityRecognitionSensor
 import kaist.iclab.tracker.sensor.phone.AmbientLightSensor
 import kaist.iclab.tracker.sensor.phone.AppListChangeSensor
 import kaist.iclab.tracker.sensor.phone.AppUsageLogSensor
@@ -305,8 +306,23 @@ val koinModule = module {
         )
     }
 
+    single {
+        ActivityRecognitionSensor(
+            context = androidContext(),
+            permissionManager = get<AndroidPermissionManager>(),
+            configStorage = SimpleStateStorage(ActivityRecognitionSensor.Config(
+                intervalMillis = TimeUnit.SECONDS.toMillis(10)
+            )),
+            stateStorage = CouchbaseSensorStateStorage(
+                couchbase = get(),
+                collectionName = ActivityRecognitionSensor::class.simpleName ?: ""
+            )
+        )
+    }
+
     single(named("sensors")) {
         listOf(
+            get<ActivityRecognitionSensor>(),
             get<AmbientLightSensor>(),
             get<AppListChangeSensor>(),
             get<AppUsageLogSensor>(),
