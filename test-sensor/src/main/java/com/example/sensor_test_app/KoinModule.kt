@@ -10,6 +10,7 @@ import kaist.iclab.tracker.permission.AndroidPermissionManager
 import kaist.iclab.tracker.sensor.common.LocationSensor
 import kaist.iclab.tracker.sensor.controller.BackgroundController
 import kaist.iclab.tracker.sensor.controller.ControllerState
+import kaist.iclab.tracker.sensor.core.Sensor
 import kaist.iclab.tracker.sensor.phone.ActivityRecognitionSensor
 import kaist.iclab.tracker.sensor.phone.AmbientLightSensor
 import kaist.iclab.tracker.sensor.phone.AppListChangeSensor
@@ -28,6 +29,7 @@ import kaist.iclab.tracker.sensor.phone.StepSensor
 import kaist.iclab.tracker.sensor.phone.UserInteractionSensor
 import kaist.iclab.tracker.sensor.phone.WifiScanSensor
 import kaist.iclab.tracker.storage.couchbase.CouchbaseDB
+import kaist.iclab.tracker.storage.couchbase.CouchbaseSensorDataStorage
 import kaist.iclab.tracker.storage.couchbase.CouchbaseStateStorage
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
@@ -343,6 +345,16 @@ val koinModule = module {
         )
     }
 
+    single(named("sensorDataStorages")) {
+        get<List<Sensor<*, *>>>(named("sensors"))
+            .associate { sensor ->
+                sensor.name to CouchbaseSensorDataStorage(
+                    couchbase = get(),
+                    collectionName = sensor.javaClass.simpleName
+                )
+            }
+    }
+
     // Global Controller
     single {
         BackgroundController(
@@ -375,7 +387,8 @@ val koinModule = module {
     viewModel {
         SensorViewModel(
             backgroundController = get(),
-            permissionManager = get<AndroidPermissionManager>()
+            permissionManager = get<AndroidPermissionManager>(),
+            sensorDataStorages = get(named("sensorDataStorages"))
         )
     }
 }
