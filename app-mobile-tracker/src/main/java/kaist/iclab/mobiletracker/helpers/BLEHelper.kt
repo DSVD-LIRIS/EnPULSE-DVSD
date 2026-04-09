@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import kaist.iclab.mobiletracker.config.AppConfig
 import kaist.iclab.mobiletracker.data.DeviceType
+import kaist.iclab.mobiletracker.data.survey.SurveyQuestionResponseInsert
 import kaist.iclab.mobiletracker.db.entity.common.LocationEntity
 import kaist.iclab.mobiletracker.db.entity.watch.WatchAccelerometerEntity
 import kaist.iclab.mobiletracker.db.entity.watch.WatchEDAEntity
@@ -12,14 +13,27 @@ import kaist.iclab.mobiletracker.db.entity.watch.WatchPPGEntity
 import kaist.iclab.mobiletracker.db.entity.watch.WatchSkinTemperatureEntity
 import kaist.iclab.mobiletracker.di.AppCoroutineScope
 import kaist.iclab.mobiletracker.repository.Result
+import kaist.iclab.mobiletracker.repository.UserProfileRepository
 import kaist.iclab.mobiletracker.repository.WatchSensorRepository
+import kaist.iclab.mobiletracker.services.SurveyService
 import kaist.iclab.mobiletracker.services.SyncTimestampService
 import kaist.iclab.mobiletracker.utils.SensorDataCsvParser
 import kaist.iclab.tracker.sync.ble.BLEDataChannel
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /**
  * Helper class for managing BLE communication with wearable devices.
@@ -32,9 +46,12 @@ class BLEHelper(
 ) : KoinComponent {
     private lateinit var bleChannel: BLEDataChannel
 
-    // Create a managed coroutine scope that can be cancelled
     // Injected coroutine scope
     private val appScope by inject<AppCoroutineScope>()
+    private val surveyService by inject<SurveyService>()
+    private val userProfileRepository by inject<UserProfileRepository>()
+
+    private val isoFormatter = DateTimeFormatter.ISO_INSTANT
 
     fun initialize() {
         bleChannel = BLEDataChannel(context)
@@ -58,6 +75,89 @@ class BLEHelper(
             }
             // Parse CSV and store all sensor data locally
             parseAndStoreWatchData(csvData)
+        }
+
+        // Listen for microEMA responses from watch
+        bleChannel.addOnReceivedListener(setOf(AppConfig.BLEKeys.MICRO_EMA_RESPONSE)) { _, json ->
+            val jsonString = when {
+                json is kotlinx.serialization.json.JsonPrimitive -> json.content
+                else -> json.toString()
+            }
+            handleMicroEmaResponse(jsonString)
+        }
+    }
+
+    /**
+     * Handle microEMA responses received from the watch via BLE.
+     *
+     * Expected payload format (JSON array):
+     * [{"questionId":"101","value":"3","status":"ANSWERED","triggerTime":"17...","surveyStartTime":"17...","responseTime":"17..."}]
+     *
+     * For EXPIRED/DISMISSED, "value" is null.
+     */
+    private fun handleMicroEmaResponse(jsonString: String) {
+        appScope.io.launch {
+            try {
+                val uuid = userProfileRepository.getCurrentUuid()
+                if (uuid == null) {
+                    Log.w(AppConfig.LogTags.PHONE_BLE, "[MICRO_EMA] No user UUID available")
+                    return@launch
+                }
+
+                val jsonArray = Json.parseToJsonElement(jsonString).jsonArray
+
+                val responses = jsonArray.mapNotNull { element ->
+                    val obj = element.jsonObject
+                    val questionId = obj["questionId"]?.jsonPrimitive?.content?.toIntOrNull()
+                        ?: return@mapNotNull null
+                    val value = obj["value"]?.let {
+                        if (it is JsonNull) null else it.jsonPrimitive.content
+                    }
+                    val status = obj["status"]?.jsonPrimitive?.content ?: "ANSWERED"
+                    val triggerTime = obj["triggerTime"]?.jsonPrimitive?.content?.toLongOrNull()
+                    val surveyStartTime = obj["surveyStartTime"]?.jsonPrimitive?.content?.toLongOrNull()
+                    val responseTime = obj["responseTime"]?.jsonPrimitive?.content?.toLongOrNull()
+
+                    // Build the response JSON that goes into the `response` column
+                    val responseJson = buildJsonObject {
+                        put("id", questionId)
+                        put("value", value)
+                        put("status", status)
+                    }
+
+                    fun formatTimestamp(millis: Long?) =
+                        millis?.let {
+                            Instant.ofEpochMilli(it).atOffset(ZoneOffset.UTC).format(isoFormatter)
+                        }
+
+                    SurveyQuestionResponseInsert(
+                        questionId = questionId,
+                        uuid = uuid,
+                        triggerTime = formatTimestamp(triggerTime),
+                        actualTriggerTime = formatTimestamp(triggerTime),
+                        surveyStartTime = formatTimestamp(surveyStartTime),
+                        responseSubmissionTime = formatTimestamp(responseTime),
+                        response = responseJson
+                    )
+                }
+
+                if (responses.isNotEmpty()) {
+                    when (val result = surveyService.submitSurveyResponses(responses)) {
+                        is Result.Success -> {
+                            Log.d(AppConfig.LogTags.PHONE_BLE,
+                                "[MICRO_EMA] Uploaded ${responses.size} responses to Supabase")
+                        }
+                        is Result.Error -> {
+                            Log.e(AppConfig.LogTags.PHONE_BLE,
+                                "[MICRO_EMA] Failed to upload: ${result.message}",
+                                result.exception)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(AppConfig.LogTags.PHONE_BLE,
+                    "[MICRO_EMA] Error processing response: ${e.message}", e)
+            }
         }
     }
 

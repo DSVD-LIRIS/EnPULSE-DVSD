@@ -1,0 +1,36 @@
+{
+  "surveyId": 42,
+  "title": "Stress Check",
+  "expireAfterMs": 30000,
+  "questions": [
+    {
+      "id": 101,
+      "surveyId": 42,
+      "text": "How stressed do you feel right now?",
+      "answerType": "RADIO",
+      "isMandatory": true,
+      "options": [
+        {
+          "id": 201,
+          "display": "1"
+        },
+        {
+          "id": 202,
+          "display": "2"
+        },
+        {
+          "id": 203,
+          "display": "3"
+        },
+        {
+          "id": 204,
+          "display": "4"
+        },
+        {
+          "id": 205,
+          "display": "5"
+        }
+      ]
+    }
+  ]
+}

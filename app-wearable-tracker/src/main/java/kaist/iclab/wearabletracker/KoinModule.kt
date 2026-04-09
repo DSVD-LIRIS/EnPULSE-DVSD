@@ -20,6 +20,9 @@ import kaist.iclab.wearabletracker.data.PhoneCommunicationManager
 import kaist.iclab.wearabletracker.data.SyncAckListener
 import kaist.iclab.wearabletracker.db.TrackerRoomDB
 import kaist.iclab.wearabletracker.db.dao.BaseDao
+import kaist.iclab.wearabletracker.ema.MicroEmaRepository
+import kaist.iclab.wearabletracker.ema.MicroEmaResponseManager
+import kaist.iclab.wearabletracker.ema.MicroEmaViewModel
 import kaist.iclab.wearabletracker.helpers.SyncPreferencesHelper
 import kaist.iclab.wearabletracker.repository.WatchSensorRepository
 import kaist.iclab.wearabletracker.repository.WatchSensorRepositoryImpl
@@ -295,5 +298,29 @@ val koinModule = module {
     // process lifetime and is never cancelled, matching the Koin singleton lifecycle.
     single<kotlinx.coroutines.CoroutineScope> {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
+    }
+
+    // --- MicroEMA ---
+
+    single {
+        MicroEmaRepository(context = androidContext())
+    }
+
+    single {
+        get<TrackerRoomDB>().microEmaResponseDao()
+    }
+
+    single {
+        MicroEmaResponseManager(
+            dao = get(),
+            phoneCommunicationManager = get()
+        )
+    }
+
+    viewModel {
+        MicroEmaViewModel(
+            repository = get(),
+            responseManager = get()
+        )
     }
 }
