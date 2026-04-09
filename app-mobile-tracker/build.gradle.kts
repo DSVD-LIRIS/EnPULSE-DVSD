@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.kotlinCompose)
-    alias(libs.plugins.googleServices)
 
     id("com.google.devtools.ksp")
     alias(libs.plugins.kotlinSerialization)
