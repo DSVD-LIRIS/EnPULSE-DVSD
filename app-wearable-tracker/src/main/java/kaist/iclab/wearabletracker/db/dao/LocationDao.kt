@@ -8,7 +8,7 @@ import kaist.iclab.wearabletracker.db.entity.CsvSerializable
 import kaist.iclab.wearabletracker.db.entity.LocationEntity
 
 @Dao
-interface LocationDao : BaseDao<LocationSensor.Entity> {
+abstract class LocationDao : BaseDao<LocationSensor.Entity> {
     override suspend fun insert(sensorEntity: LocationSensor.Entity) {
         val entity = LocationEntity(
             received = sensorEntity.received,
@@ -38,37 +38,37 @@ interface LocationDao : BaseDao<LocationSensor.Entity> {
     }
 
     @Insert
-    suspend fun insertUsingRoomEntity(locationEntity: LocationEntity)
+    abstract suspend fun insertUsingRoomEntity(locationEntity: LocationEntity)
 
     @Insert
-    suspend fun insertUsingRoomEntity(locationEntities: List<LocationEntity>)
+    abstract suspend fun insertUsingRoomEntity(locationEntities: List<LocationEntity>)
 
     @Query("SELECT * FROM LocationEntity ORDER BY timestamp ASC")
-    suspend fun getAllLocationData(): List<LocationEntity>
+    abstract suspend fun getAllLocationData(): List<LocationEntity>
 
     override suspend fun getAllForExport(): List<CsvSerializable> = getAllLocationData()
 
     @Query("SELECT * FROM LocationEntity WHERE timestamp > :since ORDER BY timestamp ASC LIMIT :limit")
-    suspend fun getLocationDataSince(since: Long, limit: Int): List<LocationEntity>
+    abstract suspend fun getLocationDataSince(since: Long, limit: Int): List<LocationEntity>
 
     override suspend fun getDataSince(timestamp: Long, limit: Int): List<CsvSerializable> =
         getLocationDataSince(timestamp, limit)
 
     @Query("DELETE FROM LocationEntity WHERE timestamp <= :until")
-    suspend fun deleteLocationDataBefore(until: Long)
+    abstract suspend fun deleteLocationDataBefore(until: Long)
 
     override suspend fun deleteDataBefore(timestamp: Long) = deleteLocationDataBefore(timestamp)
 
     @Query("DELETE FROM LocationEntity")
-    suspend fun deleteAllLocationData()
+    abstract suspend fun deleteAllLocationData()
 
     override suspend fun deleteAll() {
         deleteAllLocationData()
     }
 
     @Query("SELECT COUNT(*) FROM LocationEntity")
-    override suspend fun getCount(): Int
+    abstract override suspend fun getCount(): Int
 
     @Query("SELECT COUNT(*) FROM LocationEntity WHERE timestamp > :timestamp")
-    override suspend fun getCountSince(timestamp: Long): Int
+    abstract override suspend fun getCountSince(timestamp: Long): Int
 }

@@ -8,7 +8,7 @@ import kaist.iclab.wearabletracker.db.entity.AccelerometerEntity
 import kaist.iclab.wearabletracker.db.entity.CsvSerializable
 
 @Dao
-interface AccelerometerDao : BaseDao<AccelerometerSensor.Entity> {
+abstract class AccelerometerDao : BaseDao<AccelerometerSensor.Entity> {
     override suspend fun insert(sensorEntity: AccelerometerSensor.Entity) {
         val entity = sensorEntity.dataPoint.map {
             AccelerometerEntity(
@@ -38,35 +38,35 @@ interface AccelerometerDao : BaseDao<AccelerometerSensor.Entity> {
     }
 
     @Insert
-    suspend fun insertUsingRoomEntity(accelerometerEntity: List<AccelerometerEntity>)
+    abstract suspend fun insertUsingRoomEntity(accelerometerEntity: List<AccelerometerEntity>)
 
     @Query("SELECT * FROM AccelerometerEntity ORDER BY timestamp ASC")
-    suspend fun getAllAccelerometerData(): List<AccelerometerEntity>
+    abstract suspend fun getAllAccelerometerData(): List<AccelerometerEntity>
 
     override suspend fun getAllForExport(): List<CsvSerializable> = getAllAccelerometerData()
 
     @Query("SELECT * FROM AccelerometerEntity WHERE timestamp > :since ORDER BY timestamp ASC LIMIT :limit")
-    suspend fun getAccelerometerDataSince(since: Long, limit: Int): List<AccelerometerEntity>
+    abstract suspend fun getAccelerometerDataSince(since: Long, limit: Int): List<AccelerometerEntity>
 
     override suspend fun getDataSince(timestamp: Long, limit: Int): List<CsvSerializable> =
         getAccelerometerDataSince(timestamp, limit)
 
     @Query("DELETE FROM AccelerometerEntity WHERE timestamp <= :until")
-    suspend fun deleteAccelerometerDataBefore(until: Long)
+    abstract suspend fun deleteAccelerometerDataBefore(until: Long)
 
     override suspend fun deleteDataBefore(timestamp: Long) =
         deleteAccelerometerDataBefore(timestamp)
 
     @Query("DELETE FROM AccelerometerEntity")
-    suspend fun deleteAllAccelerometerData()
+    abstract suspend fun deleteAllAccelerometerData()
 
     override suspend fun deleteAll() {
         deleteAllAccelerometerData()
     }
 
     @Query("SELECT COUNT(*) FROM AccelerometerEntity")
-    override suspend fun getCount(): Int
+    abstract override suspend fun getCount(): Int
 
     @Query("SELECT COUNT(*) FROM AccelerometerEntity WHERE timestamp > :timestamp")
-    override suspend fun getCountSince(timestamp: Long): Int
+    abstract override suspend fun getCountSince(timestamp: Long): Int
 }

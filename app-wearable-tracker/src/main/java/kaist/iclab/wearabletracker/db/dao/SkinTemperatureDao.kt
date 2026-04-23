@@ -8,7 +8,7 @@ import kaist.iclab.wearabletracker.db.entity.CsvSerializable
 import kaist.iclab.wearabletracker.db.entity.SkinTemperatureEntity
 
 @Dao
-interface SkinTemperatureDao : BaseDao<SkinTemperatureSensor.Entity> {
+abstract class SkinTemperatureDao : BaseDao<SkinTemperatureSensor.Entity> {
     override suspend fun insert(sensorEntity: SkinTemperatureSensor.Entity) {
         val entity = sensorEntity.dataPoint.map {
             SkinTemperatureEntity(
@@ -38,35 +38,35 @@ interface SkinTemperatureDao : BaseDao<SkinTemperatureSensor.Entity> {
     }
 
     @Insert
-    suspend fun insertUsingRoomEntity(skinTemperatureEntity: List<SkinTemperatureEntity>)
+    abstract suspend fun insertUsingRoomEntity(skinTemperatureEntity: List<SkinTemperatureEntity>)
 
     @Query("SELECT * FROM SkinTemperatureEntity ORDER BY timestamp ASC")
-    suspend fun getAllSkinTemperatureData(): List<SkinTemperatureEntity>
+    abstract suspend fun getAllSkinTemperatureData(): List<SkinTemperatureEntity>
 
     override suspend fun getAllForExport(): List<CsvSerializable> = getAllSkinTemperatureData()
 
     @Query("SELECT * FROM SkinTemperatureEntity WHERE timestamp > :since ORDER BY timestamp ASC LIMIT :limit")
-    suspend fun getSkinTemperatureDataSince(since: Long, limit: Int): List<SkinTemperatureEntity>
+    abstract suspend fun getSkinTemperatureDataSince(since: Long, limit: Int): List<SkinTemperatureEntity>
 
     override suspend fun getDataSince(timestamp: Long, limit: Int): List<CsvSerializable> =
         getSkinTemperatureDataSince(timestamp, limit)
 
     @Query("DELETE FROM SkinTemperatureEntity WHERE timestamp <= :until")
-    suspend fun deleteSkinTemperatureDataBefore(until: Long)
+    abstract suspend fun deleteSkinTemperatureDataBefore(until: Long)
 
     override suspend fun deleteDataBefore(timestamp: Long) =
         deleteSkinTemperatureDataBefore(timestamp)
 
     @Query("DELETE FROM SkinTemperatureEntity")
-    suspend fun deleteAllSkinTemperatureData()
+    abstract suspend fun deleteAllSkinTemperatureData()
 
     override suspend fun deleteAll() {
         deleteAllSkinTemperatureData()
     }
 
     @Query("SELECT COUNT(*) FROM SkinTemperatureEntity")
-    override suspend fun getCount(): Int
+    abstract override suspend fun getCount(): Int
 
     @Query("SELECT COUNT(*) FROM SkinTemperatureEntity WHERE timestamp > :timestamp")
-    override suspend fun getCountSince(timestamp: Long): Int
+    abstract override suspend fun getCountSince(timestamp: Long): Int
 }

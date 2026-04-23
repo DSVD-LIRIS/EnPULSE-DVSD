@@ -8,7 +8,7 @@ import kaist.iclab.wearabletracker.db.entity.CsvSerializable
 import kaist.iclab.wearabletracker.db.entity.EDAEntity
 
 @Dao
-interface EDADao : BaseDao<EDASensor.Entity> {
+abstract class EDADao : BaseDao<EDASensor.Entity> {
     override suspend fun insert(sensorEntity: EDASensor.Entity) {
         val entity = sensorEntity.dataPoint.map {
             EDAEntity(
@@ -37,34 +37,34 @@ interface EDADao : BaseDao<EDASensor.Entity> {
     }
 
     @Insert
-    suspend fun insertUsingRoomEntity(edaEntity: List<EDAEntity>)
+    abstract suspend fun insertUsingRoomEntity(edaEntity: List<EDAEntity>)
 
     @Query("SELECT * FROM EDAEntity ORDER BY timestamp ASC")
-    suspend fun getAllEDAData(): List<EDAEntity>
+    abstract suspend fun getAllEDAData(): List<EDAEntity>
 
     override suspend fun getAllForExport(): List<CsvSerializable> = getAllEDAData()
 
     @Query("SELECT * FROM EDAEntity WHERE timestamp > :since ORDER BY timestamp ASC LIMIT :limit")
-    suspend fun getEDADataSince(since: Long, limit: Int): List<EDAEntity>
+    abstract suspend fun getEDADataSince(since: Long, limit: Int): List<EDAEntity>
 
     override suspend fun getDataSince(timestamp: Long, limit: Int): List<CsvSerializable> =
         getEDADataSince(timestamp, limit)
 
     @Query("DELETE FROM EDAEntity WHERE timestamp <= :until")
-    suspend fun deleteEDADataBefore(until: Long)
+    abstract suspend fun deleteEDADataBefore(until: Long)
 
     override suspend fun deleteDataBefore(timestamp: Long) = deleteEDADataBefore(timestamp)
 
     @Query("DELETE FROM EDAEntity")
-    suspend fun deleteAllEDAData()
+    abstract suspend fun deleteAllEDAData()
 
     override suspend fun deleteAll() {
         deleteAllEDAData()
     }
 
     @Query("SELECT COUNT(*) FROM EDAEntity")
-    override suspend fun getCount(): Int
+    abstract override suspend fun getCount(): Int
 
     @Query("SELECT COUNT(*) FROM EDAEntity WHERE timestamp > :timestamp")
-    override suspend fun getCountSince(timestamp: Long): Int
+    abstract override suspend fun getCountSince(timestamp: Long): Int
 }

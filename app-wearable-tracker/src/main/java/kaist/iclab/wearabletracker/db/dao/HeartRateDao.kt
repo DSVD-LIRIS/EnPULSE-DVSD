@@ -8,7 +8,7 @@ import kaist.iclab.wearabletracker.db.entity.CsvSerializable
 import kaist.iclab.wearabletracker.db.entity.HeartRateEntity
 
 @Dao
-interface HeartRateDao : BaseDao<HeartRateSensor.Entity> {
+abstract class HeartRateDao : BaseDao<HeartRateSensor.Entity> {
     override suspend fun insert(sensorEntity: HeartRateSensor.Entity) {
         val entity = sensorEntity.dataPoint.map {
             HeartRateEntity(
@@ -40,34 +40,34 @@ interface HeartRateDao : BaseDao<HeartRateSensor.Entity> {
     }
 
     @Insert
-    suspend fun insertUsingRoomEntity(heartRateEntity: List<HeartRateEntity>)
+    abstract suspend fun insertUsingRoomEntity(heartRateEntity: List<HeartRateEntity>)
 
     @Query("SELECT * FROM HeartRateEntity ORDER BY timestamp ASC")
-    suspend fun getAllHeartRateData(): List<HeartRateEntity>
+    abstract suspend fun getAllHeartRateData(): List<HeartRateEntity>
 
     override suspend fun getAllForExport(): List<CsvSerializable> = getAllHeartRateData()
 
     @Query("SELECT * FROM HeartRateEntity WHERE timestamp > :since ORDER BY timestamp ASC LIMIT :limit")
-    suspend fun getHeartRateDataSince(since: Long, limit: Int): List<HeartRateEntity>
+    abstract suspend fun getHeartRateDataSince(since: Long, limit: Int): List<HeartRateEntity>
 
     override suspend fun getDataSince(timestamp: Long, limit: Int): List<CsvSerializable> =
         getHeartRateDataSince(timestamp, limit)
 
     @Query("DELETE FROM HeartRateEntity WHERE timestamp <= :until")
-    suspend fun deleteHeartRateDataBefore(until: Long)
+    abstract suspend fun deleteHeartRateDataBefore(until: Long)
 
     override suspend fun deleteDataBefore(timestamp: Long) = deleteHeartRateDataBefore(timestamp)
 
     @Query("DELETE FROM HeartRateEntity")
-    suspend fun deleteAllHeartRateData()
+    abstract suspend fun deleteAllHeartRateData()
 
     override suspend fun deleteAll() {
         deleteAllHeartRateData()
     }
 
     @Query("SELECT COUNT(*) FROM HeartRateEntity")
-    override suspend fun getCount(): Int
+    abstract override suspend fun getCount(): Int
 
     @Query("SELECT COUNT(*) FROM HeartRateEntity WHERE timestamp > :timestamp")
-    override suspend fun getCountSince(timestamp: Long): Int
+    abstract override suspend fun getCountSince(timestamp: Long): Int
 }
